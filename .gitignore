@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing & Coverage
+coverage/
+*.lcov
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Environment variables
+.env
+.env*.local
+!.env.example
+
+# IDE & OS files
+.DS_Store
+*.pem
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma & Database
+prisma/*.db
+prisma/*.db-journal
+opengrapes.db
+*.sqlite
+*.sqlite3
+
+# Uploads and temporary generated files
+uploads/
+scratch/
+*.tsbuildinfo

@@ -1,0 +1,391 @@
+// Prisma schema for SIH 2026 (PS: 26075) Capacity Building & Training LMS
+// Comprehensive multi-tier role management, competency mapping, certification, and live classrooms
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────────────────────
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  TRAINER
+  TRAINEE
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ProgramStatus {
+  DRAFT
+  PUBLISHED
+  REGISTRATION_OPEN
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum EnrollmentStatus {
+  APPLIED
+  APPROVED
+  REJECTED
+  ENROLLED
+  IN_PROGRESS
+  COMPLETED
+  DROPPED
+}
+
+enum CertificateStatus {
+  VALID
+  REVOKED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  PROPOSED
+  ACCEPTED
+  REJECTED
+  ASSIGNED
+}
+
+// ── User & Auth ────────────────────────────────────────────────────────────
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  password     String
+  fullName     String
+  role         Role           @default(TRAINEE)
+  status       ApprovalStatus @default(PENDING)
+  avatarUrl    String?
+  organization String?
+  department   String?
+  designation  String?
+  phone        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relations
+  profile            Profile?
+  trainerSkills      TrainerSkill[]
+  traineeSkills      TraineeSkill[]
+  trainerAssignments TrainerAssignment[]
+  enrollments        Enrollment[]
+  createdPrograms    Program[]              @relation("ProgramCreator")
+  certificates       Certificate[]          @relation("TraineeCertificates")
+  feedbackGiven      Feedback[]             @relation("TraineeFeedbacks")
+  feedbackReceived   Feedback[]             @relation("TrainerFeedbacks")
+  announcements      Announcement[]         @relation("AuthorAnnouncements")
+  testSubmissions    AssessmentSubmission[]
+  doubtsAsked        MeetingDoubt[]
+
+  @@index([email])
+  @@index([role, status])
+}
+
+// ── Trainee / Trainer Extended Profile ─────────────────────────────────────
+model Profile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio              String?  @db.Text
+  qualifications   String? // JSON or text list of degrees/certifications
+  yearsExperience  Float    @default(0)
+  resumeUrl        String?
+  linkedinUrl      String?
+  governmentIdType String? // e.g. Aadhaar, Employee ID
+  governmentIdNum  String?
+  address          String?
+  interests        String[] @default([])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ── Competency Taxonomy & Skills ───────────────────────────────────────────
+model Skill {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String // e.g. "Technical", "Pedagogical", "Administrative", "Leadership"
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trainerSkills       TrainerSkill[]
+  traineeSkills       TraineeSkill[]
+  programRequirements ProgramSkillRequirement[]
+
+  @@index([category])
+}
+
+model TrainerSkill {
+  id              String   @id @default(cuid())
+  trainerId       String
+  trainer         User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  skillId         String
+  skill           Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency     Int      @default(1) // Scale 1 (Novice) to 5 (Expert)
+  yearsExperience Float    @default(1)
+  isVerified      Boolean  @default(false)
+  verifiedBy      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([trainerId, skillId])
+  @@index([skillId, proficiency])
+}
+
+model TraineeSkill {
+  id          String   @id @default(cuid())
+  traineeId   String
+  trainee     User     @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency Int      @default(1) // Scale 1 to 5
+  source      String? // e.g. "Acquired in Program: Advanced Cloud Architecture"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([traineeId, skillId])
+}
+
+// ── Training Programs / Batches ────────────────────────────────────────────
+model Program {
+  id          String        @id @default(cuid())
+  title       String
+  code        String        @unique // e.g. "CAP-2026-CLOUD-01"
+  description String        @db.Text
+  department  String
+  level       String        @default("Intermediate") // Beginner, Intermediate, Advanced
+  capacity    Int           @default(50)
+  startDate   DateTime
+  endDate     DateTime
+  status      ProgramStatus @default(DRAFT)
+  bannerUrl   String?
+  venue       String?       @default("Virtual Classroom (LiveKit)")
+  createdById String
+  createdBy   User          @relation("ProgramCreator", fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  skillRequirements  ProgramSkillRequirement[]
+  trainerAssignments TrainerAssignment[]
+  enrollments        Enrollment[]
+  certificates       Certificate[]
+  feedbacks          Feedback[]
+  liveSessions       LiveSession[]
+  assessments        Assessment[]
+
+  @@index([status, department])
+  @@index([startDate, endDate])
+}
+
+model ProgramSkillRequirement {
+  id             String  @id @default(cuid())
+  programId      String
+  program        Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  skillId        String
+  skill          Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  minProficiency Int     @default(3) // 1 to 5 required for trainer match
+  weight         Float   @default(1.0) // For ranking algorithm calculations
+  isMandatory    Boolean @default(true)
+
+  @@unique([programId, skillId])
+}
+
+model TrainerAssignment {
+  id         String           @id @default(cuid())
+  programId  String
+  program    Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
+  trainerId  String
+  trainer    User             @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  matchScore Float            @default(0) // Calculated from competency matching engine (0 - 100%)
+  status     AssignmentStatus @default(PROPOSED)
+  assignedAt DateTime         @default(now())
+  notes      String?
+
+  @@unique([programId, trainerId])
+  @@index([programId, status])
+}
+
+// ── Enrollment & Trainee Progress ──────────────────────────────────────────
+model Enrollment {
+  id                   String           @id @default(cuid())
+  programId            String
+  program              Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
+  traineeId            String
+  trainee              User             @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+  status               EnrollmentStatus @default(APPLIED)
+  progressPercentage   Float            @default(0)
+  attendancePercentage Float            @default(0)
+  finalGrade           String? // e.g. "A+", "A", "Pass", "Fail"
+  enrolledAt           DateTime         @default(now())
+  completedAt          DateTime?
+  updatedAt            DateTime         @updatedAt
+
+  @@unique([programId, traineeId])
+  @@index([programId, status])
+  @@index([traineeId, status])
+}
+
+// ── Cryptographic Certificates ─────────────────────────────────────────────
+model Certificate {
+  id                String            @id @default(cuid())
+  certificateNumber String            @unique // e.g. "CC-2026-984321"
+  verificationHash  String            @unique // SHA-256 HMAC hash of (id + traineeId + programId + issueDate)
+  programId         String
+  program           Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  traineeId         String
+  trainee           User              @relation("TraineeCertificates", fields: [traineeId], references: [id], onDelete: Cascade)
+  issueDate         DateTime          @default(now())
+  expiryDate        DateTime?
+  pdfUrl            String?
+  status            CertificateStatus @default(VALID)
+  metadata          Json? // Additional metadata (issuer name, scores, signature refs)
+  createdAt         DateTime          @default(now())
+
+  @@index([verificationHash])
+  @@index([traineeId])
+  @@index([programId])
+}
+
+// ── Feedback & Quality Assurance ───────────────────────────────────────────
+model Feedback {
+  id                   String   @id @default(cuid())
+  programId            String
+  program              Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  traineeId            String
+  trainee              User     @relation("TraineeFeedbacks", fields: [traineeId], references: [id], onDelete: Cascade)
+  trainerId            String?
+  trainer              User?    @relation("TrainerFeedbacks", fields: [trainerId], references: [id], onDelete: SetNull)
+  overallRating        Int // 1 to 5 stars
+  contentRating        Int? // 1 to 5
+  trainerRating        Int? // 1 to 5
+  infrastructureRating Int? // 1 to 5
+  comments             String?  @db.Text
+  suggestions          String?  @db.Text
+  createdAt            DateTime @default(now())
+
+  @@unique([programId, traineeId])
+  @@index([programId])
+  @@index([trainerId])
+}
+
+// ── Public CMS & Announcements ─────────────────────────────────────────────
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  summary     String?   @db.Text
+  content     String    @db.Text
+  category    String    @default("General") // "General", "Upcoming Training", "Policy", "Achievements"
+  bannerUrl   String?
+  attachment  String?
+  isPublished Boolean   @default(false)
+  isFeatured  Boolean   @default(false)
+  viewCount   Int       @default(0)
+  authorId    String
+  author      User      @relation("AuthorAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isPublished, category])
+}
+
+// ── Live Interactive Classrooms (LiveKit) ──────────────────────────────────
+model LiveSession {
+  id             String        @id @default(cuid())
+  programId      String
+  program        Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  roomId         String        @unique // LiveKit room identifier
+  title          String
+  description    String?
+  status         SessionStatus @default(SCHEDULED)
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  actualStart    DateTime?
+  actualEnd      DateTime?
+  recordingUrl   String?
+  hasNotes       Boolean       @default(false)
+  whiteboardData Json? // Tldraw scene snapshot
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  doubts  MeetingDoubt[]
+  minutes MeetingMinutes?
+
+  @@index([programId, status])
+  @@index([roomId])
+}
+
+model MeetingDoubt {
+  id         String      @id @default(cuid())
+  sessionId  String
+  session    LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  question   String      @db.Text
+  answer     String?     @db.Text
+  resolved   Boolean     @default(false)
+  screenshot String? // base64 or URL
+  createdAt  DateTime    @default(now())
+
+  @@index([sessionId])
+}
+
+model MeetingMinutes {
+  id          String      @id @default(cuid())
+  sessionId   String      @unique
+  session     LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  content     String      @db.Text // AI generated transcript summary & action items
+  generatedAt DateTime    @default(now())
+}
+
+// ── Assessments & Quizzes ──────────────────────────────────────────────────
+model Assessment {
+  id           String    @id @default(cuid())
+  programId    String
+  program      Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  totalMarks   Int       @default(100)
+  passingMarks Int       @default(40)
+  dueDate      DateTime?
+  questions    Json // Array of structured questions
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  submissions AssessmentSubmission[]
+
+  @@index([programId])
+}
+
+model AssessmentSubmission {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  traineeId    String
+  trainee      User       @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+  answers      Json
+  score        Float?
+  isPassed     Boolean?
+  feedback     String?
+  submittedAt  DateTime   @default(now())
+
+  @@unique([assessmentId, traineeId])
+  @@index([traineeId])
+}

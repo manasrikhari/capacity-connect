@@ -1,0 +1,327 @@
+// Prisma schema for the Batch LMS
+// Run `npx prisma generate` after changes, and `npx prisma migrate dev` to apply.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STUDENT
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum MeetingStatus {
+  UPCOMING
+  LIVE
+  ENDED
+}
+
+enum BatchStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum Plan {
+  FREE
+}
+
+// ── Tenant isolation unit ──────────────────────────────────────────────────
+model Batch {
+  id        String      @id @default(cuid())
+  name      String
+  subject   String?
+  grade     String?
+  teacherId String
+  teacher   User        @relation("OwnedBatches", fields: [teacherId], references: [id], onDelete: Cascade)
+  status    BatchStatus @default(ACTIVE)
+  joinCode  String      @unique
+
+  enrollments  Enrollment[]
+  meetings     Meeting[]
+  notes        Note[]
+  tests        Test[]
+  fees         Fee[]
+  payments     Payment[]
+  testAttempts TestAttempt[]
+  liveSessions LiveSession[]
+  aiConversations AiConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teacherId])
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String         @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role           @default(STUDENT)
+  status        ApprovalStatus @default(PENDING)
+  plan          Plan           @default(FREE)
+  onboarded     Boolean        @default(false)
+
+  enrollments Enrollment[]
+  doubts       Doubt[]
+  aiConversations AiConversation[]
+
+  accounts Account[]
+  sessions Session[]
+
+  // ADMIN only — batches they own
+  ownedBatches Batch[] @relation("OwnedBatches")
+
+  testAttempts TestAttempt[]
+  fees         Fee[]
+  payments     Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── Enrollment (student ↔ batch many-to-many) ─────────────────────────────
+model Enrollment {
+  id        String         @id @default(cuid())
+  studentId String
+  student   User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batchId   String
+  batch     Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  status    ApprovalStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, batchId])
+  @@index([batchId])
+  @@index([studentId])
+}
+
+// ── Content (all batch-scoped) ─────────────────────────────────────────────
+model Meeting {
+  id          String        @id @default(cuid())
+  batchId     String
+  batch       Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  date        DateTime
+  link        String
+  status      MeetingStatus @default(UPCOMING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+}
+
+model Note {
+  id      String @id @default(cuid())
+  batchId String
+  batch   Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  title   String
+  subject String
+  content String
+  fileUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+}
+
+model Test {
+  id       String  @id @default(cuid())
+  batchId  String
+  batch    Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  title    String
+  subject  String
+  isActive Boolean @default(false)
+
+  questions Question[]
+  attempts  TestAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+}
+
+model Question {
+  // No batchId — inherits batch through Test
+  id     String @id @default(cuid())
+  testId String
+  test   Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  question      String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctOption String
+  marks         Int    @default(1)
+  order         Int    @default(0)
+}
+
+model TestAttempt {
+  id        String @id @default(cuid())
+  batchId   String
+  batch     Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  testId    String
+  test      Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  answers     String
+  score       Int
+  totalMarks  Int
+  submittedAt DateTime @default(now())
+
+  @@unique([testId, studentId])
+  @@index([batchId])
+}
+
+model Fee {
+  id          String @id @default(cuid())
+  studentId   String
+  student     User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batchId     String
+  batch       Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  totalAmount Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, batchId])
+  @@index([batchId])
+}
+
+model Payment {
+  id        String @id @default(cuid())
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batchId   String
+  batch     Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  amount Int
+  date   DateTime
+  method String
+  note   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+  @@index([batchId])
+}
+
+// ── Live Meeting Storage ───────────────────────────────────────────────────
+model LiveSession {
+  id            String          @id @default(cuid())
+  batchId       String
+  batch         Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  roomId        String          @unique
+  status        String          @default("live") // "live", "completed", "expired"
+  startedAt     DateTime        @default(now())
+  endedAt       DateTime?
+  teacherJoined Boolean         @default(false)
+  hasNotes      Boolean         @default(false)
+  
+  doubts        Doubt[]
+  meetingMinutes MeetingMinutes?
+}
+model Doubt {
+  id           String       @id @default(cuid())
+  sessionId    String
+  liveSession  LiveSession  @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
+  studentId    String
+  student      User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  doubtText    String
+  answer       String
+  screenshot   String?      // base64 image data
+  timestamp    DateTime     @default(now())
+}
+model MeetingMinutes {
+  id           String       @id @default(cuid())
+  sessionId    String       @unique
+  liveSession  LiveSession  @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
+  content      String       @db.Text
+  generatedAt  DateTime     @default(now())
+}
+
+model AiConversation {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchId   String
+  batch     Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  title     String
+  messages  AiMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([batchId])
+}
+
+model AiMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String         // "user" or "model"
+  content        String         @db.Text
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId])
+}
+

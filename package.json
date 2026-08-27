@@ -1,0 +1,39 @@
+{
+  "name": "capacity-connect-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SIH 2026 (PS 26075) - Comprehensive Capacity Building & Training Management LMS Platform",
+  "workspaces": [
+    "backend",
+    "lms",
+    "live"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=backend",
+    "dev:all": "npx concurrently -n \"backend,lms,live\" -c \"blue,green,magenta\" \"npm run dev:backend\" \"npm run dev:lms\" \"npm run dev:live\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:lms": "npm run dev --workspace=lms",
+    "dev:live": "npm run dev --workspace=live",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build --workspace=backend",
+    "build:lms": "npm run build --workspace=lms",
+    "build:live": "npm run build --workspace=live",
+    "prisma:generate": "npm run prisma:generate --workspace=backend",
+    "prisma:migrate": "npm run prisma:migrate --workspace=backend",
+    "prisma:studio": "npm run prisma:studio --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "keywords": [
+    "sih2026",
+    "capacity-building",
+    "training-management",
+    "lms",
+    "livekit",
+    "webrtc",
+    "competency-mapping"
+  ],
+  "author": "OpenGrapes Team",
+  "license": "MIT"
+}

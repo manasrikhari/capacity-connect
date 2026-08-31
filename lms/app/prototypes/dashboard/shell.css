@@ -1,0 +1,25 @@
+/* Handoff-page chrome only. Everything the design itself needs lives in
+   designs/lifted2.css — this file styles the ground switcher and nothing else,
+   and is deleted together with this route after integration. */
+
+.pt-wrap {
+  width: 100%;
+  padding-bottom: 64px;
+}
+
+.pt-grounds {
+  max-width: 1440px;
+  margin: 18px auto;
+  padding: 0 clamp(24px, 4vw, 64px);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: var(--font-mono-stack); font-size: 11px; color: var(--ink-500);
+}
+.pt-g {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-body-stack); font-size: 12.5px; font-weight: 500;
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong); background: transparent;
+  color: var(--ink-700); cursor: pointer;
+}
+.pt-g i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .15); }
+.pt-g[aria-pressed="true"] { border-color: var(--ink-900); background: var(--cream-50); color: var(--ink-900); }

@@ -1,0 +1,181 @@
+/* ============================================================================
+   OpenGrapes Design System — shared token layer
+   ----------------------------------------------------------------------------
+   Extracted from components/landing/styles/base.ts so the app and the landing
+   page can share one source of truth. The landing still injects its own copy
+   via <style> (which wins on document order), so it cannot regress from here.
+
+   Two deliberate differences from the landing's copy:
+     1. --accent-* no longer aliases sage to plum (see "Accents" below).
+     2. --ease-out uses the stronger standard curve; the landing's weaker
+        cubic-bezier(0.22, 0.61, 0.36, 1) stays scoped to its scroll reveals.
+   ========================================================================== */
+
+:root {
+  /* ── Base / surfaces (warm off-white & cream) ── */
+  --cream-50:  #FBF9F3;   /* lightest paper */
+  --cream-100: #F7F3E9;   /* page background */
+  --cream-200: #F1ECDE;   /* sunken / alt section */
+  --cream-300: #E8E1CF;   /* hairline on cream */
+
+  /* ── Ink (warm near-black, never pure #000) ── */
+  --ink-900: #23211C;     /* headings */
+  --ink-700: #423F37;     /* body */
+  --ink-500: #6B6557;     /* muted / captions */
+  --ink-300: #9C9685;     /* faint */
+
+  /* ── Sage green — SEMANTIC ONLY (paid / present / correct) ── */
+  --sage-50:  #EDF2EA;
+  --sage-100: #DCE6D6;
+  --sage-200: #BFD2B5;
+  --sage-300: #9DBA8F;
+  --sage-500: #6E9461;
+  --sage-600: #587A4D;
+  --sage-700: #44603C;
+
+  /* ── Plum — the interaction accent ── */
+  --plum-50:  #F0ECF4;
+  --plum-100: #E3DBEC;
+  --plum-200: #CBBCDC;
+  --plum-300: #AD98C6;
+  --plum-500: #836BA6;
+  --plum-600: #6B5489;
+  --plum-700: #534168;
+
+  /* ── Semantic surfaces ── */
+  --bg-page:       var(--cream-100);
+  --bg-paper:      var(--cream-50);
+  --bg-sunken:     var(--cream-200);
+  --surface-card:  var(--cream-50);
+  --border-hair:   var(--cream-300);
+  --border-strong: #DAD2BE;
+
+  --text-heading: var(--ink-900);
+  --text-body:    var(--ink-700);
+  --text-muted:   var(--ink-500);
+  --text-faint:   var(--ink-300);
+
+  /* ── Accents ──
+     base.ts:461 aliased --accent-green to --plum-500, so "sage" rendered
+     purple everywhere and both accents collapsed to one. Resolved as a
+     decision: plum owns interaction, sage is reserved for status. */
+  --accent-primary: var(--plum-500);
+  --accent-deep:    var(--plum-700);
+  --focus-ring:     var(--plum-300);
+
+  /* ── Status ── */
+  --status-paid:    var(--sage-600);
+  --status-partial: #C18A3D;
+  --status-unpaid:  #B6604E;
+  --status-live:    #C0524A;
+
+  /* ── Type ── */
+  --font-display-stack: var(--font-spectral), Georgia, "Times New Roman", serif;
+  --font-body-stack:    var(--font-hanken), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono-stack:    var(--font-spline-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-hand-stack:    var(--font-caveat), cursive;
+
+  --text-xs:   0.78rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-md:   1.125rem;
+  --text-lg:   1.375rem;
+  --text-xl:   1.75rem;
+  --text-2xl:  2.25rem;
+  --text-3xl:  3rem;
+  --text-4xl:  4rem;
+  --text-5xl:  5.25rem;
+
+  --leading-tight: 1.08;
+  --leading-snug: 1.25;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  /* Tracking is size-specific, never one value across sizes (apple-design). */
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.08em;
+  --tracking-caps: 0.14em;
+
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ── Space / radius / shadow ── */
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;  --space-4: 16px;
+  --space-5: 24px;  --space-6: 32px;  --space-7: 48px;  --space-8: 64px;
+  --space-9: 96px;  --space-10: 128px; --space-11: 160px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;   /* app controls use this, not --radius-pill */
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(60, 52, 32, 0.05);
+  --shadow-sm: 0 2px 8px rgba(60, 52, 32, 0.06);
+  --shadow-md: 0 8px 24px rgba(60, 52, 32, 0.08);
+  --shadow-lg: 0 18px 48px rgba(60, 52, 32, 0.10);
+
+  --container: 1180px;
+  --container-narrow: 760px;
+
+  /* ── Motion (review-animations standards) ──
+     Never ease-in on UI. Enter/exit -> ease-out; on-screen movement ->
+     ease-in-out; sheets -> ease-drawer. App UI stays under 300ms. */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --dur-press: 160ms;   /* button / pressable feedback */
+  --dur-pop:   200ms;   /* tooltips, small popovers */
+  --dur-menu:  240ms;   /* dropdowns, selects */
+  --dur-panel: 260ms;   /* modals, drawers (enter) */
+  --dur-exit:  150ms;   /* exits are faster than enters */
+}
+
+/* ── Tailwind v4 bridge ─────────────────────────────────────────────────────
+   Additive only: every name below is NEW, so no existing utility silently
+   changes meaning. Radii, shadows and motion stay as plain custom properties
+   and are referenced explicitly, so the 53 files still on Tailwind's default
+   scale keep rendering exactly as they do today until they are migrated. */
+@theme {
+  --color-page:   #F7F3E9;
+  --color-paper:  #FBF9F3;
+  --color-sunken: #F1ECDE;
+
+  --color-hair:        #E8E1CF;
+  --color-hair-strong: #DAD2BE;
+
+  --color-ink-900: #23211C;
+  --color-ink-700: #423F37;
+  --color-ink-500: #6B6557;
+  --color-ink-300: #9C9685;
+
+  --color-plum-50:  #F0ECF4;
+  --color-plum-100: #E3DBEC;
+  --color-plum-200: #CBBCDC;
+  --color-plum-300: #AD98C6;
+  --color-plum-500: #836BA6;
+  --color-plum-600: #6B5489;
+  --color-plum-700: #534168;
+
+  --color-sage-50:  #EDF2EA;
+  --color-sage-100: #DCE6D6;
+  --color-sage-200: #BFD2B5;
+  --color-sage-300: #9DBA8F;
+  --color-sage-500: #6E9461;
+  --color-sage-600: #587A4D;
+  --color-sage-700: #44603C;
+
+  --color-status-paid:    #587A4D;
+  --color-status-partial: #C18A3D;
+  --color-status-unpaid:  #B6604E;
+  --color-status-live:    #C0524A;
+
+  --ease-og-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-og-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-og-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}

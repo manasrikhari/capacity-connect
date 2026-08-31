@@ -1,50 +1,35 @@
 @import "tailwindcss";
+@import "./opengrapes.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #1e1b2e;
-}
-
+/* Bridge the OpenGrapes tokens into Tailwind's core namespaces.
+   `--font-*` here repoints the whole app onto the landing page's faces. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-plus-jakarta-sans);
+  --color-background: var(--bg-page);
+  --color-foreground: var(--text-body);
+
+  --font-sans: var(--font-body-stack);
+  --font-mono: var(--font-mono-stack);
+  --font-display: var(--font-display-stack);
+  --font-hand: var(--font-hand-stack);
 }
 
-@theme {
-  --animate-blob-slow: blob-float 22s ease-in-out infinite;
-  --animate-blob-slower: blob-float 30s ease-in-out infinite reverse;
-}
-
-@keyframes blob-float {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(4%, -6%) scale(1.08);
-  }
-  66% {
-    transform: translate(-5%, 4%) scale(0.95);
-  }
-}
-
+/* State indication for a live class. Retuned from emerald to --status-live
+   so it reads as the same product as the landing's .mock-bar .live dot. */
 @keyframes live-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--status-live) 50%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--status-live) 0%, transparent);
   }
 }
 
-/* Faint dot-grid texture; pair with a `text-*` color + low opacity. */
+/* The "board" material: things that are live or shared.
+   17px matches the landing's .mock-board grid exactly. */
 @utility bg-dot-grid {
-  background-image: radial-gradient(currentColor 1px, transparent 1.5px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 17px 17px;
 }
 
 html {
@@ -52,6 +37,44 @@ html {
 }
 
 body {
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  color: var(--text-body);
+  background: var(--bg-page);
+  font-family: var(--font-body-stack);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display face + size-specific tracking for headings, matching the landing. */
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-family: var(--font-display-stack);
+  color: var(--text-heading);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--plum-100);
+  color: var(--ink-900);
+}
+
+/* Reduced motion is handled per-animation, not with a blanket kill switch:
+   the rule is fewer and gentler motion, not none. Each authored animation
+   keeps its opacity/color transition and drops only transform-based movement.
+   The one global concession is decorative infinite loops, which have no
+   comprehension value and are the main vestibular trigger. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-iteration-count: 1 !important;
+  }
 }

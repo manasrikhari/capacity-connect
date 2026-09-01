@@ -13,6 +13,11 @@
   --font-hand: var(--font-hand-stack);
 }
 
+/* Solid-instead-of-blur: translucent chrome (mobile header, modal/drawer
+   backdrops) opts out of transparency for users who ask for it, via
+   `reduce-transparency:` utilities. */
+@custom-variant reduce-transparency (@media (prefers-reduced-transparency: reduce));
+
 /* State indication for a live class. Retuned from emerald to --status-live
    so it reads as the same product as the landing's .mock-bar .live dot. */
 @keyframes live-pulse {

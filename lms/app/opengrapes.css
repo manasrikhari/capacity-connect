@@ -12,17 +12,31 @@
    ========================================================================== */
 
 :root {
-  /* ── Base / surfaces (warm off-white & cream) ── */
+  /* ── Base / surfaces (warm off-white & cream — landing heritage) ── */
   --cream-50:  #FBF9F3;   /* lightest paper */
   --cream-100: #F7F3E9;   /* page background */
   --cream-200: #F1ECDE;   /* sunken / alt section */
   --cream-300: #E8E1CF;   /* hairline on cream */
 
-  /* ── Ink (warm near-black, never pure #000) ── */
-  --ink-900: #23211C;     /* headings */
-  --ink-700: #423F37;     /* body */
-  --ink-500: #6B6557;     /* muted / captions */
-  --ink-300: #9C9685;     /* faint */
+  /* ── Ground: plum paper (Lifted 2.0 decision — chosen over porcelain and
+     classroom sage; the app's wall carries the brand accent faintly) ── */
+  --paper-page:   #F0EEF3;
+  --paper-card:   #F9F8FB;
+  --paper-sunken: #E5E1EC;  /* tracks, wells, meters */
+  --paper-hair:   #DFDBE6;
+  --paper-strong: #C7C1D2;
+
+  /* ── The board: chalk-green black (live/shared surfaces only) ── */
+  --board:       #20261E;
+  --board-edge:  #2F372C;
+  --chalk:       #F3F5EC;
+  --chalk-muted: #B7BFAC;
+
+  /* ── Ink (warm near-black, never pure #000 — deepened per Lifted 2.0) ── */
+  --ink-900: #16140F;     /* headings */
+  --ink-700: #2E2B24;     /* body */
+  --ink-500: #5E5A67;     /* muted / captions — cooled to sit on plum paper, ≥4.5:1 */
+  --ink-300: #6B6776;     /* faint — still AA for normal text on the page ground */
 
   /* ── Sage green — SEMANTIC ONLY (paid / present / correct) ── */
   --sage-50:  #EDF2EA;
@@ -43,12 +57,12 @@
   --plum-700: #534168;
 
   /* ── Semantic surfaces ── */
-  --bg-page:       var(--cream-100);
-  --bg-paper:      var(--cream-50);
-  --bg-sunken:     var(--cream-200);
-  --surface-card:  var(--cream-50);
-  --border-hair:   var(--cream-300);
-  --border-strong: #DAD2BE;
+  --bg-page:       var(--paper-page);
+  --bg-paper:      var(--paper-card);
+  --bg-sunken:     var(--paper-sunken);
+  --surface-card:  var(--paper-card);
+  --border-hair:   var(--paper-hair);
+  --border-strong: var(--paper-strong);
 
   --text-heading: var(--ink-900);
   --text-body:    var(--ink-700);
@@ -142,17 +156,22 @@
    and are referenced explicitly, so the 53 files still on Tailwind's default
    scale keep rendering exactly as they do today until they are migrated. */
 @theme {
-  --color-page:   #F7F3E9;
-  --color-paper:  #FBF9F3;
-  --color-sunken: #F1ECDE;
+  --color-page:   #F0EEF3;
+  --color-paper:  #F9F8FB;
+  --color-sunken: #E5E1EC;
 
-  --color-hair:        #E8E1CF;
-  --color-hair-strong: #DAD2BE;
+  --color-hair:        #DFDBE6;
+  --color-hair-strong: #C7C1D2;
 
-  --color-ink-900: #23211C;
-  --color-ink-700: #423F37;
-  --color-ink-500: #6B6557;
-  --color-ink-300: #9C9685;
+  --color-ink-900: #16140F;
+  --color-ink-700: #2E2B24;
+  --color-ink-500: #5E5A67;
+  --color-ink-300: #6B6776;
+
+  --color-board:       #20261E;
+  --color-board-edge:  #2F372C;
+  --color-chalk:       #F3F5EC;
+  --color-chalk-muted: #B7BFAC;
 
   --color-plum-50:  #F0ECF4;
   --color-plum-100: #E3DBEC;

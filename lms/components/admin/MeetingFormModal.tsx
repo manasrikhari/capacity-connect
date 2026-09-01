@@ -25,7 +25,7 @@ export function MeetingFormModal({
 
   useEffect(() => {
     if (state?.success) {
-      toast.success(meeting ? "Meeting updated" : "Meeting scheduled");
+      toast.success(meeting ? "Class updated" : "Class scheduled");
       formRef.current?.reset();
       onClose();
     } else if (state?.error) {
@@ -35,7 +35,7 @@ export function MeetingFormModal({
   }, [state]);
 
   return (
-    <Modal open={open} onClose={onClose} title={meeting ? "Edit meeting" : "Schedule meeting"}>
+    <Modal open={open} onClose={onClose} title={meeting ? "Edit class" : "Schedule class"}>
       <form ref={formRef} action={formAction} className="space-y-4">
         <FormField label="Title" htmlFor="title" error={state?.fieldErrors?.title?.[0]}>
           <Input id="title" name="title" defaultValue={meeting?.title} placeholder="e.g. Algebra Revision" />
@@ -52,15 +52,33 @@ export function MeetingFormModal({
             placeholder="What will this session cover?"
           />
         </FormField>
-        <FormField label="Date & time" htmlFor="date" error={state?.fieldErrors?.date?.[0]}>
-          <Input
-            id="date"
-            name="date"
-            type="datetime-local"
-            defaultValue={meeting ? toDatetimeLocalValue(meeting.date) : ""}
-          />
-        </FormField>
-        <FormField label="Meeting link" htmlFor="link" error={state?.fieldErrors?.link?.[0]}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField label="Date & time" htmlFor="date" error={state?.fieldErrors?.date?.[0]}>
+            <Input
+              id="date"
+              name="date"
+              type="datetime-local"
+              defaultValue={meeting ? toDatetimeLocalValue(meeting.date) : ""}
+            />
+          </FormField>
+          <FormField
+            label="Duration (minutes)"
+            htmlFor="durationMins"
+            error={state?.fieldErrors?.durationMins?.[0]}
+          >
+            <Input
+              id="durationMins"
+              name="durationMins"
+              type="number"
+              min={15}
+              max={480}
+              step={5}
+              defaultValue={meeting?.durationMins ?? 60}
+              placeholder="60"
+            />
+          </FormField>
+        </div>
+        <FormField label="Class link (optional)" htmlFor="link" error={state?.fieldErrors?.link?.[0]}>
           <Input
             id="link"
             name="link"
@@ -74,7 +92,7 @@ export function MeetingFormModal({
             Cancel
           </Button>
           <Button type="submit" loading={pending}>
-            {meeting ? "Save changes" : "Schedule"}
+            {meeting ? "Save changes" : "Schedule class"}
           </Button>
         </div>
       </form>

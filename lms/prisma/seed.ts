@@ -82,7 +82,7 @@ async function main() {
     data: {
       email: "teacher2@opengrapes.com",
       name: "Mr. Deshpande",
-      password: await bcrypt.hash("teacher2pass", 10),
+      password: await bcrypt.hash("1234", 10), // demo login: "teacher" / 1234
       role: Role.ADMIN,
       status: ApprovalStatus.APPROVED,
       onboarded: true,
@@ -561,6 +561,14 @@ async function main() {
     console.log(`📦 ${b.name}  (joinCode: ${b.joinCode})  — teacher: ${b.teacher.email}`);
     for (const e of b.enrollments) {
       console.log(`   └─ ${e.student.email}  (${e.student.name})`);
+  // Demo pair: "teacher" / 1234 (Mr. Deshpande) and "student" / 1234 (Ishaan,
+  // already enrolled in his 12th-A). Bare usernames resolve in lib/auth.ts.
+  await prisma.user.update({
+    where: { email: "ishaan@test.com" },
+    data: { password: await bcrypt.hash("1234", 10) },
+  });
+  console.log('Demo logins: "teacher" / 1234 and "student" / 1234 (same batch: 12th-A)');
+
     }
     console.log();
   }

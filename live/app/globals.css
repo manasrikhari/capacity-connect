@@ -4,11 +4,11 @@
    with chalk text), plum is interaction, sage is present/positive, terracotta is
    live/danger. Same product identity as the landing and LMS, tuned for video. */
 @theme inline {
-  --color-background: #1A1F18;
-  --color-foreground: #F3F5EC;
-  --color-surface: #20261E;
-  --color-surface-light: #2F372C;
-  --color-border: #333B2F;
+  --color-background: #241F2E;
+  --color-foreground: #F3F1F7;
+  --color-surface: #2E2839;
+  --color-surface-light: #3E3650;
+  --color-border: #443B52;
   --color-primary: #A98FCB;
   --color-primary-hover: #C3B0DD;
   --color-primary-glow: rgba(169, 143, 203, 0.25);
@@ -16,12 +16,12 @@
   --font-mono: var(--font-spline-mono);
   --font-display: var(--font-spectral);
 
-  --color-shell: #14180F;
-  --color-surface-hi: #2A3226;
+  --color-shell: #1B1724;
+  --color-surface-hi: #37304A;
   --color-accent: #A98FCB;
   --color-accent-hi: #C3B0DD;
-  --color-text: #F3F5EC;
-  --color-text-muted: #9BA391;
+  --color-text: #F3F1F7;
+  --color-text-muted: #B9B1C8;
   --color-danger: #D06A62;
   --color-success: #8FB07F;
   --color-warning: #D3A05A;
@@ -82,7 +82,7 @@ body {
 }
 
 .lk-participant-placeholder {
-  background: radial-gradient(circle at center, #2A3226 0%, #14180F 100%) !important;
+  background: radial-gradient(circle at center, #37304A 0%, #1B1724 100%) !important;
   color: var(--color-primary) !important;
 }
 

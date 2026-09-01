@@ -33,7 +33,19 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         const parsed = adminLoginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const { email, password } = parsed.data;
+        const { email: identifier, password } = parsed.data;
+        /* Bare usernames are a development convenience: "teacher" and
+           "student" map to the seeded demo pair (same batch), anything else
+           tries <name>@test.com. Production requires a full email. */
+        let email = identifier.toLowerCase();
+        if (!email.includes("@")) {
+          if (process.env.NODE_ENV === "production") return null;
+          const aliases: Record<string, string> = {
+            teacher: "teacher2@opengrapes.com",
+            student: "ishaan@test.com",
+          };
+          email = aliases[email] ?? `${email}@test.com`;
+        }
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
 

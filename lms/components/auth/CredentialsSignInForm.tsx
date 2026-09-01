@@ -14,13 +14,13 @@ export function CredentialsSignInForm() {
 
   return (
     <form action={action} className="space-y-4">
-      <FormField label="Email" htmlFor="email" error={state?.fieldErrors?.email?.[0]}>
+      <FormField label="Email or username" htmlFor="email" error={state?.fieldErrors?.email?.[0]}>
         <Input
           id="email"
           name="email"
-          type="email"
+          type="text"
           autoComplete="username"
-          placeholder="you@opengrapes.com"
+          placeholder="teacher"
           required
         />
       </FormField>

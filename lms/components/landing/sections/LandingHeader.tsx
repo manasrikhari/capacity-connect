@@ -9,6 +9,7 @@ export function LandingHeader() {
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
           <a href="#ai">Platform</a>
+          <a href="/staff">Staff sign in</a>
         </nav>
         <div className="nav-actions">
           <form action={googleSignInAction}>

@@ -76,7 +76,7 @@ export function LandingHero() {
               <span className="badge">LIVE</span>
             </div>
             <p>
-              <span className="q">"What was the deadline she just mentioned?"</span>
+              <span className="q">&ldquo;What was the deadline she just mentioned?&rdquo;</span>
               The lab report is due Friday, 6 PM — noted at 12:04 in today&apos;s
               class.
             </p>

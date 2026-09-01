@@ -11,7 +11,6 @@ import { LandingFooter } from "./sections/LandingFooter";
 export function LandingPage() {
   return (
     <>
-      {/* eslint-disable-next-line react/no-danger */}
       <style dangerouslySetInnerHTML={{ __html: allLandingStyles }} />
 
       <LandingScrollbar />

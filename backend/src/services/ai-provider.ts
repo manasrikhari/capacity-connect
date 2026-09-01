@@ -78,6 +78,18 @@ class KeyRotationManager {
 
 export const rotationManager = new KeyRotationManager();
 
+/** True when at least one Gemini API key is configured (requestAI is Gemini-backed). */
+export function isAIConfigured(): boolean {
+  return Boolean(
+    process.env.GEMINI_API_KEY ||
+      process.env.GEMINI_KEY_1 ||
+      process.env.GEMINI_KEY_2 ||
+      process.env.GEMINI_KEY_3 ||
+      process.env.GEMINI_KEY_4 ||
+      process.env.GEMINI_KEY_5
+  );
+}
+
 // OCR & Diagram transcription using Gemini rotation
 export async function transcribeImage(attachedImage: any): Promise<string> {
   const promptText =

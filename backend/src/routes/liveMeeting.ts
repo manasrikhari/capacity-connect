@@ -1,65 +1,95 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { AccessToken } from 'livekit-server-sdk';
+import { AccessToken, TrackSource } from 'livekit-server-sdk';
 import { ENV } from '../config/env';
 import { db } from '../config/db';
-import { requestAI, transcribeImage } from '../services/ai-provider';
+import { roomServiceClient } from '../config/livekit';
+import { requestAI, isAIConfigured } from '../services/ai-provider';
+import {
+  LiveClassroomService,
+  ClassroomClaims,
+  ClassroomTokenPayload,
+} from '../services/liveClassroom.service';
+import { AppError } from '../utils/appError';
 
 const router = Router();
 
-const LMS_JWT_SECRET = process.env.LMS_JWT_SECRET || '4bf8a2b5efc19688b14e6b12a875a5cb8227b686d06126f595df87cf3c1be0aa';
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || '35c60da6e053a479b1d9bf5b27ac28b9d311fa6771d9d71c4c8d5dcd295feab0';
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'd3d81b8d2acb6c2ba6cfcb5a2b0ac2825b410fb595bf87cf3c2be0b4845de2aa';
+interface ClassroomRequest extends Request {
+  classroom?: ClassroomTokenPayload;
+}
+
+/** Require a valid classroom access token in the Authorization header. */
+const requireClassroomToken = (req: ClassroomRequest, res: Response, next: NextFunction): void => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Authorization token required' });
+    return;
+  }
+  try {
+    req.classroom = LiveClassroomService.verifyAccessToken(authHeader.slice(7));
+    next();
+  } catch (err) {
+    next(err); // AppError 401 / 503 handled by the global errorHandler
+  }
+};
+
+/** Require the classroom token to belong to the teacher. */
+const requireTeacher = (req: ClassroomRequest, res: Response, next: NextFunction): void => {
+  if (req.classroom?.role !== 'teacher') {
+    res.status(403).json({ error: 'Only the teacher can perform this action' });
+    return;
+  }
+  next();
+};
 
 /**
  * POST /api/exchange-lms-token
- * Receives JWT from LMS and converts it to classroom access & refresh tokens
+ * Receives JWT from LMS and converts it to classroom access & refresh tokens.
  */
-router.post('/exchange-lms-token', async (req: Request, res: Response): Promise<void> => {
-  const { token } = req.body;
+router.post('/exchange-lms-token', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { token } = req.body || {};
   if (!token) {
     res.status(400).json({ error: 'LMS token is required' });
     return;
   }
 
   try {
-    let decoded: any;
+    let decoded: ReturnType<typeof LiveClassroomService.verifyLmsHandoffToken>;
     try {
-      decoded = jwt.verify(token, LMS_JWT_SECRET, { algorithms: ['HS256'], clockTolerance: 300 });
+      decoded = LiveClassroomService.verifyLmsHandoffToken(token);
     } catch (jwtErr: any) {
-      console.warn(`[JWT Verify Attempt 1 failed]: ${jwtErr.message}. Trying fallback decode...`);
-      // Also try with Buffer secret if string secret failed
-      try {
-        decoded = jwt.verify(token, Buffer.from(LMS_JWT_SECRET, 'utf-8'), { algorithms: ['HS256'], clockTolerance: 300 });
-      } catch (jwtErr2: any) {
-        console.error(`[JWT Verify Error]: ${jwtErr2.message}`);
-        throw jwtErr2;
-      }
+      if (jwtErr instanceof AppError) throw jwtErr; // 503 config error
+      console.error(`[Live Exchange] LMS token verification failed: ${jwtErr?.message || jwtErr}`);
+      res.status(401).json({ error: 'Invalid or expired LMS token' });
+      return;
     }
 
     const userEmail = decoded.email;
     const userName = decoded.name || 'Participant';
     const rawRole = decoded.role;
     const meetingId = decoded.meetingId;
+    const lmsBatchId = decoded.batchId || null;
+    const lmsUserId = decoded.userId || decoded.id;
 
     if (!userEmail || !meetingId) {
       res.status(400).json({ error: 'Invalid LMS token payload' });
       return;
     }
 
-    // Check if user exists in database
     let user = await db.user.findUnique({
       where: { email: userEmail.toLowerCase() },
     });
 
-    let userId: string;
-    let finalRole: string = rawRole;
-
     if (!user) {
-      const assignedRole = (rawRole === 'teacher' || rawRole === 'ADMIN' || rawRole === 'TRAINER') ? 'ADMIN' : 'TRAINEE';
+      // LMS "teacher" maps to backend TRAINER (never ADMIN).
+      const assignedRole =
+        rawRole === 'teacher' || rawRole === 'TRAINER'
+          ? 'TRAINER'
+          : rawRole === 'ADMIN'
+            ? 'ADMIN'
+            : 'TRAINEE';
       user = await db.user.create({
         data: {
-          id: decoded.userId || decoded.id,
+          ...(lmsUserId ? { id: lmsUserId } : {}),
           email: userEmail.toLowerCase(),
           password: 'SSO_MANAGED_LOGIN',
           fullName: userName,
@@ -67,84 +97,39 @@ router.post('/exchange-lms-token', async (req: Request, res: Response): Promise<
           status: 'APPROVED',
         },
       });
-      userId = user.id;
-      finalRole = user.role;
-    } else {
-      if (user.status === 'SUSPENDED' || user.status === 'REJECTED') {
-        res.status(403).json({ error: 'Your account is suspended or rejected.' });
-        return;
-      }
-      userId = user.id;
-      finalRole = user.role;
+    } else if (user.status === 'SUSPENDED' || user.status === 'REJECTED') {
+      res.status(403).json({ error: 'Your account is suspended or rejected.' });
+      return;
     }
 
-    const isTeacher = finalRole === 'ADMIN' || finalRole === 'TRAINER' || rawRole === 'teacher';
+    const isTeacher =
+      user.role === 'ADMIN' || user.role === 'TRAINER' || user.role === 'SUPER_ADMIN' || rawRole === 'teacher';
+    const nativeRole: 'teacher' | 'student' = isTeacher ? 'teacher' : 'student';
 
-    // Verify session
-    let liveSession = await db.liveSession.findUnique({
-      where: { roomId: meetingId },
-    });
+    const liveSession = await LiveClassroomService.findOrCreateSession(meetingId, user.id);
 
-    if (!liveSession) {
-      if (isTeacher) {
-        // Resolve programId/batchId
-        let programId = decoded.batchId;
-        if (!programId) {
-          const firstProg = await db.program.findFirst();
-          programId = firstProg?.id || 'default-program';
-        }
-
-        liveSession = await db.liveSession.create({
-          data: {
-            programId: programId!,
-            roomId: meetingId,
-            title: `Live Session - ${meetingId}`,
-            status: 'LIVE',
-            scheduledStart: new Date(),
-            scheduledEnd: new Date(Date.now() + 2 * 60 * 60 * 1000),
-            actualStart: new Date(),
-          },
-        });
-      } else {
-        // For student, auto-allow or check session
-        const firstProg = await db.program.findFirst();
-        liveSession = await db.liveSession.create({
-          data: {
-            programId: decoded.batchId || firstProg?.id || 'default-program',
-            roomId: meetingId,
-            title: `Live Session - ${meetingId}`,
-            status: 'LIVE',
-            scheduledStart: new Date(),
-            scheduledEnd: new Date(Date.now() + 2 * 60 * 60 * 1000),
-            actualStart: new Date(),
-          },
-        });
-      }
-    }
-
-    const nativeRole = isTeacher ? 'teacher' : 'student';
-    const claims = {
-      userId,
+    const claims: ClassroomClaims = {
+      userId: user.id,
+      lmsUserId: lmsUserId || user.id,
       role: nativeRole,
       roomId: meetingId,
-      batchId: liveSession.programId,
+      roomName: meetingId,
+      batchId: lmsBatchId,
       name: userName,
       email: userEmail,
     };
 
-    const accessToken = jwt.sign(
-      { ...claims, type: 'access' },
-      ACCESS_TOKEN_SECRET,
-      { expiresIn: '4h' }
-    );
+    const { accessToken, refreshToken } = LiveClassroomService.issueTokenPair(claims);
 
-    const refreshToken = jwt.sign(
-      { ...claims, type: 'refresh' },
-      REFRESH_TOKEN_SECRET,
-      { expiresIn: '7d' }
-    );
+    if (nativeRole === 'teacher') {
+      // Fire-and-forget: tell the LMS the session has started.
+      LiveClassroomService.notifyLms('/api/live/session-started', meetingId, lmsBatchId, {
+        roomId: meetingId,
+        batchId: lmsBatchId,
+      });
+    }
 
-    const startedAtMs = new Date(liveSession.scheduledStart || Date.now()).getTime();
+    const startedAtMs = new Date(liveSession.actualStart || liveSession.scheduledStart || Date.now()).getTime();
 
     res.json({
       accessToken,
@@ -153,17 +138,53 @@ router.post('/exchange-lms-token', async (req: Request, res: Response): Promise<
       startedAtMs,
     });
   } catch (error) {
-    console.error('[Live Exchange LMS token error]', error);
-    res.status(401).json({ error: 'Invalid or expired LMS token' });
+    next(error);
   }
 });
 
 /**
- * POST /api/token
- * Generate LiveKit token using classroom session token
+ * POST /api/renew-session
+ * Verify the refresh token and re-issue an access + refresh pair carrying the same claims.
  */
-router.post('/token', async (req: Request, res: Response): Promise<void> => {
-  const { roomName, sessionToken, isOverlay } = req.body;
+router.post('/renew-session', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { refreshToken } = req.body || {};
+    if (!refreshToken) {
+      res.status(400).json({ error: 'refreshToken is required' });
+      return;
+    }
+
+    const decoded = LiveClassroomService.verifyRefreshToken(refreshToken);
+    const pair = LiveClassroomService.issueTokenPair(LiveClassroomService.toClaims(decoded));
+
+    res.json({ accessToken: pair.accessToken, refreshToken: pair.refreshToken });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/exchange-session
+ * Handoff-code exchange is not supported; the live client redirects to the LMS on failure.
+ */
+router.post('/exchange-session', (_req: Request, res: Response): void => {
+  res.status(501).json({ error: 'code exchange not supported' });
+});
+
+/**
+ * GET /api/livekit-url
+ */
+router.get('/livekit-url', (_req: Request, res: Response): void => {
+  res.json({ url: ENV.LIVEKIT_URL });
+});
+
+/**
+ * POST /api/token
+ * Generate a LiveKit token using a classroom session (access) token.
+ * Teacher keeps host privileges (roomAdmin/roomCreate); client reads metadata === 'teacher'.
+ */
+router.post('/token', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { roomName, sessionToken, isOverlay } = req.body || {};
 
   if (!roomName || !sessionToken) {
     res.status(400).json({ error: 'roomName and sessionToken are required' });
@@ -171,21 +192,11 @@ router.post('/token', async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    const decoded = jwt.verify(sessionToken, ACCESS_TOKEN_SECRET) as {
-      userId: string;
-      role: string;
-      name: string;
-      roomId: string;
-      type: string;
-    };
-
-    if (decoded.type !== 'access') {
-      res.status(401).json({ error: 'Invalid token type' });
-      return;
-    }
+    const decoded = LiveClassroomService.verifyAccessToken(sessionToken);
 
     const participantIdentity = isOverlay ? `${decoded.userId}-overlay` : decoded.userId;
     const participantName = isOverlay ? `${decoded.name} (Overlay)` : decoded.name;
+    const isTeacher = decoded.role === 'teacher';
 
     const at = new AccessToken(ENV.LIVEKIT_API_KEY, ENV.LIVEKIT_API_SECRET, {
       identity: participantIdentity,
@@ -193,6 +204,7 @@ router.post('/token', async (req: Request, res: Response): Promise<void> => {
       ttl: '4h',
     });
 
+    // The live client relies on participant.metadata === 'teacher' for host UI.
     at.metadata = decoded.role;
 
     at.addGrant({
@@ -201,83 +213,348 @@ router.post('/token', async (req: Request, res: Response): Promise<void> => {
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
+      roomAdmin: isTeacher,
+      roomCreate: isTeacher,
     });
 
     const token = await at.toJwt();
     res.json({ token });
   } catch (error) {
-    console.error('[Live Token generation error]', error);
-    res.status(401).json({ error: 'Invalid or expired session token' });
+    next(error);
   }
 });
 
 /**
  * GET /api/turn
- * Return Metered STUN / TURN server credentials
+ * Return Metered STUN/TURN credentials, or STUN-only servers when METERED_API_KEY is unset.
  */
-router.get('/turn', async (_req: Request, res: Response) => {
-  const apiKey = process.env.METERED_API_KEY || 'f14f187d2a8b2bc5b82f20aaff39bda30f99';
-  const appName = process.env.METERED_APP_NAME || 'opengrapes';
+router.get('/turn', async (_req: Request, res: Response): Promise<void> => {
+  const stunOnly = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' },
+    ],
+  };
+
+  if (!ENV.METERED_API_KEY) {
+    res.json(stunOnly);
+    return;
+  }
 
   try {
-    const response = await fetch(`https://${appName}.metered.live/api/v1/turn/credentials?apiKey=${apiKey}`);
+    const response = await fetch(
+      `https://${ENV.METERED_APP_NAME}.metered.live/api/v1/turn/credentials?apiKey=${ENV.METERED_API_KEY}`
+    );
     if (response.ok) {
       const iceServers = await response.json();
       res.json({ iceServers });
       return;
     }
+    console.warn(`[TURN Fallback] Metered responded with HTTP ${response.status}, using default STUN`);
   } catch (e) {
     console.warn('[TURN Fallback] Could not fetch Metered credentials, using default STUN');
   }
 
-  res.json({
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' },
-    ],
-  });
+  res.json(stunOnly);
 });
 
 /**
- * POST /api/doubt/ask
- * AI doubt solver with LaTeX & diagram OCR
+ * POST /api/mute-participant
+ * Teacher-only: mute/unmute a participant's mic or camera track via LiveKit.
  */
-router.post('/doubt/ask', async (req: Request, res: Response) => {
-  const { doubt, attachedImage, topicNotes, history } = req.body;
+router.post(
+  '/mute-participant',
+  requireClassroomToken,
+  requireTeacher,
+  async (req: ClassroomRequest, res: Response): Promise<void> => {
+    const { roomId, participantIdentity, trackType, muted } = req.body || {};
 
-  try {
-    let ocrText = '';
-    if (attachedImage) {
-      ocrText = await transcribeImage(attachedImage);
+    if (!roomId || !participantIdentity || (trackType !== 'audio' && trackType !== 'video')) {
+      res.status(400).json({ error: 'roomId, participantIdentity and trackType (audio|video) are required' });
+      return;
     }
 
-    const contextPrompt = `
-Class Topic Context: ${topicNotes || 'General Live Training'}
-${ocrText ? `Transcribed Image/Diagram LaTeX: ${ocrText}` : ''}
-${history ? `Previous Chat History:\n${history}` : ''}
-`;
+    try {
+      const participant = await roomServiceClient.getParticipant(roomId, participantIdentity);
+      const targetSource = trackType === 'audio' ? TrackSource.MICROPHONE : TrackSource.CAMERA;
+      const tracks = (participant.tracks || []).filter((t) => t.source === targetSource);
 
-    const answer = await requestAI(
-      doubt || 'Please explain this question step-by-step.',
-      contextPrompt,
-      'You are an expert AI tutor in a live interactive classroom. Provide clear step-by-step explanations with LaTeX math formatting where appropriate.'
-    );
+      if (tracks.length === 0) {
+        res.json({ success: true, message: 'No matching published track found' });
+        return;
+      }
 
-    res.json({
-      answer,
-      ocrText: ocrText || undefined,
-    });
-  } catch (error: any) {
-    console.error('[Doubt Ask Error]', error);
-    res.status(500).json({ error: 'Failed to process doubt' });
+      await Promise.all(
+        tracks.map((t) => roomServiceClient.mutePublishedTrack(roomId, participantIdentity, t.sid, !!muted))
+      );
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[Mute Participant] Failed:', error?.message || error);
+      res.status(500).json({ error: 'Failed to change mute state' });
+    }
   }
+);
+
+/**
+ * POST /api/kick-participant
+ * Teacher-only: remove a participant from the LiveKit room.
+ */
+router.post(
+  '/kick-participant',
+  requireClassroomToken,
+  requireTeacher,
+  async (req: ClassroomRequest, res: Response): Promise<void> => {
+    const { roomId, participantIdentity } = req.body || {};
+
+    if (!roomId || !participantIdentity) {
+      res.status(400).json({ error: 'roomId and participantIdentity are required' });
+      return;
+    }
+
+    try {
+      await roomServiceClient.removeParticipant(roomId, participantIdentity);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[Kick Participant] Failed:', error?.message || error);
+      res.status(500).json({ error: 'Failed to kick participant' });
+    }
+  }
+);
+
+/**
+ * POST /api/doubt
+ * SSE stream of the AI tutor's answer ({thinking}/{text} chunks, "data: [DONE]" terminator),
+ * then persists the doubt and notifies the LMS.
+ */
+router.post('/doubt', requireClassroomToken, async (req: ClassroomRequest, res: Response): Promise<void> => {
+  const claims = req.classroom!;
+  const { doubtText, screenshot } = req.body || {};
+  const question =
+    (typeof doubtText === 'string' && doubtText.trim()) || 'Please explain the attached question step-by-step.';
+  const screenshotValue: string | null = typeof screenshot === 'string' && screenshot ? screenshot : null;
+
+  res.status(200);
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  const send = (payload: Record<string, unknown>): void => {
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+
+  let answer = '';
+  try {
+    if (isAIConfigured()) {
+      answer = await requestAI(
+        question,
+        `Live classroom room: ${claims.roomName}. Student: ${claims.name}.`,
+        'You are an expert AI tutor in a live interactive classroom. Provide clear step-by-step explanations with LaTeX math formatting where appropriate.'
+      );
+      // requestAI is non-streaming: chunk the full answer into SSE text events.
+      const CHUNK_SIZE = 80;
+      for (let i = 0; i < answer.length; i += CHUNK_SIZE) {
+        send({ text: answer.slice(i, i + CHUNK_SIZE) });
+      }
+    } else {
+      answer = "The AI tutor isn't configured on this server.";
+      send({ text: answer });
+    }
+  } catch (error: any) {
+    console.error('[Doubt] AI request failed:', error?.message || error);
+    if (!answer) {
+      answer = 'Sorry, the AI tutor ran into an error while answering. Please try again.';
+      send({ text: answer });
+    }
+  }
+
+  // Persist BEFORE the [DONE] signal so the client's immediate history refetch sees the new doubt.
+  try {
+    const session = await LiveClassroomService.findOrCreateSession(claims.roomId, claims.userId);
+    await db.meetingDoubt.create({
+      data: {
+        sessionId: session.id,
+        studentId: claims.userId,
+        question,
+        answer,
+        screenshot: screenshotValue,
+      },
+    });
+  } catch (persistErr: any) {
+    console.error('[Doubt] Failed to persist doubt:', persistErr?.message || persistErr);
+  }
+
+  // Fire-and-forget mirror to the LMS.
+  LiveClassroomService.notifyLms('/api/live/doubt', claims.roomId, claims.batchId, {
+    lmsUserId: claims.lmsUserId,
+    doubtText: question,
+    answer,
+    screenshot: screenshotValue,
+  });
+
+  res.write('data: [DONE]\n\n');
+  res.end();
+});
+
+/**
+ * GET /api/doubts/:sessionId
+ * Doubts for this room, shaped for the live client's DoubtSolverTab.
+ * Students only see their own doubts; the teacher sees all.
+ */
+router.get(
+  '/doubts/:sessionId',
+  requireClassroomToken,
+  async (req: ClassroomRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const claims = req.classroom!;
+      const roomId = req.params.sessionId as string;
+
+      // The classroom token is scoped to a single room.
+      if (roomId !== claims.roomId) {
+        res.status(403).json({ error: 'Token is not valid for this room' });
+        return;
+      }
+
+      const session = await db.liveSession.findUnique({ where: { roomId } });
+      if (!session) {
+        res.json({ doubts: [] });
+        return;
+      }
+
+      const where: { sessionId: string; studentId?: string } = { sessionId: session.id };
+      if (claims.role !== 'teacher') {
+        where.studentId = claims.userId;
+      }
+
+      const doubts = await db.meetingDoubt.findMany({
+        where,
+        include: { student: { select: { fullName: true } } },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      res.json({
+        doubts: doubts.map((d) => ({
+          id: d.id,
+          session_id: roomId,
+          student_id: d.studentId,
+          studentName: d.student?.fullName || 'Student',
+          doubt_text: d.question,
+          answer: d.answer || '',
+          screenshot: d.screenshot,
+          // Client renders new Date(timestamp + ' UTC') — send "YYYY-MM-DD HH:mm:ss" in UTC.
+          timestamp: d.createdAt.toISOString().replace('T', ' ').slice(0, 19),
+        })),
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/summary/:sessionId
+ * Rolling summaries are not available on this server; return an empty payload
+ * so the client's polling stays quiet without faking data.
+ */
+router.get('/summary/:sessionId', requireClassroomToken, (_req: ClassroomRequest, res: Response): void => {
+  res.json({ rollingSummary: null, topicNotes: null });
+});
+
+/**
+ * POST /api/summary/trigger
+ */
+router.post('/summary/trigger', requireClassroomToken, (_req: ClassroomRequest, res: Response): void => {
+  res.json({ success: false, message: 'summaries not available' });
+});
+
+/**
+ * POST /api/transcript/:roomName/topic
+ * Accept and ignore topic updates (no transcript pipeline on this server).
+ */
+router.post('/transcript/:roomName/topic', requireClassroomToken, (_req: ClassroomRequest, res: Response): void => {
+  res.json({ success: true });
+});
+
+/**
+ * POST /api/transcribe
+ */
+router.post('/transcribe', (_req: Request, res: Response): void => {
+  res.status(501).json({ error: 'transcription not supported' });
 });
 
 /**
  * POST /api/end-class
+ * Accepts a classroom access token OR an LMS handoff JWT (teacher role required).
+ * Deletes the LiveKit room, marks the backend LiveSession COMPLETED, and notifies the LMS.
  */
-router.post('/end-class', async (req: Request, res: Response) => {
-  res.json({ success: true, message: 'Class session ended' });
+router.post('/end-class', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Authorization token required' });
+      return;
+    }
+    const token = authHeader.slice(7);
+
+    let roomId: string | undefined;
+    let batchId: string | null = null;
+    let role: string | undefined;
+
+    try {
+      const claims = LiveClassroomService.verifyAccessToken(token);
+      roomId = claims.roomId;
+      batchId = claims.batchId;
+      role = claims.role;
+    } catch (accessErr) {
+      if (accessErr instanceof AppError && accessErr.statusCode === 503) throw accessErr;
+      try {
+        const decoded = LiveClassroomService.verifyLmsHandoffToken(token);
+        roomId = decoded.meetingId;
+        batchId = decoded.batchId || null;
+        role = decoded.role;
+      } catch (lmsErr) {
+        if (lmsErr instanceof AppError && lmsErr.statusCode === 503) throw lmsErr;
+        res.status(401).json({ error: 'Invalid or expired token' });
+        return;
+      }
+    }
+
+    if (role !== 'teacher') {
+      res.status(403).json({ error: 'Only the teacher can end the class' });
+      return;
+    }
+    if (!roomId) {
+      res.status(400).json({ error: 'Token does not identify a room' });
+      return;
+    }
+
+    batchId = batchId || req.body?.batchId || null;
+    const hasNotes = !!req.body?.hasNotes;
+
+    try {
+      await roomServiceClient.deleteRoom(roomId);
+    } catch (e: any) {
+      // Room may already be gone — ignore.
+      console.warn(`[End Class] Could not delete LiveKit room ${roomId}: ${e?.message || e}`);
+    }
+
+    await db.liveSession.updateMany({
+      where: { roomId },
+      data: {
+        status: 'COMPLETED',
+        actualEnd: new Date(),
+        ...(hasNotes ? { hasNotes: true } : {}),
+      },
+    });
+
+    // Fire-and-forget: tell the LMS the class ended.
+    LiveClassroomService.notifyLms('/api/live/end-class', roomId, batchId, { hasNotes });
+
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;

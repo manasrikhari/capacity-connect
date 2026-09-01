@@ -22,7 +22,7 @@ export async function createBatchAction(_prev: ActionState, formData: FormData):
     return { error: "Batch name is required." };
   }
 
-  const joinCode = generateJoinCode();
+  const joinCode = await generateUniqueJoinCode();
 
   const batch = await prisma.batch.create({
     data: { name, subject, teacherId: session.user.id, joinCode },
@@ -37,4 +37,17 @@ function generateJoinCode(): string {
   const part = () =>
     Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   return `${part()}-${part()}`;
+}
+
+/**
+ * Join codes are @unique. Math.random can collide, so retry a few times,
+ * checking the batch table for an existing code before settling on one.
+ */
+async function generateUniqueJoinCode(): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateJoinCode();
+    const existing = await prisma.batch.findUnique({ where: { joinCode: code } });
+    if (!existing) return code;
+  }
+  return generateJoinCode();
 }

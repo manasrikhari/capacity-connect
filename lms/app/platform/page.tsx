@@ -4,7 +4,6 @@ import {
   GraduationCap,
   LinkIcon,
   TrendingUp,
-  UserPlus,
   Users,
   Wallet,
 } from "lucide-react";
@@ -16,7 +15,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatCard } from "@/components/ui/StatCard";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatPaise } from "@/lib/utils";
+import { formatDate, formatPaise, formatPaiseCompact } from "@/lib/utils";
+
+const TABLE_HEAD = "font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300";
 
 export default async function PlatformPage() {
   const session = await auth();
@@ -73,7 +74,6 @@ export default async function PlatformPage() {
   const approvedTeachers = teachers.filter((t) => t.status === "APPROVED");
   const pendingTeachers = teachers.filter((t) => t.status === "PENDING");
   const suspendedTeachers = teachers.filter((t) => t.status === "SUSPENDED");
-  const rejectedTeachers = teachers.filter((t) => t.status === "REJECTED");
 
   const activeBatches = batchCounts.find((b) => b.status === "ACTIVE")?._count ?? 0;
   const archivedBatches = batchCounts.find((b) => b.status === "ARCHIVED")?._count ?? 0;
@@ -90,43 +90,39 @@ export default async function PlatformPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Platform Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">Overview across all teachers, batches, and students.</p>
+        <h1 className="text-2xl font-normal text-ink-900">Platform dashboard</h1>
+        <p className="mt-1 text-sm text-ink-500">Overview across all teachers, batches, and students.</p>
       </div>
 
       {/* ── Stat cards ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-6 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           icon={Users}
           label="Teachers"
           value={teachers.length}
           hint={`${approvedTeachers.length} approved · ${pendingTeachers.length} pending · ${suspendedTeachers.length} suspended`}
-          color="violet"
         />
         <StatCard
           icon={BookOpen}
           label="Batches"
           value={totalBatches}
           hint={`${activeBatches} active · ${archivedBatches} archived`}
-          color="blue"
         />
         <StatCard
           icon={GraduationCap}
           label="Students"
           value={totalStudents}
-          color="violet"
         />
         <StatCard
           icon={LinkIcon}
           label="Enrollments"
           value={totalEnrollments}
           hint={totalEnrollments > totalStudents ? `${totalEnrollments - totalStudents} multi-batch` : undefined}
-          color="blue"
         />
         <StatCard
           icon={Wallet}
           label="Collected"
-          value={formatPaise(totalPaid)}
+          value={formatPaiseCompact(totalPaid)}
           hint={outstanding > 0 ? `${formatPaise(outstanding)} outstanding` : undefined}
           color="green"
         />
@@ -135,7 +131,6 @@ export default async function PlatformPage() {
           label="New signups"
           value={recentTeachers7d + recentStudents7d}
           hint={`7d: ${recentTeachers7d} teachers, ${recentStudents7d} students · 30d: ${recentTeachers30d} + ${recentStudents30d}`}
-          color="amber"
         />
       </div>
 
@@ -145,17 +140,19 @@ export default async function PlatformPage() {
           <CardHeader>
             <CardTitle>
               <span className="flex items-center gap-2">
-                <Clock className="size-5 text-amber-500" />
+                <Clock className="size-5 text-status-partial" />
                 Pending teachers ({pendingTeachers.length})
               </span>
             </CardTitle>
           </CardHeader>
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-hair">
             {pendingTeachers.map((t) => (
               <li key={t.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{t.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-slate-500">{t.email} · signed up {formatDate(t.createdAt)}</p>
+                  <p className="text-sm font-medium text-ink-900">{t.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-ink-500">
+                    {t.email} · signed up <span className="font-mono">{formatDate(t.createdAt)}</span>
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <TeacherStatusButton teacherId={t.id} status="APPROVED" variant="primary">
@@ -182,16 +179,16 @@ export default async function PlatformPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-xs font-medium uppercase tracking-wide text-slate-400">
-                  <th className="py-2 pr-4 font-medium">Teacher</th>
-                  <th className="py-2 pr-4 font-medium">Status</th>
-                  <th className="py-2 pr-4 font-medium">Plan</th>
-                  <th className="py-2 pr-4 text-right font-medium">Batches</th>
-                  <th className="py-2 pr-4 text-right font-medium">Students</th>
-                  <th className="py-2 font-medium">Actions</th>
+                <tr className={`border-b border-hair-strong ${TABLE_HEAD}`}>
+                  <th className="py-2 pr-4 font-normal">Teacher</th>
+                  <th className="py-2 pr-4 font-normal">Status</th>
+                  <th className="py-2 pr-4 font-normal">Plan</th>
+                  <th className="py-2 pr-4 text-right font-normal">Batches</th>
+                  <th className="py-2 pr-4 text-right font-normal">Students</th>
+                  <th className="py-2 font-normal">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-hair">
                 {teachers.map((t) => {
                   const statusColor = {
                     APPROVED: "green" as const,
@@ -202,15 +199,15 @@ export default async function PlatformPage() {
                   return (
                     <tr key={t.id}>
                       <td className="py-3 pr-4">
-                        <p className="font-medium text-slate-800">{t.name ?? "Unnamed"}</p>
-                        <p className="text-xs text-slate-500">{t.email}</p>
+                        <p className="font-medium text-ink-900">{t.name ?? "Unnamed"}</p>
+                        <p className="text-xs text-ink-500">{t.email}</p>
                       </td>
                       <td className="py-3 pr-4">
                         <Badge color={statusColor[t.status]}>{t.status.toLowerCase()}</Badge>
                       </td>
-                      <td className="py-3 pr-4 text-slate-600">{t.plan}</td>
-                      <td className="py-3 pr-4 text-right text-slate-800">{t._count.ownedBatches}</td>
-                      <td className="py-3 pr-4 text-right text-slate-800">{studentCount(t)}</td>
+                      <td className="py-3 pr-4 text-ink-700">{t.plan}</td>
+                      <td className="py-3 pr-4 text-right font-mono tabular-nums text-ink-900">{t._count.ownedBatches}</td>
+                      <td className="py-3 pr-4 text-right font-mono tabular-nums text-ink-900">{studentCount(t)}</td>
                       <td className="py-3">
                         <div className="flex gap-1.5">
                           {t.status !== "APPROVED" && (
@@ -255,32 +252,32 @@ export default async function PlatformPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-xs font-medium uppercase tracking-wide text-slate-400">
-                  <th className="py-2 pr-4 font-medium">Batch</th>
-                  <th className="py-2 pr-4 font-medium">Teacher</th>
-                  <th className="py-2 pr-4 text-right font-medium">Students</th>
-                  <th className="py-2 pr-4 font-medium">Status</th>
-                  <th className="py-2 font-medium">Created</th>
+                <tr className={`border-b border-hair-strong ${TABLE_HEAD}`}>
+                  <th className="py-2 pr-4 font-normal">Batch</th>
+                  <th className="py-2 pr-4 font-normal">Teacher</th>
+                  <th className="py-2 pr-4 text-right font-normal">Students</th>
+                  <th className="py-2 pr-4 font-normal">Status</th>
+                  <th className="py-2 font-normal">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-hair">
                 {batches.map((b) => (
                   <tr key={b.id}>
                     <td className="py-3 pr-4">
-                      <p className="font-medium text-slate-800">{b.name}</p>
-                      {b.grade && <p className="text-xs text-slate-500">{b.grade}</p>}
+                      <p className="font-medium text-ink-900">{b.name}</p>
+                      {b.grade && <p className="text-xs text-ink-500">{b.grade}</p>}
                     </td>
                     <td className="py-3 pr-4">
-                      <p className="text-slate-800">{b.teacher.name ?? "Unnamed"}</p>
-                      <p className="text-xs text-slate-500">{b.teacher.email}</p>
+                      <p className="text-ink-900">{b.teacher.name ?? "Unnamed"}</p>
+                      <p className="text-xs text-ink-500">{b.teacher.email}</p>
                     </td>
-                    <td className="py-3 pr-4 text-right text-slate-800">{b._count.enrollments}</td>
+                    <td className="py-3 pr-4 text-right font-mono tabular-nums text-ink-900">{b._count.enrollments}</td>
                     <td className="py-3 pr-4">
                       <Badge color={b.status === "ACTIVE" ? "green" : "slate"}>
                         {b.status.toLowerCase()}
                       </Badge>
                     </td>
-                    <td className="py-3 text-slate-600">{formatDate(b.createdAt)}</td>
+                    <td className="py-3 font-mono text-ink-500">{formatDate(b.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -295,12 +292,12 @@ export default async function PlatformPage() {
           <CardHeader>
             <CardTitle>Suspended teachers ({suspendedTeachers.length})</CardTitle>
           </CardHeader>
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-hair">
             {suspendedTeachers.map((t) => (
               <li key={t.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{t.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm font-medium text-ink-900">{t.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-ink-500">
                     {t.email} · {t._count.ownedBatches} batch{t._count.ownedBatches !== 1 ? "es" : ""}
                   </p>
                 </div>

@@ -229,6 +229,13 @@
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   z-index: 3;
 }
+.lf2-block.on-air { padding: 6px 11px; }
+.lf2-block.on-air .hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lf2-block.on-air .tm {
+  font-family: var(--font-mono-stack); font-size: 9px;
+  letter-spacing: .04em; color: var(--chalk-muted); font-variant-numeric: tabular-nums;
+}
+.lf2-block.on-air h4 { margin-top: 3px; }
 .lf2-block.on-air .lbl {
   font-family: var(--font-mono-stack); font-size: 8.5px;
   letter-spacing: var(--tracking-caps); text-transform: uppercase;
@@ -257,13 +264,6 @@
   content: ""; position: absolute; left: 0; top: -3.5px;
   width: 7px; height: 7px; border-radius: 50%; background: var(--status-live);
 }
-.lf2-now::after {
-  content: attr(data-now);
-  position: absolute; right: 0; top: -16px;
-  font-family: var(--font-mono-stack); font-size: 9.5px; letter-spacing: .08em;
-  color: var(--status-live); background: var(--bg-page); padding: 0 5px;
-}
-
 /* ── Coming up (days beyond the clock) ── */
 .lf2-coming { margin-top: 6px; }
 .lf2-coming .lf2-note .t { letter-spacing: .04em; }

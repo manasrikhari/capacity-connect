@@ -299,9 +299,10 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                      the hole. Slivers under ~15 minutes are dropped. */
                   let parts: Array<[number, number]> = [[bs, be]];
                   if (liveStart !== null && liveEnd !== null && bs < liveEnd && be > liveStart) {
+                    const gutter = 8 / HOUR_PX; // breathing room around the lit slot
                     parts = [
-                      [bs, Math.min(be, liveStart)],
-                      [Math.max(bs, liveEnd), be],
+                      [bs, Math.min(be, liveStart - gutter)],
+                      [Math.max(bs, liveEnd + gutter), be],
                     ];
                   }
                   parts = parts.filter(([a, z]) => z - a >= 0.25);
@@ -310,7 +311,8 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                     parts[0] ?? [0, 0]
                   );
                   return parts.map(([a, z]) => {
-                    const full = a === tallest[0] && z - a >= 0.6;
+                    const main = a === tallest[0];
+                    const roomy = z - a >= 0.75; // enough height for two lines
                     return (
                       <div
                         key={`${b.id}-${a}`}
@@ -319,12 +321,14 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                         }`}
                         style={{ top: at(a), height: (z - a) * HOUR_PX - 5 }}
                       >
-                        {full ? <h4>{b.title}</h4> : null}
-                        <div className="t">
-                          {hhmm(bs)} – {hhmm(be)}
-                          {full && b.note ? ` · ${b.note}` : ""}
-                        </div>
-                        {full && b.state === "past" && b.attended !== null ? (
+                        {main ? <h4>{b.title}</h4> : null}
+                        {!main || roomy ? (
+                          <div className="t">
+                            {hhmm(bs)} – {hhmm(be)}
+                            {main && roomy && b.note ? ` · ${b.note}` : ""}
+                          </div>
+                        ) : null}
+                        {main && b.state === "past" && b.attended !== null ? (
                           <span className="tag">{b.attended ? "Attended" : "Missed"}</span>
                         ) : null}
                       </div>
@@ -343,18 +347,19 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                     }}
                     aria-label={`${live.title} — live now`}
                   >
-                    <div className="lbl">Live now</div>
-                    <h4>{live.title}</h4>
-                    <div className="t">
-                      {hhmm(liveStart)} – {hhmm(liveEnd)}
+                    <div className="hd">
+                      <span className="lbl">Live now</span>
+                      <span className="tm">
+                        {hhmm(liveStart)} – {hhmm(liveEnd)}
+                      </span>
                     </div>
+                    <h4>{live.title}</h4>
                   </div>
                 ) : null}
 
                 {nowOnGrid !== null ? (
                   <div
                     className="lf2-now"
-                    data-now={hhmm(nowOnGrid)}
                     style={{ ["--lf2-now" as string]: `${at(nowOnGrid)}px` }}
                     aria-hidden="true"
                   />

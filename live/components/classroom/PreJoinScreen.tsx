@@ -201,7 +201,7 @@ export default function PreJoinScreen({
   const displayTeacherName = teacherName || 'Teacher';
 
   return (
-    <div className="min-h-screen w-screen bg-[#030712] text-white flex flex-col relative overflow-hidden font-sans select-none">
+    <div className="h-dvh w-screen bg-background text-white flex flex-col relative overflow-hidden font-sans select-none">
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px]" />
@@ -216,16 +216,14 @@ export default function PreJoinScreen({
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 w-full max-w-3xl mx-auto flex flex-col items-center justify-center gap-8 p-8 lg:p-12 z-10 min-h-0">
+      <main className="flex-1 w-full max-w-3xl mx-auto flex flex-col items-center justify-center gap-4 p-4 lg:p-6 z-10 min-h-0">
         {/* Preview & Device Setup */}
-        <div className="w-full flex flex-col items-center justify-center space-y-6 text-center min-h-0">
+        <div className="w-full flex-1 min-h-0 flex flex-col items-center justify-center gap-4 text-center">
           <div className="space-y-2">
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#E2E8F0] mx-auto">
-              Connecting you to{" "}
-              <span className="text-[#A98FCB] font-extrabold">
-                {displayTeacherName}
-              </span>
-              's <span className="text-indigo-400 ">{roomName}</span> session
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#E2E8F0] mx-auto shrink-0">
+              Joining{" "}
+              <span className="text-[#C3B0DD] font-extrabold">{displayTeacherName}</span>
+              's live classroom
             </h1>
             <p className="text-sm text-foreground/50">
               Welcome,{" "}
@@ -235,7 +233,7 @@ export default function PreJoinScreen({
           </div>
 
           {/* Self video feed box */}
-          <div className="w-full max-w-xl md:max-w-2xl aspect-video rounded-2xl border border-white/10 bg-[#202124] shadow-2xl relative flex items-center justify-center overflow-hidden group">
+          <div className="h-full max-h-[46vh] w-auto max-w-full aspect-video mx-auto rounded-2xl border border-white/10 bg-[#202124] shadow-2xl relative flex items-center justify-center overflow-hidden group shrink min-h-40">
             {!isCamEnabled ? (
               <div className="flex flex-col items-center justify-center text-foreground/20 space-y-3 p-6 select-none">
                 <span className="text-2xl font-semibold text-foreground/60 font-sans">
@@ -551,10 +549,10 @@ export default function PreJoinScreen({
           </div>
 
           {/* Join class button right in the center */}
-          <div className="w-full max-w-md pt-4 z-20">
+          <div className="w-full max-w-md pt-1 z-20 shrink-0">
             <button
               onClick={handleJoinClick}
-              className="w-full py-4 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/40 cursor-pointer flex items-center justify-center gap-2 text-sm"
+              className="w-full py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/40 cursor-pointer flex items-center justify-center gap-2 text-sm"
             >
               <span>Join class</span>
             </button>

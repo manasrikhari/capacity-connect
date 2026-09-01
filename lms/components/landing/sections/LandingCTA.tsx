@@ -1,5 +1,3 @@
-import { googleSignInAction } from "@/app/actions/auth-actions";
-
 export function LandingCTA() {
   return (
     <section className="band">
@@ -14,11 +12,9 @@ export function LandingCTA() {
             themselves, for everyone in the room.
           </p>
           <div className="hero-cta">
-            <form action={googleSignInAction}>
-              <button type="submit" className="btn btn-cream btn-lg">
-                Start teaching free
-              </button>
-            </form>
+            <a href="#signin" className="btn btn-cream btn-lg">
+              Start teaching free
+            </a>
             <button className="btn btn-line btn-lg">Book a walkthrough</button>
           </div>
         </div>

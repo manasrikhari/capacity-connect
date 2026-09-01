@@ -6,7 +6,7 @@ export default auth((req) => {
   const session = req.auth;
 
   if (!session) {
-    if (pathname === "/" || pathname.startsWith("/join") || pathname === "/staff") {
+    if (pathname === "/" || pathname.startsWith("/join")) {
       return NextResponse.next();
     }
     return NextResponse.redirect(new URL("/", req.url));

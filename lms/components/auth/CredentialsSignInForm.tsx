@@ -6,7 +6,7 @@ import { initialActionState } from "@/lib/action-state";
 import { Button } from "@/components/ui/Button";
 import { FormField, Input } from "@/components/ui/Field";
 
-export function StaffLoginForm() {
+export function CredentialsSignInForm() {
   const [state, action, pending] = useActionState(
     credentialsSignInAction,
     initialActionState

@@ -6,6 +6,7 @@ import { featuresStyles } from "./features";
 import { howItWorksStyles } from "./howitworks";
 import { platformStyles } from "./platform";
 import { ctaStyles } from "./cta";
+import { signInStyles } from "./signin";
 import { footerStyles } from "./footer";
 import { animationStyles } from "./animations";
 
@@ -17,6 +18,7 @@ export const allLandingStyles = [
   featuresStyles,
   howItWorksStyles,
   platformStyles,
+  signInStyles,
   ctaStyles,
   footerStyles,
   animationStyles,

@@ -6,6 +6,7 @@ import { LandingHero } from "./sections/LandingHero";
 import { LandingFeatures } from "./sections/LandingFeatures";
 import { LandingHowItWorks } from "./sections/LandingHowItWorks";
 import { LandingPlatform } from "./sections/LandingPlatform";
+import { LandingSignIn } from "./sections/LandingSignIn";
 import { LandingCTA } from "./sections/LandingCTA";
 import { LandingFooter } from "./sections/LandingFooter";
 export function LandingPage() {
@@ -19,6 +20,7 @@ export function LandingPage() {
       <LandingFeatures />
       <LandingHowItWorks />
       <LandingPlatform />
+      <LandingSignIn />
       <LandingCTA />
       <LandingFooter />
 

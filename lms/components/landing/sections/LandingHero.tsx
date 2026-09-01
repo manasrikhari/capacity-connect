@@ -1,5 +1,3 @@
-import { googleSignInAction } from "@/app/actions/auth-actions";
-
 export function LandingHero() {
   return (
     <section className="hero">
@@ -19,11 +17,9 @@ export function LandingHero() {
             never miss a thing.
           </p>
           <div className="hero-cta reveal d3">
-            <form action={googleSignInAction}>
-              <button type="submit" className="btn btn-primary btn-lg">
-                Get Started
-              </button>
-            </form>
+            <a href="#signin" className="btn btn-primary btn-lg">
+              Get started
+            </a>
           </div>
           <div className="hero-note reveal d3">
             <i data-lucide="check-circle-2" /> One-click join · no installs ·

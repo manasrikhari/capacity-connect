@@ -222,7 +222,7 @@ export default function PreJoinScreen({
           <div className="space-y-2">
             <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#E2E8F0] mx-auto">
               Connecting you to{" "}
-              <span className="text-[#6366F1] font-extrabold">
+              <span className="text-[#A98FCB] font-extrabold">
                 {displayTeacherName}
               </span>
               's <span className="text-indigo-400 ">{roomName}</span> session
@@ -263,7 +263,7 @@ export default function PreJoinScreen({
               </div>
             ) : !hasCamPermission ? (
               <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 max-w-md">
-                <div className="w-16 h-16 rounded-full bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center text-[#6366F1] animate-pulse">
+                <div className="w-16 h-16 rounded-full bg-[#A98FCB]/10 border border-[#A98FCB]/20 flex items-center justify-center text-[#A98FCB] animate-pulse">
                   <svg
                     className="w-8 h-8"
                     fill="none"

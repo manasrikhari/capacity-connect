@@ -1,26 +1,30 @@
 @import "tailwindcss";
 
+/* OpenGrapes, in the dark: the classroom board is the ground (chalk-green-black
+   with chalk text), plum is interaction, sage is present/positive, terracotta is
+   live/danger. Same product identity as the landing and LMS, tuned for video. */
 @theme inline {
-  --color-background: #030712;
-  --color-foreground: #f9fafb;
-  --color-surface: #13131F;
-  --color-surface-light: #1f2937;
-  --color-border: #2C2C42;
-  --color-primary: #6366f1;
-  --color-primary-hover: #818cf8;
-  --color-primary-glow: rgba(99, 102, 241, 0.25);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #1A1F18;
+  --color-foreground: #F3F5EC;
+  --color-surface: #20261E;
+  --color-surface-light: #2F372C;
+  --color-border: #333B2F;
+  --color-primary: #A98FCB;
+  --color-primary-hover: #C3B0DD;
+  --color-primary-glow: rgba(169, 143, 203, 0.25);
+  --font-sans: var(--font-hanken);
+  --font-mono: var(--font-spline-mono);
+  --font-display: var(--font-spectral);
 
-  --color-shell: #0D0D14;
-  --color-surface-hi: #1E1E30;
-  --color-accent: #5B4FD4;
-  --color-accent-hi: #7B6EF6;
-  --color-text: #E8E8F0;
-  --color-text-muted: #5A5A78;
-  --color-danger: #E5484D;
-  --color-success: #46A758;
-  --color-warning: #F5A623;
+  --color-shell: #14180F;
+  --color-surface-hi: #2A3226;
+  --color-accent: #A98FCB;
+  --color-accent-hi: #C3B0DD;
+  --color-text: #F3F5EC;
+  --color-text-muted: #9BA391;
+  --color-danger: #D06A62;
+  --color-success: #8FB07F;
+  --color-warning: #D3A05A;
 
   --animate-pulse-recording: pulse-recording 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
@@ -68,8 +72,8 @@ body {
 }
 
 .lk-participant-tile:hover {
-  border-color: rgba(99, 102, 241, 0.3) !important;
-  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15) !important;
+  border-color: rgba(169, 143, 203, 0.3) !important;
+  box-shadow: 0 10px 25px -5px rgba(169, 143, 203, 0.15) !important;
 }
 
 .lk-participant-tile[data-lk-speaking="true"] {
@@ -78,7 +82,7 @@ body {
 }
 
 .lk-participant-placeholder {
-  background: radial-gradient(circle at center, #1e1b4b 0%, #030712 100%) !important;
+  background: radial-gradient(circle at center, #2A3226 0%, #14180F 100%) !important;
   color: var(--color-primary) !important;
 }
 
@@ -208,14 +212,15 @@ body {
   --tl-color-background: #090d16 !important; /* Contrasting dark mode canvas background */
 }
 
-/* Style the page frames to look like soft eye-pleasing cream sheets of paper */
+/* Style the page frames to look like soft eye-pleasing paper sheets — the
+   OpenGrapes plum-tinted paper, so the whiteboard reads as the app's own paper. */
 .tl-frame,
 .tl-frame__background,
 .tl-frame-background,
 .tl-shape[data-shape-type="frame"] rect,
 .tl-shape[data-shape-type="frame"] path {
-  background-color: #FAF9F6 !important; /* Soft off-white cream */
-  fill: #FAF9F6 !important;
+  background-color: #F9F8FB !important; /* OpenGrapes paper */
+  fill: #F9F8FB !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   border: 1px solid rgba(0, 0, 0, 0.15) !important;
   border-radius: 4px !important;
@@ -271,11 +276,11 @@ body {
 /* Onboarding animations */
 @keyframes pulse-accent-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(91, 79, 212, 0.7);
+    box-shadow: 0 0 0 0 rgba(169, 143, 203, 0.7);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(91, 79, 212, 0);
+    box-shadow: 0 0 0 8px rgba(169, 143, 203, 0);
     transform: scale(1.05);
   }
 }

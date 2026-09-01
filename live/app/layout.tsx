@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Spectral, Hanken_Grotesk, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { AuthProvider } from "../components/AuthProvider";
@@ -9,17 +9,26 @@ export const viewport: Viewport = {
   initialScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#090d1a",
+  themeColor: "#1A1F18",
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/* The OpenGrapes voices, in the classroom: Hanken for the interface, Spline
+   Sans Mono for machine data (times, labels), Spectral for the occasional
+   display heading. Same faces as the LMS and landing. */
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const splineSansMono = Spline_Sans_Mono({
+  variable: "--font-spline-mono",
   subsets: ["latin"],
+});
+
+const spectral = Spectral({
+  variable: "--font-spectral",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -36,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${hankenGrotesk.variable} ${splineSansMono.variable} ${spectral.variable} h-full antialiased`}
     >
       <body className="h-full bg-background text-foreground">
         <AuthProvider>{children}</AuthProvider>

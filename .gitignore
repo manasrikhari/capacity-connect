@@ -46,3 +46,6 @@ opengrapes.db
 uploads/
 scratch/
 *.tsbuildinfo
+
+# Claude Code local tooling
+.claude/

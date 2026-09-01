@@ -54,10 +54,10 @@
   min-height: 236px;
   background: var(--board);
   /* The whiteboard grid, faint in chalk — the same 17px the landing draws. */
-  background-image: radial-gradient(rgba(243, 245, 236, 0.13) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(243, 241, 247, 0.14) 1px, transparent 1px);
   background-size: 17px 17px;
   border: 1px solid var(--board-edge);
-  box-shadow: 0 18px 48px rgba(32, 38, 30, 0.18), 0 2px 8px rgba(32, 38, 30, 0.10);
+  box-shadow: 0 18px 48px rgba(36, 30, 48, 0.20), 0 2px 8px rgba(36, 30, 48, 0.11);
   color: var(--chalk);
   overflow: hidden;
   will-change: transform;
@@ -80,8 +80,8 @@
 .lf2-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 18px; }
 .lf2-hero .btn { background: var(--chalk); color: var(--board); }
 .lf2-hero .btn:disabled { background: color-mix(in srgb, var(--chalk) 55%, transparent); cursor: not-allowed; }
-.lf2-hero .btn.ghost { background: transparent; color: var(--chalk); border-color: rgba(243, 245, 236, .3); }
-.lf2-hero .btn.ghost:hover { background: rgba(243, 245, 236, .09); }
+.lf2-hero .btn.ghost { background: transparent; color: var(--chalk); border-color: rgba(243, 241, 247, .3); }
+.lf2-hero .btn.ghost:hover { background: rgba(243, 241, 247, .09); }
 
 /* Buttons — scoped so the dashboard carries everything it needs. */
 .lf2 .btn {
@@ -99,7 +99,7 @@
 
 /* The lesson's progress, in chalk. */
 .lf2-prog { margin-top: 18px; }
-.lf2-prog-track { height: 3px; border-radius: 2px; background: rgba(243, 245, 236, .16); overflow: hidden; }
+.lf2-prog-track { height: 3px; border-radius: 2px; background: rgba(243, 241, 247, .16); overflow: hidden; }
 .lf2-prog-track i {
   display: block; height: 100%; border-radius: 2px;
   background: var(--chalk);
@@ -116,7 +116,7 @@
 /* Waiting: same board, unlit. Shadow eases, the live label goes chalk-muted,
    and there is no progress bar — the board is asleep, not gone. */
 .lf2-hero.waiting {
-  box-shadow: 0 10px 28px rgba(32, 38, 30, 0.12), 0 1px 5px rgba(32, 38, 30, 0.08);
+  box-shadow: 0 10px 28px rgba(36, 30, 48, 0.13), 0 1px 5px rgba(36, 30, 48, 0.09);
 }
 .lf2-hero.waiting h2 { color: var(--chalk); }
 .lf2-hero.waiting p { color: var(--chalk-muted); font-size: 13.5px; margin-top: 10px; }
@@ -188,6 +188,14 @@
   color: var(--ink-300); background: var(--bg-page); padding-right: 8px;
 }
 
+/* An empty day keeps its ruled clock; it just says so, quietly. */
+.lf2-day-empty {
+  position: absolute; left: 58px; right: 0; top: 40%;
+  font-family: var(--font-mono-stack); font-size: 10px;
+  letter-spacing: var(--tracking-caps); text-transform: uppercase;
+  color: var(--ink-300); text-align: center;
+}
+
 .lf2-block {
   position: absolute; left: 58px; right: 0; z-index: 2;
   padding: 6px 11px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -220,7 +228,7 @@
   border: 1.5px dashed var(--ink-700);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-sunken) 70%, transparent);
-  box-shadow: inset 0 2px 6px rgba(32, 38, 30, 0.12);
+  box-shadow: inset 0 2px 6px rgba(36, 30, 48, 0.13);
   display: flex; align-items: center; justify-content: center;
 }
 .lf2-cut span {

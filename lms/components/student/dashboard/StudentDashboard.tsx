@@ -326,11 +326,14 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
               ))}
             </div>
 
-            {hasGrid ? (
-              <div className="lf2-day">
+            <div className="lf2-day">
                 {hours.map((h) => (
                   <div className="lf2-hour" key={h} data-h={h} />
                 ))}
+
+                {!hasGrid ? (
+                  <div className="lf2-day-empty">No classes on today&apos;s clock</div>
+                ) : null}
 
                 {data.todayBlocks.map((b) => {
                   const s = toHours(b.startAt);
@@ -381,7 +384,7 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                   />
                 ) : null}
               </div>
-            ) : null}
+
 
             <div className="lf2-coming">
               <div className="lf2-h">Coming up</div>

@@ -26,11 +26,12 @@
   --paper-hair:   #DFDBE6;
   --paper-strong: #C7C1D2;
 
-  /* ── The board: chalk-green black (live/shared surfaces only) ── */
-  --board:       #20261E;
-  --board-edge:  #2F372C;
-  --chalk:       #F3F5EC;
-  --chalk-muted: #B7BFAC;
+  /* ── The board: deep plum (live/shared surfaces only) — the raised dark
+     surface carries the brand's own hue, not a dead black ── */
+  --board:       #2E2839;
+  --board-edge:  #423A52;
+  --chalk:       #F3F1F7;
+  --chalk-muted: #B9B1C8;
 
   /* ── Ink (warm near-black, never pure #000 — deepened per Lifted 2.0) ── */
   --ink-900: #16140F;     /* headings */
@@ -168,10 +169,10 @@
   --color-ink-500: #5E5A67;
   --color-ink-300: #6B6776;
 
-  --color-board:       #20261E;
-  --color-board-edge:  #2F372C;
-  --color-chalk:       #F3F5EC;
-  --color-chalk-muted: #B7BFAC;
+  --color-board:       #2E2839;
+  --color-board-edge:  #423A52;
+  --color-chalk:       #F3F1F7;
+  --color-chalk-muted: #B9B1C8;
 
   --color-plum-50:  #F0ECF4;
   --color-plum-100: #E3DBEC;

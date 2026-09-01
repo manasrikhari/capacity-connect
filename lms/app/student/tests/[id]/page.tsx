@@ -1,21 +1,28 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Prisma, TestAttempt } from "@/app/generated/prisma/client";
-import { TestAttemptForm } from "@/components/student/TestAttemptForm";
+import { TestAttemptForm, type AttemptQuestion } from "@/components/student/TestAttemptForm";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime, isTestOpen } from "@/lib/utils";
 
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
 
 type TestWithQuestions = Prisma.TestGetPayload<{ include: { questions: true } }>;
 
 function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestAttempt }) {
-  const answers = JSON.parse(attempt.answers) as Record<string, string>;
+  let answers: Record<string, string> = {};
+  let corrupt = false;
+  try {
+    answers = JSON.parse(attempt.answers) as Record<string, string>;
+  } catch {
+    corrupt = true;
+  }
   const percentage = attempt.totalMarks > 0 ? Math.round((attempt.score / attempt.totalMarks) * 100) : 0;
 
   return (
@@ -23,61 +30,71 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-slate-500">Your score</p>
-            <p className="text-2xl font-bold text-slate-800">
+            <p className="text-sm text-ink-500">Your score</p>
+            <p className="font-display text-3xl font-normal tabular-nums text-ink-900">
               {attempt.score} / {attempt.totalMarks}
             </p>
           </div>
           <Badge color={percentage >= 50 ? "green" : "red"}>{percentage}%</Badge>
         </div>
-        <p className="mt-2 text-xs text-slate-400">Submitted {formatDateTime(attempt.submittedAt)}</p>
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+          Submitted {formatDateTime(attempt.submittedAt)}
+        </p>
       </Card>
 
-      <div className="space-y-3">
-        {test.questions.map((question, index) => {
-          const selected = answers[question.id];
-          const isCorrect = selected === question.correctOption;
-          const options: Record<(typeof OPTION_LETTERS)[number], string> = {
-            A: question.optionA,
-            B: question.optionB,
-            C: question.optionC,
-            D: question.optionD,
-          };
-          return (
-            <Card key={question.id}>
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-slate-800">
-                  {index + 1}. {question.question}
-                </p>
-                <Badge color={isCorrect ? "green" : "red"}>{isCorrect ? "Correct" : "Incorrect"}</Badge>
-              </div>
-              <div className="mt-3 space-y-2">
-                {OPTION_LETTERS.map((letter) => {
-                  const isSelected = selected === letter;
-                  const isAnswer = question.correctOption === letter;
-                  return (
-                    <div
-                      key={letter}
-                      className={cn(
-                        "rounded-lg border px-3 py-2 text-sm",
-                        isAnswer
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : isSelected
-                            ? "border-red-200 bg-red-50 text-red-700"
-                            : "border-slate-100 text-slate-600"
-                      )}
-                    >
-                      <span className="font-medium">{letter}.</span> {options[letter]}
-                      {isSelected && !isAnswer && <span className="ml-2 text-xs">(your answer)</span>}
-                      {isAnswer && <span className="ml-2 text-xs">(correct answer)</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+      {corrupt ? (
+        <EmptyState
+          icon={Lock}
+          title="Answers unavailable"
+          description="We couldn't read your saved answers, but your score above still stands."
+        />
+      ) : (
+        <div className="space-y-3">
+          {test.questions.map((question, index) => {
+            const selected = answers[question.id];
+            const isCorrect = selected === question.correctOption;
+            const options: Record<(typeof OPTION_LETTERS)[number], string> = {
+              A: question.optionA,
+              B: question.optionB,
+              C: question.optionC,
+              D: question.optionD,
+            };
+            return (
+              <Card key={question.id}>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-ink-900">
+                    {index + 1}. {question.question}
+                  </p>
+                  <Badge color={isCorrect ? "green" : "red"}>{isCorrect ? "Correct" : "Incorrect"}</Badge>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {OPTION_LETTERS.map((letter) => {
+                    const isSelected = selected === letter;
+                    const isAnswer = question.correctOption === letter;
+                    return (
+                      <div
+                        key={letter}
+                        className={cn(
+                          "rounded-[10px] border px-3 py-2 text-sm",
+                          isAnswer
+                            ? "border-sage-200 bg-sage-50 text-sage-700"
+                            : isSelected
+                              ? "border-status-unpaid/25 bg-status-unpaid/10 text-status-unpaid"
+                              : "border-hair text-ink-700"
+                        )}
+                      >
+                        <span className="font-medium">{letter}.</span> {options[letter]}
+                        {isSelected && !isAnswer && <span className="ml-2 text-xs">(your answer)</span>}
+                        {isAnswer && <span className="ml-2 text-xs">(correct answer)</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -104,10 +121,23 @@ export default async function StudentTestDetailPage({ params }: { params: Promis
   if (!test.isActive && !attempt) notFound();
 
   const totalMarks = test.questions.reduce((sum, q) => sum + q.marks, 0);
+  const open = isTestOpen(test);
+
+  // Never send correctOption to the client before submission.
+  const safeQuestions: AttemptQuestion[] = test.questions.map((q) => ({
+    id: q.id,
+    question: q.question,
+    optionA: q.optionA,
+    optionB: q.optionB,
+    optionC: q.optionC,
+    optionD: q.optionD,
+    marks: q.marks,
+    order: q.order,
+  }));
 
   return (
     <div className="space-y-6">
-      <Link href="/student/tests" className="inline-flex items-center gap-1.5 text-sm text-violet-600 hover:underline">
+      <Link href="/student/tests" className="inline-flex items-center gap-1.5 text-sm text-plum-700 hover:underline">
         <ArrowLeft className="size-4" />
         Back to tests
       </Link>
@@ -115,10 +145,15 @@ export default async function StudentTestDetailPage({ params }: { params: Promis
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{test.title}</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1 className="text-2xl font-medium text-ink-900">{test.title}</h1>
+            <p className="mt-1 text-sm text-ink-500">
               {test.questions.length} questions &middot; {totalMarks} marks
             </p>
+            {test.closesAt && (
+              <p className={cn("mt-1 text-xs", open ? "text-ink-500" : "text-status-unpaid")}>
+                {open ? `Closes ${formatDateTime(test.closesAt)}` : "Closed"}
+              </p>
+            )}
           </div>
           <Badge color="violet">{test.subject}</Badge>
         </div>
@@ -126,8 +161,14 @@ export default async function StudentTestDetailPage({ params }: { params: Promis
 
       {attempt ? (
         <ResultView test={test} attempt={attempt} />
+      ) : open ? (
+        <TestAttemptForm testId={test.id} questions={safeQuestions} />
       ) : (
-        <TestAttemptForm testId={test.id} questions={test.questions} />
+        <EmptyState
+          icon={Lock}
+          title="This test has closed"
+          description="The window to attempt this test has passed, so it can no longer be taken."
+        />
       )}
     </div>
   );

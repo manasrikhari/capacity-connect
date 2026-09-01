@@ -1,7 +1,5 @@
 import {
-  CheckSquare,
   ChevronRight,
-  CircleCheck,
   Clock,
   GraduationCap,
   X,
@@ -11,6 +9,8 @@ import { setActiveBatchAction, cancelEnrollmentAction } from "@/app/student/acti
 import { getSession } from "@/lib/session";
 import { getStudentHubData } from "@/lib/batch";
 import type { StudentHubBatch, StudentHubPending } from "@/lib/batch";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatCard } from "@/components/ui/StatCard";
 import {
   JoinBatchTrigger,
   JoinSuccessModal,
@@ -50,10 +50,8 @@ export default async function StudentHubPage({
       {/* Hero */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[27px] font-extrabold tracking-tight text-slate-800">
-            My Batches
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-normal text-ink-900">My batches</h1>
+          <p className="mt-1 text-sm text-ink-500">
             Pick a class to see its meetings, notes and tests.
           </p>
         </div>
@@ -61,38 +59,31 @@ export default async function StudentHubPage({
       </div>
 
       {!hasAny ? (
-        <StudentEmptyState />
+        <div className="mt-6">
+          <EmptyState
+            icon={GraduationCap}
+            title="No batches yet"
+            description="Enter a join code from your teacher to start accessing meetings, notes, and tests."
+            action={<JoinBatchTrigger variant="empty-state" />}
+          />
+        </div>
       ) : (
         <>
-          {/* Stat chips */}
-          <div className="mt-5 flex flex-wrap gap-3">
-            <StatChip
-              icon={GraduationCap}
-              value={stats.joinedBatches}
-              label="Joined batches"
-              color="violet"
-            />
-            <StatChip
-              icon={CircleCheck}
+          {/* Stats */}
+          <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3">
+            <StatCard value={stats.joinedBatches} label="Joined batches" />
+            <StatCard
               value={stats.liveNow}
               label="Live now"
-              color="green"
+              color={stats.liveNow > 0 ? "green" : "slate"}
             />
-            <StatChip
-              icon={CheckSquare}
-              value={stats.testsToAttempt}
-              label="Tests to attempt"
-              color="amber"
-            />
+            <StatCard value={stats.testsToAttempt} label="Tests to attempt" />
           </div>
 
           {/* Section label */}
-          <div className="mb-4 mt-7 flex items-center gap-3">
-            <h2 className="text-[15px] font-bold text-slate-800">
-              My batches
-            </h2>
-            <div className="h-px flex-1 bg-violet-100" />
-            <span className="text-xs text-slate-400">
+          <div className="mb-4 mt-8 flex items-center justify-between border-b border-hair-strong pb-2">
+            <h2 className="text-sm font-semibold text-ink-900">My batches</h2>
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
               {stats.joinedBatches} joined
               {pending.length > 0 && ` · ${pending.length} pending`}
             </span>
@@ -119,32 +110,29 @@ function ApprovedBatchCard({ batch }: { batch: StudentHubBatch }) {
     <form action={setActiveBatchAction.bind(null, batch.id)}>
       <button
         type="submit"
-        className="group relative flex min-h-42 w-full cursor-pointer flex-col rounded-2xl border border-white/60 bg-white/80 p-4.5 text-left shadow-sm shadow-violet-100/60 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-200/50"
+        className="group relative flex min-h-40 w-full cursor-pointer flex-col rounded-2xl border border-hair bg-paper p-[18px] text-left transition-[border-color] duration-[var(--dur-press)] ease-[var(--ease-out)] hover:border-plum-200 active:scale-[0.99]"
       >
         {/* Arrow */}
-        <div className="absolute right-4.5 top-4.5 flex size-7.5 items-center justify-center rounded-[9px] border border-violet-100 bg-violet-50/60 text-violet-600 transition-colors group-hover:border-violet-600 group-hover:bg-violet-600 group-hover:text-white">
+        <div className="absolute right-[18px] top-[18px] flex size-7 items-center justify-center rounded-[9px] border border-hair bg-sunken/50 text-ink-500 transition-colors group-hover:border-plum-600 group-hover:bg-plum-600 group-hover:text-paper">
           <ChevronRight className="size-4" />
         </div>
 
         {/* Top row: icon + live badge */}
         <div className="flex items-start gap-2.5">
-          <div className="flex size-11.5 shrink-0 items-center justify-center rounded-[13px] bg-violet-100 text-violet-600">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-[12px] bg-plum-50 text-plum-600">
             <GraduationCap className="size-6" />
           </div>
           {batch.isLive && (
-            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-              <span
-                className="inline-block size-1.5 rounded-full bg-emerald-500"
-                style={{ animation: "live-pulse 1.6s infinite" }}
-              />
+            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-status-live/10 px-2.5 py-1 text-[11px] font-semibold text-status-live">
+              <span className="inline-block size-1.5 animate-pulse rounded-full bg-status-live" />
               Live now
             </span>
           )}
         </div>
 
         {/* Name + grade */}
-        <h3 className="mt-3 text-lg font-bold text-slate-800">{batch.name}</h3>
-        <p className="mt-0.5 text-[12.5px] text-slate-400">
+        <h3 className="mt-3 text-lg font-normal text-ink-900">{batch.name}</h3>
+        <p className="mt-0.5 text-xs text-ink-500">
           {[batch.grade, batch.teacherName].filter(Boolean).join(" · ")}
         </p>
 
@@ -169,15 +157,15 @@ function ApprovedBatchCard({ batch }: { batch: StudentHubBatch }) {
 
 function PendingBatchCard({ batch }: { batch: StudentHubPending }) {
   return (
-    <div className="flex min-h-42 flex-col rounded-2xl border border-white/60 bg-white/80 p-4.5 shadow-sm shadow-violet-100/60 backdrop-blur-sm">
+    <div className="flex min-h-40 flex-col rounded-2xl border border-hair bg-paper p-[18px]">
       {/* Top row: icon + waiting badge + cancel */}
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex items-start gap-2.5">
-          <div className="flex size-11.5 shrink-0 items-center justify-center rounded-[13px] bg-amber-100 text-amber-600">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-[12px] bg-status-partial/10 text-status-partial">
             <Clock className="size-6" />
           </div>
-          <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-            <span className="inline-block size-1.5 rounded-full bg-amber-500" />
+          <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-status-partial/10 px-2.5 py-1 text-[11px] font-semibold text-status-partial">
+            <span className="inline-block size-1.5 rounded-full bg-status-partial" />
             Waiting
           </span>
         </div>
@@ -185,7 +173,7 @@ function PendingBatchCard({ batch }: { batch: StudentHubPending }) {
           <button
             type="submit"
             title="Cancel request"
-            className="flex size-7.5 items-center justify-center rounded-[9px] border border-red-100 bg-red-50/60 text-red-400 transition-colors hover:border-red-300 hover:bg-red-100 hover:text-red-600 cursor-pointer"
+            className="flex size-7 cursor-pointer items-center justify-center rounded-[9px] border border-status-unpaid/25 bg-status-unpaid/10 text-status-unpaid transition-colors hover:bg-status-unpaid/15"
           >
             <X className="size-3.5" />
           </button>
@@ -193,13 +181,13 @@ function PendingBatchCard({ batch }: { batch: StudentHubPending }) {
       </div>
 
       {/* Name + grade */}
-      <h3 className="mt-3 text-lg font-bold text-slate-800">{batch.name}</h3>
-      <p className="mt-0.5 text-[12.5px] text-slate-400">
+      <h3 className="mt-3 text-lg font-normal text-ink-900">{batch.name}</h3>
+      <p className="mt-0.5 text-xs text-ink-500">
         {[batch.grade, batch.teacherName].filter(Boolean).join(" · ")}
       </p>
 
       {/* Status chip */}
-      <span className="mt-3 inline-flex w-fit items-center gap-2 rounded-lg border border-dashed border-violet-100 bg-violet-50/60 px-2.5 py-1.5 text-xs text-slate-500">
+      <span className="mt-3 inline-flex w-fit items-center gap-2 rounded-[8px] border border-dashed border-hair bg-paper px-2.5 py-1.5 text-xs text-ink-500">
         Request sent — waiting for approval
       </span>
     </div>
@@ -217,62 +205,11 @@ function Chip({
     <span
       className={
         alert
-          ? "inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-100 px-2.5 py-1.5 text-xs text-amber-700 [&>b]:font-bold [&>b]:text-amber-700"
-          : "inline-flex items-center gap-1 rounded-lg border border-violet-100 bg-violet-50/60 px-2.5 py-1.5 text-xs text-slate-500 [&>b]:font-bold [&>b]:text-slate-800"
+          ? "inline-flex items-center gap-1 rounded-[8px] border border-status-partial/25 bg-status-partial/10 px-2.5 py-1.5 text-xs text-status-partial [&>b]:font-semibold [&>b]:text-status-partial"
+          : "inline-flex items-center gap-1 rounded-[8px] border border-hair bg-sunken/50 px-2.5 py-1.5 text-xs text-ink-500 [&>b]:font-semibold [&>b]:text-ink-900"
       }
     >
       {children}
     </span>
-  );
-}
-
-function StatChip({
-  icon: Icon,
-  value,
-  label,
-  color,
-}: {
-  icon: typeof GraduationCap;
-  value: number;
-  label: string;
-  color: "violet" | "blue" | "amber" | "green";
-}) {
-  const styles = {
-    violet: "bg-violet-100 text-violet-600",
-    blue: "bg-blue-100 text-blue-600",
-    amber: "bg-amber-100 text-amber-600",
-    green: "bg-emerald-100 text-emerald-600",
-  };
-
-  return (
-    <div className="flex items-center gap-3 rounded-[13px] border border-violet-100 bg-white/80 px-3.5 py-2.5">
-      <div
-        className={`flex size-7.5 shrink-0 items-center justify-center rounded-[9px] ${styles[color]}`}
-      >
-        <Icon className="size-4" />
-      </div>
-      <div>
-        <p className="text-lg font-extrabold leading-none tracking-tight text-slate-800">
-          {value}
-        </p>
-        <p className="mt-0.5 text-[11.5px] text-slate-500">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-function StudentEmptyState() {
-  return (
-    <div className="mt-6 flex flex-col items-center rounded-2xl border border-violet-100 bg-white/80 px-6 py-16 text-center">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-violet-100">
-        <GraduationCap className="size-8 text-violet-600" />
-      </div>
-      <h3 className="text-xl font-bold text-slate-800">No batches yet</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-        Enter a join code from your teacher to start accessing meetings, notes,
-        and tests.
-      </p>
-      <JoinBatchTrigger variant="empty-state" />
-    </div>
   );
 }

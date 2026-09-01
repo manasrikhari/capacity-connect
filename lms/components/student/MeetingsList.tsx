@@ -5,14 +5,17 @@ import { ClipboardList, FileDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { formatDateTime } from "@/lib/utils";
+import { whiteboardPdfUrl } from "@/lib/whiteboard";
 
 interface Meeting {
   id: string;
   title: string;
   description: string | null;
   date: Date | string;
+  durationMins: number;
   status: string;
 }
 
@@ -25,12 +28,18 @@ interface LiveSession {
   } | null;
 }
 
+interface AttendanceRecord {
+  meetingId: string;
+  status: "PRESENT" | "ABSENT";
+}
+
 interface MeetingsListProps {
   meetings: Meeting[];
   liveSessions: LiveSession[];
+  attendance: AttendanceRecord[];
 }
 
-export function MeetingsList({ meetings, liveSessions }: MeetingsListProps) {
+export function MeetingsList({ meetings, liveSessions, attendance }: MeetingsListProps) {
   const [activeMoM, setActiveMoM] = useState<{ title: string; content: string } | null>(null);
   const [visibleCount, setVisibleCount] = useState(4);
 
@@ -45,34 +54,38 @@ export function MeetingsList({ meetings, liveSessions }: MeetingsListProps) {
     ])
   );
 
+  const attendanceMap = new Map(attendance.map((a) => [a.meetingId, a.status]));
+
   const visibleMeetings = meetings.slice(0, visibleCount);
 
   return (
-    <div className="divide-y divide-slate-100 rounded-lg border border-slate-100 bg-white">
+    <ul className="divide-y divide-hair rounded-2xl border border-hair bg-paper">
       {visibleMeetings.map((meeting) => {
         const sessionDetails = sessionMap.get(meeting.id);
         const hasNotes = sessionDetails?.hasNotes ?? false;
         const minutes = sessionDetails?.minutes ?? null;
+        const attendanceStatus = attendanceMap.get(meeting.id);
 
         return (
-          <div key={meeting.id} className="flex items-center justify-between p-4 gap-4">
-            <div className="space-y-1 min-w-0 flex-1">
-              <h4 className="font-medium text-slate-800 truncate" title={meeting.title}>
+          <li key={meeting.id} className="flex items-center justify-between gap-4 p-4">
+            <div className="min-w-0 flex-1 space-y-1">
+              <h3 className="truncate text-base text-ink-900" title={meeting.title}>
                 {meeting.title}
-              </h4>
-              <p className="text-xs text-slate-400">
-                Ended on {formatDateTime(meeting.date)}
+              </h3>
+              <p className="font-mono text-[11px] text-ink-300">
+                {formatDateTime(meeting.date)} · {meeting.durationMins} min
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex shrink-0 items-center gap-2.5">
               {/* Minutes of Meeting (MoM) Dialog Trigger */}
               {minutes ? (
                 <button
                   type="button"
                   onClick={() => setActiveMoM({ title: meeting.title, content: minutes })}
-                  className="p-2 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer"
-                  title="View Minutes of Meeting (MoM)"
+                  className="rounded-[8px] p-2 text-plum-700 transition-colors hover:bg-plum-50 cursor-pointer"
+                  title="View minutes of meeting"
+                  aria-label="View minutes of meeting"
                 >
                   <ClipboardList className="size-4" />
                 </button>
@@ -80,8 +93,9 @@ export function MeetingsList({ meetings, liveSessions }: MeetingsListProps) {
                 <button
                   type="button"
                   disabled
-                  className="p-2 rounded-lg bg-slate-50 text-slate-350 opacity-40 cursor-not-allowed"
-                  title="No Minutes of Meeting (MoM) available for class"
+                  className="cursor-not-allowed rounded-[8px] p-2 text-ink-300 opacity-40"
+                  title="No minutes available"
+                  aria-label="No minutes available"
                 >
                   <ClipboardList className="size-4" />
                 </button>
@@ -90,11 +104,12 @@ export function MeetingsList({ meetings, liveSessions }: MeetingsListProps) {
               {/* Whiteboard Notes PDF Download */}
               {hasNotes ? (
                 <a
-                  href={`https://opengrapes-whiteboard-sync.manasrikhari23.workers.dev/api/pdf/${meeting.id}`}
+                  href={whiteboardPdfUrl(meeting.id)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer"
-                  title="Download Class Notes PDF"
+                  className="rounded-[8px] p-2 text-plum-700 transition-colors hover:bg-plum-50 cursor-pointer"
+                  title="Download class notes PDF"
+                  aria-label="Download class notes PDF"
                 >
                   <FileDown className="size-4" />
                 </a>
@@ -102,69 +117,75 @@ export function MeetingsList({ meetings, liveSessions }: MeetingsListProps) {
                 <button
                   type="button"
                   disabled
-                  className="p-2 rounded-lg bg-slate-50 text-slate-350 opacity-40 cursor-not-allowed"
-                  title="No notes available for class"
+                  className="cursor-not-allowed rounded-[8px] p-2 text-ink-300 opacity-40"
+                  title="No notes available"
+                  aria-label="No notes available"
                 >
                   <FileDown className="size-4" />
                 </button>
               )}
 
-              <Badge color="slate">Ended</Badge>
+              {attendanceStatus === "PRESENT" ? (
+                <Badge color="green">Attended</Badge>
+              ) : attendanceStatus === "ABSENT" ? (
+                <Badge color="red">Missed</Badge>
+              ) : (
+                <Badge color="slate">Ended</Badge>
+              )}
             </div>
-          </div>
+          </li>
         );
       })}
 
       {meetings.length > visibleCount && (
-        <div className="flex justify-center p-3 border-t border-slate-50 bg-slate-50/10">
-          <button
+        <li className="flex justify-center p-3">
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setVisibleCount((prev) => prev + 4)}
-            className="px-4 py-2 text-xs font-semibold text-violet-600 hover:text-violet-750 bg-violet-50 hover:bg-violet-100/80 rounded-xl transition-all cursor-pointer shadow-xs"
           >
-            Load More Meetings
-          </button>
-        </div>
+            Load more classes
+          </Button>
+        </li>
       )}
 
       {/* MoM Content Lightbox Dialog */}
       <Modal
         open={!!activeMoM}
         onClose={() => setActiveMoM(null)}
-        title={`Minutes of Meeting: ${activeMoM?.title || ""}`}
+        title={`Minutes of meeting: ${activeMoM?.title || ""}`}
       >
         {activeMoM && (
-          <div className="space-y-4">
-            <div className="text-sm leading-relaxed bg-slate-50/50 p-6 border border-slate-100 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h1: ({ children }) => <h1 className="text-lg font-bold text-violet-750 border-b border-violet-100/50 pb-1 mt-4 mb-2">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-base font-semibold text-slate-800 mt-3 mb-1.5">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-sm font-semibold text-slate-700 mt-2 mb-1">{children}</h3>,
-                  p: ({ children }) => <p className="text-sm leading-relaxed text-slate-600 my-2">{children}</p>,
-                  ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 my-2 text-slate-650 text-sm">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 my-2 text-slate-650 text-sm">{children}</ol>,
-                  li: ({ children }) => <li className="pl-1">{children}</li>,
-                  strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
-                  table: ({ children }) => (
-                    <div className="overflow-x-auto my-3 rounded-lg border border-slate-200">
-                      <table className="min-w-full divide-y divide-slate-200 text-sm text-left">{children}</table>
-                    </div>
-                  ),
-                  thead: ({ children }) => <thead className="bg-slate-50 text-slate-700 font-semibold">{children}</thead>,
-                  tbody: ({ children }) => <tbody className="divide-y divide-slate-200">{children}</tbody>,
-                  tr: ({ children }) => <tr className="hover:bg-slate-50/30">{children}</tr>,
-                  th: ({ children }) => <th className="px-3 py-2 border-b border-slate-200 font-bold">{children}</th>,
-                  td: ({ children }) => <td className="px-3 py-2 text-slate-600">{children}</td>,
-                }}
-              >
-                {activeMoM.content}
-              </ReactMarkdown>
-            </div>
+          <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-hair bg-sunken/40 p-6 text-sm leading-relaxed scrollbar-thin">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ children }) => <h1 className="mt-4 mb-2 border-b border-hair pb-1 text-lg font-semibold text-ink-900">{children}</h1>,
+                h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-base font-semibold text-ink-900">{children}</h2>,
+                h3: ({ children }) => <h3 className="mt-2 mb-1 text-sm font-semibold text-ink-700">{children}</h3>,
+                p: ({ children }) => <p className="my-2 text-sm leading-relaxed text-ink-700">{children}</p>,
+                ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5 text-sm text-ink-700">{children}</ul>,
+                ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5 text-sm text-ink-700">{children}</ol>,
+                li: ({ children }) => <li className="pl-1">{children}</li>,
+                strong: ({ children }) => <strong className="font-semibold text-ink-900">{children}</strong>,
+                table: ({ children }) => (
+                  <div className="my-3 overflow-x-auto rounded-lg border border-hair">
+                    <table className="min-w-full divide-y divide-hair text-left text-sm">{children}</table>
+                  </div>
+                ),
+                thead: ({ children }) => <thead className="bg-sunken font-semibold text-ink-700">{children}</thead>,
+                tbody: ({ children }) => <tbody className="divide-y divide-hair">{children}</tbody>,
+                tr: ({ children }) => <tr className="hover:bg-sunken/30">{children}</tr>,
+                th: ({ children }) => <th className="border-b border-hair px-3 py-2 font-semibold">{children}</th>,
+                td: ({ children }) => <td className="px-3 py-2 text-ink-700">{children}</td>,
+              }}
+            >
+              {activeMoM.content}
+            </ReactMarkdown>
           </div>
         )}
       </Modal>
-    </div>
+    </ul>
   );
 }

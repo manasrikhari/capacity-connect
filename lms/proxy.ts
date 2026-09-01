@@ -5,15 +5,10 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
-  // Design prototype surface (app/prototypes/*). Development only — the guard
-  // means it can never be reachable in a deployed build. Remove this together
-  // with the prototype routes once a direction is promoted.
-  if (process.env.NODE_ENV !== "production" && pathname.startsWith("/prototypes")) {
-    return NextResponse.next();
-  }
-
   if (!session) {
-    if (pathname === "/" || pathname.startsWith("/join")) return NextResponse.next();
+    if (pathname === "/" || pathname.startsWith("/join") || pathname === "/staff") {
+      return NextResponse.next();
+    }
     return NextResponse.redirect(new URL("/", req.url));
   }
 

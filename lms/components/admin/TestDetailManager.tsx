@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime, isTestOpen } from "@/lib/utils";
 
 type TestWithQuestions = Prisma.TestGetPayload<{ include: { questions: true } }>;
 
@@ -74,10 +74,11 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
   }
 
   const totalMarks = test.questions.reduce((sum, q) => sum + q.marks, 0);
+  const closed = !!test.closesAt && !isTestOpen({ isActive: true, closesAt: test.closesAt });
 
   return (
     <div className="space-y-6">
-      <Link href="/admin/tests" className="inline-flex items-center gap-1 text-sm text-violet-600 hover:underline">
+      <Link href="/admin/tests" className="inline-flex items-center gap-1 text-sm text-plum-700 hover:underline">
         <ArrowLeft className="size-4" /> Back to tests
       </Link>
 
@@ -88,10 +89,15 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
               <CardTitle>{test.title}</CardTitle>
               <Badge color={test.isActive ? "green" : "slate"}>{test.isActive ? "Active" : "Inactive"}</Badge>
             </div>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-ink-500">
               {test.subject} · {test.questions.length} question{test.questions.length === 1 ? "" : "s"} ·{" "}
               {totalMarks} marks total
             </p>
+            {test.closesAt && (
+              <p className={cn("mt-1 text-xs", closed ? "text-status-unpaid" : "text-ink-500")}>
+                {closed ? "Closed" : `Closes ${formatDateTime(test.closesAt)}`}
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button size="sm" variant="ghost" onClick={() => setEditTestOpen(true)}>
@@ -120,8 +126,8 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
         </CardHeader>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-800">Questions</h2>
+      <div className="flex items-center justify-between border-b border-hair-strong pb-2">
+        <h2 className="font-sans text-sm font-semibold text-ink-900">Questions</h2>
         <Button size="sm" onClick={openAddQuestion}>
           <Plus className="size-4" /> Add question
         </Button>
@@ -151,7 +157,7 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
               <Card key={question.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-800">
+                    <p className="text-sm font-medium text-ink-900">
                       {index + 1}. {question.question}
                     </p>
                     <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
@@ -159,10 +165,10 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
                         <div
                           key={letter}
                           className={cn(
-                            "flex items-center gap-2 rounded-lg px-2 py-1 text-sm",
+                            "flex items-center gap-2 rounded-[10px] px-2 py-1 text-sm",
                             question.correctOption === letter
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "text-slate-600"
+                              ? "bg-sage-50 text-sage-700"
+                              : "text-ink-700"
                           )}
                         >
                           <span className="font-medium">{letter}.</span>
@@ -170,7 +176,7 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
                         </div>
                       ))}
                     </div>
-                    <p className="mt-2 text-xs text-slate-400">
+                    <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
                       {question.marks} mark{question.marks === 1 ? "" : "s"}
                     </p>
                   </div>

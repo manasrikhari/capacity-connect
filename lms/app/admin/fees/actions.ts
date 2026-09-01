@@ -16,6 +16,7 @@ export async function setFeeAmount(_prev: ActionState, formData: FormData): Prom
   const parsed = feeAmountSchema.safeParse({
     studentId: formData.get("studentId"),
     totalAmount: formData.get("totalAmount"),
+    dueDate: formData.get("dueDate"),
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -29,11 +30,12 @@ export async function setFeeAmount(_prev: ActionState, formData: FormData): Prom
   }
 
   const totalAmount = rupeesToPaise(parsed.data.totalAmount);
+  const dueDate = parsed.data.dueDate;
 
   await prisma.fee.upsert({
     where: { studentId_batchId: { studentId: parsed.data.studentId, batchId: batch.id } },
-    update: { totalAmount },
-    create: { studentId: parsed.data.studentId, batchId: batch.id, totalAmount },
+    update: { totalAmount, dueDate },
+    create: { studentId: parsed.data.studentId, batchId: batch.id, totalAmount, dueDate },
   });
 
   revalidatePath("/admin/fees");

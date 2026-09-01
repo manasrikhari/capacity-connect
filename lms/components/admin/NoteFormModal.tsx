@@ -3,11 +3,19 @@
 import { useActionState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { createNote, updateNote } from "@/app/admin/notes/actions";
-import type { Note } from "@/app/generated/prisma/client";
 import { Button } from "@/components/ui/Button";
 import { FormField, Input, Textarea } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
 import { initialActionState } from "@/lib/action-state";
+
+/** The subset of a note the form needs to prefill an edit. */
+export type EditableNote = {
+  id: string;
+  title: string;
+  subject: string;
+  content: string;
+  fileUrl: string | null;
+};
 
 export function NoteFormModal({
   open,
@@ -16,7 +24,7 @@ export function NoteFormModal({
 }: {
   open: boolean;
   onClose: () => void;
-  note?: Note | null;
+  note?: EditableNote | null;
 }) {
   const action = note ? updateNote.bind(null, note.id) : createNote;
   const [state, formAction, pending] = useActionState(action, initialActionState);

@@ -1,26 +1,25 @@
 import { Wallet } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Badge, type BadgeColor } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { StatCard } from "@/components/ui/StatCard";
 import { getSession } from "@/lib/session";
 import { getActiveBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
-import { formatPaise, getFeeStatus } from "@/lib/utils";
+import {
+  FEE_STATUS_BADGE,
+  FEE_STATUS_LABELS,
+  formatDate,
+  formatPaise,
+  getFeeStatus,
+} from "@/lib/utils";
 
-const STATUS_LABELS: Record<string, string> = {
-  PAID: "Paid",
-  PARTIAL: "Partially paid",
-  UNPAID: "Unpaid",
-};
-
-const STATUS_COLORS: Record<string, BadgeColor> = {
-  PAID: "green",
-  PARTIAL: "amber",
-  UNPAID: "red",
-};
+/** A fee is overdue when its due date has passed and money is still owed. */
+function isOverdue(dueDate: Date | null, outstanding: number): boolean {
+  return dueDate ? dueDate.getTime() < Date.now() && outstanding > 0 : false;
+}
 
 export default async function AdminFeesPage() {
   const session = await getSession();
@@ -48,90 +47,111 @@ export default async function AdminFeesPage() {
     const fee = e.student.fees[0];
     const totalAmount = fee?.totalAmount ?? 0;
     const paidAmount = e.student.payments.reduce((sum, p) => sum + p.amount, 0);
+    const outstanding = Math.max(totalAmount - paidAmount, 0);
+    const dueDate = fee?.dueDate ?? null;
     return {
       id: e.student.id,
       name: e.student.name ?? "Unnamed",
       email: e.student.email,
       totalAmount,
       paidAmount,
+      outstanding,
+      dueDate,
+      overdue: isOverdue(dueDate, outstanding),
       status: getFeeStatus(totalAmount, paidAmount),
     };
   });
 
-  const totalDue = rows.reduce((sum, r) => sum + r.totalAmount, 0);
+  const totalAssigned = rows.reduce((sum, r) => sum + r.totalAmount, 0);
   const totalCollected = rows.reduce((sum, r) => sum + r.paidAmount, 0);
+  const totalOutstanding = Math.max(totalAssigned - totalCollected, 0);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Fees</h1>
-        <p className="mt-1 text-sm text-slate-500">Track fee status and record payments per student.</p>
+        <h1 className="text-2xl text-ink-900">Fees</h1>
+        <p className="mt-1 text-sm text-ink-500">
+          Track fee status and record payments per student.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <p className="text-sm text-slate-500">Total due</p>
-          <p className="mt-1 text-xl font-semibold text-slate-800">{formatPaise(totalDue)}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-slate-500">Total collected</p>
-          <p className="mt-1 text-xl font-semibold text-emerald-600">{formatPaise(totalCollected)}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-slate-500">Outstanding</p>
-          <p className="mt-1 text-xl font-semibold text-amber-600">
-            {formatPaise(Math.max(totalDue - totalCollected, 0))}
-          </p>
-        </Card>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <StatCard label="Total assigned" value={formatPaise(totalAssigned)} />
+        <StatCard label="Collected" value={formatPaise(totalCollected)} color="green" />
+        <StatCard label="Outstanding" value={formatPaise(totalOutstanding)} color="red" />
       </div>
 
-      <Card>
-        {rows.length === 0 ? (
-          <EmptyState
-            icon={Wallet}
-            title="No approved students yet"
-            description="Fee records will appear here once students are approved."
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
-                  <th className="py-2 pr-4">Student</th>
-                  <th className="py-2 pr-4">Total</th>
-                  <th className="py-2 pr-4">Paid</th>
-                  <th className="py-2 pr-4">Outstanding</th>
-                  <th className="py-2 pr-4">Status</th>
-                  <th className="py-2 pr-4" />
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={Wallet}
+          title="No approved students yet"
+          description="Fee records will appear here once students are approved."
+        />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-hair-strong font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                <th className="py-2 pr-4 font-normal">Student</th>
+                <th className="py-2 pr-4 font-normal">Total</th>
+                <th className="py-2 pr-4 font-normal">Paid</th>
+                <th className="py-2 pr-4 font-normal">Outstanding</th>
+                <th className="py-2 pr-4 font-normal">Due</th>
+                <th className="py-2 pr-4 font-normal">Status</th>
+                <th className="py-2 pr-4 font-normal" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-hair">
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td className="py-3 pr-4">
+                    <p className="font-medium text-ink-900">{row.name}</p>
+                    <p className="text-xs text-ink-500">{row.email}</p>
+                  </td>
+                  <td className="py-3 pr-4 font-mono tabular-nums text-ink-700">
+                    {formatPaise(row.totalAmount)}
+                  </td>
+                  <td className="py-3 pr-4 font-mono tabular-nums text-sage-700">
+                    {formatPaise(row.paidAmount)}
+                  </td>
+                  <td className="py-3 pr-4 font-mono tabular-nums text-ink-900">
+                    {formatPaise(row.outstanding)}
+                  </td>
+                  <td className="py-3 pr-4">
+                    {row.dueDate ? (
+                      <span
+                        className={`font-mono text-xs ${
+                          row.overdue ? "text-status-unpaid" : "text-ink-500"
+                        }`}
+                      >
+                        Due {formatDate(row.dueDate)}
+                      </span>
+                    ) : (
+                      <span className="text-ink-300">—</span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-4">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge color={FEE_STATUS_BADGE[row.status]}>
+                        {FEE_STATUS_LABELS[row.status]}
+                      </Badge>
+                      {row.overdue ? <Badge color="red">Overdue</Badge> : null}
+                    </div>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <Link
+                      href={`/admin/fees/${row.id}`}
+                      className={buttonClasses("secondary", "sm")}
+                    >
+                      Manage
+                    </Link>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td className="py-2 pr-4">
-                      <p className="font-medium text-slate-800">{row.name}</p>
-                      <p className="text-xs text-slate-500">{row.email}</p>
-                    </td>
-                    <td className="py-2 pr-4 text-slate-700">{formatPaise(row.totalAmount)}</td>
-                    <td className="py-2 pr-4 text-slate-700">{formatPaise(row.paidAmount)}</td>
-                    <td className="py-2 pr-4 text-slate-700">
-                      {formatPaise(Math.max(row.totalAmount - row.paidAmount, 0))}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <Badge color={STATUS_COLORS[row.status]}>{STATUS_LABELS[row.status]}</Badge>
-                    </td>
-                    <td className="py-2 pr-4">
-                      <Link href={`/admin/fees/${row.id}`} className={buttonClasses("secondary", "sm")}>
-                        Manage
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

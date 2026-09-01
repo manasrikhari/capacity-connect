@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { getActiveBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime } from "@/lib/utils";
+import { whiteboardPdfUrl } from "@/lib/whiteboard";
 
 export default async function AdminNotesPage() {
   const session = await getSession();
@@ -38,19 +39,18 @@ export default async function AdminNotesPage() {
     isExported: false,
   }));
 
-  const exportedNotes = liveSessions.map((session) => {
-    const meeting = meetingMap.get(session.roomId);
-    const className = meeting?.title || "Class Session";
-    const sessionTime = session.startedAt;
-    const formattedTitle = `${className} - ${formatDateTime(sessionTime)}`;
+  const exportedNotes = liveSessions.map((liveSession) => {
+    const meeting = meetingMap.get(liveSession.roomId);
+    const className = meeting?.title || "Class session";
+    const formattedTitle = `${className} — ${formatDateTime(liveSession.startedAt)}`;
 
     return {
-      id: `exported-${session.roomId}`,
+      id: `exported-${liveSession.roomId}`,
       title: formattedTitle,
-      subject: "Live Class",
-      content: `Handwritten whiteboard notes from class session.`,
-      fileUrl: `https://opengrapes-whiteboard-sync.manasrikhari23.workers.dev/api/pdf/${session.roomId}`,
-      updatedAt: session.endedAt || session.startedAt,
+      subject: "Live class",
+      content: "Handwritten whiteboard notes from a class session.",
+      fileUrl: whiteboardPdfUrl(liveSession.roomId),
+      updatedAt: liveSession.endedAt || liveSession.startedAt,
       isExported: true,
     };
   });

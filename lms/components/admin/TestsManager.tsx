@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { formatDateTime, isTestOpen } from "@/lib/utils";
 
 type TestWithCounts = Prisma.TestGetPayload<{
   include: { _count: { select: { questions: true; attempts: true } } };
@@ -32,7 +33,7 @@ export function TestsManager({ tests }: { tests: TestWithCounts[] }) {
   }
 
   function handleDelete(id: string) {
-    if (!confirm("Delete this test and all its questions/attempts? This cannot be undone.")) return;
+    if (!confirm("Delete this test and all its questions and attempts? This cannot be undone.")) return;
     setPendingId(id);
     startTransition(async () => {
       const result = await deleteTest(id);
@@ -46,8 +47,8 @@ export function TestsManager({ tests }: { tests: TestWithCounts[] }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Tests</h1>
-          <p className="mt-1 text-sm text-slate-500">Create MCQ tests and review student results.</p>
+          <h1 className="text-2xl font-medium text-ink-900">Tests</h1>
+          <p className="mt-1 text-sm text-ink-500">Create MCQ tests and review student results.</p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus className="size-4" />
@@ -71,11 +72,12 @@ export function TestsManager({ tests }: { tests: TestWithCounts[] }) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tests.map((test) => {
             const isPending = pending && pendingId === test.id;
+            const closed = !!test.closesAt && !isTestOpen({ isActive: true, closesAt: test.closesAt });
             return (
               <Card key={test.id} className="flex flex-col">
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-medium text-slate-800">{test.title}</h3>
+                    <h3 className="min-w-0 font-medium text-ink-900">{test.title}</h3>
                     <Badge color={test.isActive ? "green" : "slate"}>
                       {test.isActive ? "Active" : "Inactive"}
                     </Badge>
@@ -83,10 +85,17 @@ export function TestsManager({ tests }: { tests: TestWithCounts[] }) {
                   <Badge color="violet" className="mt-2">
                     {test.subject}
                   </Badge>
-                  <p className="mt-3 text-sm text-slate-500">
+                  <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-500">
                     {test._count.questions} question{test._count.questions === 1 ? "" : "s"} ·{" "}
                     {test._count.attempts} attempt{test._count.attempts === 1 ? "" : "s"}
                   </p>
+                  {test.closesAt && (
+                    <p
+                      className={`mt-1.5 text-xs ${closed ? "text-status-unpaid" : "text-ink-500"}`}
+                    >
+                      {closed ? "Closed" : `Closes ${formatDateTime(test.closesAt)}`}
+                    </p>
+                  )}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link href={`/admin/tests/${test.id}`} className={buttonClasses("ghost", "sm")}>

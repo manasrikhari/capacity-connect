@@ -12,6 +12,7 @@ function parseTestMetaForm(formData: FormData) {
   return testMetaSchema.safeParse({
     title: formData.get("title"),
     subject: formData.get("subject"),
+    closesAt: formData.get("closesAt"),
   });
 }
 
@@ -42,6 +43,7 @@ export async function createTest(_prev: ActionState, formData: FormData): Promis
       batchId: batch.id,
       title: parsed.data.title,
       subject: parsed.data.subject,
+      closesAt: parsed.data.closesAt,
       isActive: false,
     },
   });
@@ -65,11 +67,16 @@ export async function updateTest(id: string, _prev: ActionState, formData: FormD
 
   await prisma.test.update({
     where: { id },
-    data: { title: parsed.data.title, subject: parsed.data.subject },
+    data: {
+      title: parsed.data.title,
+      subject: parsed.data.subject,
+      closesAt: parsed.data.closesAt,
+    },
   });
 
   revalidatePath("/admin/tests");
   revalidatePath(`/admin/tests/${id}`);
+  revalidatePath("/student/tests");
   return { success: true };
 }
 

@@ -138,7 +138,8 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
     }
     const exitY = c.top + 18 - m.top;
     const targetY = h.top + h.height / 2 - m.top;
-    const midX = (h.right + c.left) / 2 - m.left;
+    const railLeft = c.left - 58; // the cut-out sits 58px inside the rail (hour gutter)
+    const midX = (h.right + railLeft) / 2 - m.left;
     const heroRight = h.right - m.left;
     setThread({
       a: { top: exitY, left: midX, w: c.left - m.left - midX },
@@ -335,26 +336,45 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                   <div className="lf2-day-empty">No classes on today&apos;s clock</div>
                 ) : null}
 
-                {data.todayBlocks.map((b) => {
-                  const s = toHours(b.startAt);
-                  return (
-                    <div
-                      key={b.id}
-                      className={`lf2-block ${b.state}${
-                        b.state === "past" && b.attended === false ? " missed" : ""
-                      }`}
-                      style={{ top: at(s), height: (b.durationMins / 60) * HOUR_PX - 5 }}
-                    >
-                      <h4>{b.title}</h4>
-                      <div className="t">
-                        {hhmm(s)} – {hhmm(s + b.durationMins / 60)}
-                        {b.note ? ` · ${b.note}` : ""}
-                      </div>
-                      {b.state === "past" && b.attended !== null ? (
-                        <span className="tag">{b.attended ? "Attended" : "Missed"}</span>
-                      ) : null}
-                    </div>
+                {data.todayBlocks.flatMap((b) => {
+                  const bs = toHours(b.startAt);
+                  const be = bs + b.durationMins / 60;
+                  /* The cut-out owns the live window: a block that crosses it is
+                     clamped to the parts outside, so nothing renders on top of
+                     the hole. Slivers under ~15 minutes are dropped. */
+                  let parts: Array<[number, number]> = [[bs, be]];
+                  if (liveStart !== null && liveEnd !== null && bs < liveEnd && be > liveStart) {
+                    parts = [
+                      [bs, Math.min(be, liveStart)],
+                      [Math.max(bs, liveEnd), be],
+                    ];
+                  }
+                  parts = parts.filter(([a, z]) => z - a >= 0.25);
+                  const tallest = parts.reduce(
+                    (best, cur) => (cur[1] - cur[0] > best[1] - best[0] ? cur : best),
+                    parts[0] ?? [0, 0]
                   );
+                  return parts.map(([a, z]) => {
+                    const full = a === tallest[0] && z - a >= 0.6;
+                    return (
+                      <div
+                        key={`${b.id}-${a}`}
+                        className={`lf2-block ${b.state}${
+                          b.state === "past" && b.attended === false ? " missed" : ""
+                        }`}
+                        style={{ top: at(a), height: (z - a) * HOUR_PX - 5 }}
+                      >
+                        {full ? <h4>{b.title}</h4> : null}
+                        <div className="t">
+                          {hhmm(bs)} – {hhmm(be)}
+                          {full && b.note ? ` · ${b.note}` : ""}
+                        </div>
+                        {full && b.state === "past" && b.attended !== null ? (
+                          <span className="tag">{b.attended ? "Attended" : "Missed"}</span>
+                        ) : null}
+                      </div>
+                    );
+                  });
                 })}
 
                 {live && liveStart !== null && liveEnd !== null ? (

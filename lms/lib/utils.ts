@@ -36,6 +36,20 @@ export function getFeeStatus(totalAmount: number, paidAmount: number): FeeStatus
   return "UNPAID";
 }
 
+/** UI labels for the derived fee status. */
+export const FEE_STATUS_LABELS: Record<FeeStatus, string> = {
+  PAID: "Paid",
+  PARTIAL: "Partially paid",
+  UNPAID: "Unpaid",
+};
+
+/** Badge tone for the derived fee status. */
+export const FEE_STATUS_BADGE: Record<FeeStatus, "green" | "amber" | "red"> = {
+  PAID: "green",
+  PARTIAL: "amber",
+  UNPAID: "red",
+};
+
 export function formatDateTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleString("en-IN", {
@@ -55,6 +69,24 @@ export function formatDate(date: Date | string): string {
     month: "short",
     year: "numeric",
   });
+}
+
+/** 24-hour "16:30" style time string (mono-friendly, en-IN). */
+export function formatTime(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+/** A test is open when it is active and its close time (if any) is still in the future. */
+export function isTestOpen(test: { isActive: boolean; closesAt: Date | string | null }): boolean {
+  if (!test.isActive) return false;
+  if (!test.closesAt) return true;
+  const closesAt = typeof test.closesAt === "string" ? new Date(test.closesAt) : test.closesAt;
+  return closesAt.getTime() > Date.now();
 }
 
 /** Format a Date as the value expected by an <input type="datetime-local"> in local time. */

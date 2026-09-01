@@ -13,10 +13,21 @@ export const questionSchema = z.object({
   marks: z.coerce.number().int().min(1, "Marks must be at least 1").max(100),
 });
 
+// Optional datetime-local string ("" allowed) parsed to a Date, or null when empty.
+const closesAtSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v ? new Date(v) : null))
+  .refine((d) => d === null || !Number.isNaN(d.getTime()), {
+    message: "Enter a valid close date & time",
+  });
+
 export const testSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   subject: z.string().min(1, "Subject is required").max(100),
   isActive: z.boolean().default(false),
+  closesAt: closesAtSchema,
   questions: z.array(questionSchema).min(1, "Add at least one question"),
 });
 
@@ -24,6 +35,7 @@ export const testSchema = z.object({
 export const testMetaSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   subject: z.string().min(1, "Subject is required").max(100),
+  closesAt: closesAtSchema,
 });
 
 export type QuestionInput = z.infer<typeof questionSchema>;

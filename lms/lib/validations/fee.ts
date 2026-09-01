@@ -7,6 +7,15 @@ export const feeAmountSchema = z.object({
     .number()
     .nonnegative("Amount must be 0 or more")
     .max(10_000_000, "Amount is too large"),
+  // Optional date string ("" allowed) parsed to a Date, or null when empty.
+  dueDate: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? new Date(v) : null))
+    .refine((d) => d === null || !Number.isNaN(d.getTime()), {
+      message: "Enter a valid due date",
+    }),
 });
 
 export const paymentMethods = ["Cash", "UPI", "Bank Transfer", "Card", "Other"] as const;

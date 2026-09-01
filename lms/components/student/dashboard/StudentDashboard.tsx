@@ -132,7 +132,7 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
     const m = mainRef.current?.getBoundingClientRect();
     const h = heroRef.current?.getBoundingClientRect();
     const c = cutRef.current?.getBoundingClientRect();
-    if (!m || !h || !c || window.innerWidth < 1000) {
+    if (!m || !h || !c || m.width === 0 || window.innerWidth < 1000) {
       setThread(null);
       return;
     }
@@ -151,7 +151,11 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
   useLayoutEffect(measure, [measure, liveStart, clock, live]);
   useEffect(() => {
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    document.addEventListener("visibilitychange", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      document.removeEventListener("visibilitychange", measure);
+    };
   }, [measure]);
 
   const att = data.attendance;
@@ -181,26 +185,37 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                 cardRef={heroRef}
               />
             ) : (
-              <div className="lf2-next">
-                <div className="lbl">{data.nextClass ? "Up next" : "Nothing live"}</div>
-                {data.nextClass ? (
-                  <>
-                    <h2>{data.nextClass.title}</h2>
-                    {data.nextClass.note ? <p>{data.nextClass.note}</p> : null}
-                    <div className="when">
-                      {data.nextClass.whenLabel} · {data.nextClass.durationMins} min ·{" "}
-                      {data.teacherName}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h2>No class on the board</h2>
-                    <p>
-                      When {data.teacherName} starts a class, it lifts off the schedule and
-                      lands here.
-                    </p>
-                  </>
-                )}
+              /* The board never leaves — unlit means waiting. Raised still
+                 means "the class surface"; only the light changes. */
+              <div className="lf2-hero-wrap">
+                <div className="lf2-hero waiting">
+                  <div className="lbl waiting">
+                    {data.nextClass ? "Up next" : "Board is clear"}
+                  </div>
+                  {data.nextClass ? (
+                    <>
+                      <h2>{data.nextClass.title}</h2>
+                      <p>
+                        {data.nextClass.whenLabel} · {data.nextClass.durationMins} min ·{" "}
+                        {data.teacherName}
+                        {data.nextClass.note ? ` · ${data.nextClass.note}` : ""}
+                      </p>
+                      <div className="lf2-actions">
+                        <Link href="/student/meetings" className="btn ghost">
+                          All meetings
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h2>Nothing on the board</h2>
+                      <p>
+                        When {data.teacherName} starts a class, it lifts off the schedule
+                        and lands here.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 

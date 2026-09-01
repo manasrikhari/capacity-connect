@@ -3,12 +3,12 @@
 /* The student dashboard — Lifted 2.0, on real data.
    Stack × Timetable: one dark raised card (the live class, drawn as a chalk
    night board) on a flat ledger page, with a timetable rail carrying the day
-   on a real time axis. The live slot on the rail is a dashed cut-out — the
-   hole the class left when it was lifted off the schedule. Only one thing on
+   on a real time axis. The live slot's own block lights up as board material
+   while the class runs — lit means live.
    the page is raised, so raised means *happening now*; at rest the hero is a
    flat dashed panel holding the next class. */
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { joinMeetingAction } from "@/app/actions/meeting";
@@ -78,13 +78,6 @@ const toHours = (iso: string) => {
   return d.getHours() + d.getMinutes() / 60;
 };
 
-type Thread = {
-  a: { top: number; left: number; w: number };
-  v: { top: number; left: number; h: number };
-  b: { top: number; left: number; w: number };
-  dot: { top: number; left: number };
-};
-
 export function StudentDashboard({ data }: { data: DashboardData }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -121,43 +114,6 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
   const nowOnGrid =
     clock !== null && clock >= dayStart && clock <= dayStart + rows ? clock : null;
 
-  /* ── The leader thread, measured: the cut-out moves with the real clock, so
-     the line from hole to card is aimed after layout. ── */
-  const mainRef = useRef<HTMLDivElement | null>(null);
-  const heroRef = useRef<HTMLDivElement | null>(null);
-  const cutRef = useRef<HTMLDivElement | null>(null);
-  const [thread, setThread] = useState<Thread | null>(null);
-
-  const measure = useCallback(() => {
-    const m = mainRef.current?.getBoundingClientRect();
-    const h = heroRef.current?.getBoundingClientRect();
-    const c = cutRef.current?.getBoundingClientRect();
-    if (!m || !h || !c || m.width === 0 || window.innerWidth < 1000) {
-      setThread(null);
-      return;
-    }
-    const exitY = c.top + 18 - m.top;
-    const targetY = h.top + h.height / 2 - m.top;
-    const railLeft = c.left - 58; // the cut-out sits 58px inside the rail (hour gutter)
-    const midX = (h.right + railLeft) / 2 - m.left;
-    const heroRight = h.right - m.left;
-    setThread({
-      a: { top: exitY, left: midX, w: c.left - m.left - midX },
-      v: { top: Math.min(exitY, targetY), left: midX, h: Math.abs(exitY - targetY) },
-      b: { top: targetY, left: heroRight + 5, w: midX - heroRight - 5 },
-      dot: { top: targetY - 4, left: heroRight + 1 },
-    });
-  }, []);
-
-  useLayoutEffect(measure, [measure, liveStart, clock, live]);
-  useEffect(() => {
-    window.addEventListener("resize", measure);
-    document.addEventListener("visibilitychange", measure);
-    return () => {
-      window.removeEventListener("resize", measure);
-      document.removeEventListener("visibilitychange", measure);
-    };
-  }, [measure]);
 
   const att = data.attendance;
   const fees = data.fees;
@@ -170,7 +126,7 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
       </div>
 
       <div className="lf2-in">
-        <div className="lf2-main" ref={mainRef}>
+        <div className="lf2-main">
           {/* ── Hero column ── */}
           <div>
             <div className="lf2-lbl">{live ? "Happening now" : "On the board"}</div>
@@ -183,7 +139,6 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                 progress={progress}
                 teacherName={data.teacherName}
                 enrolled={data.enrolled}
-                cardRef={heroRef}
               />
             ) : (
               /* The board never leaves — unlit means waiting. Raised still
@@ -378,20 +333,21 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                 })}
 
                 {live && liveStart !== null && liveEnd !== null ? (
+                  /* The slot's own block, lit: same board material as the hero.
+                     Lit means live — no overlay, no hole. */
                   <div
-                    className="lf2-cut"
-                    ref={cutRef}
+                    className="lf2-block on-air"
                     style={{
                       top: at(liveStart),
                       height: (live.durationMins / 60) * HOUR_PX - 5,
                     }}
-                    aria-label={`${live.title} — lifted off the schedule, live now`}
+                    aria-label={`${live.title} — live now`}
                   >
-                    <span>
-                      Lifted — live now
-                      <br />
+                    <div className="lbl">Live now</div>
+                    <h4>{live.title}</h4>
+                    <div className="t">
                       {hhmm(liveStart)} – {hhmm(liveEnd)}
-                    </span>
+                    </div>
                   </div>
                 ) : null}
 
@@ -430,14 +386,6 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
             </div>
           </div>
 
-          {thread ? (
-            <>
-              <i className="lf2-thread seg-a" style={{ top: thread.a.top, left: thread.a.left, width: thread.a.w }} />
-              <i className="lf2-thread seg-v" style={{ top: thread.v.top, left: thread.v.left, height: thread.v.h }} />
-              <i className="lf2-thread seg-b" style={{ top: thread.b.top, left: thread.b.left, width: thread.b.w }} />
-              <i className="lf2-thread-dot" style={{ top: thread.dot.top, left: thread.dot.left }} />
-            </>
-          ) : null}
         </div>
 
         {/* ── The record ── */}
@@ -545,7 +493,6 @@ function HeroBoard({
   progress,
   teacherName,
   enrolled,
-  cardRef,
 }: {
   live: NonNullable<DashboardData["live"]>;
   start: number;
@@ -554,9 +501,8 @@ function HeroBoard({
   progress: number;
   teacherName: string;
   enrolled: number;
-  cardRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const ref = cardRef;
+  const ref = useRef<HTMLDivElement | null>(null);
   const raf = useRef<number | null>(null);
   const st = useRef({ tx: 0, ty: 0, x: 0, y: 0, vx: 0, vy: 0, running: false });
   const [pending, startTransition] = useTransition();

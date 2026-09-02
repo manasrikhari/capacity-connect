@@ -37,28 +37,30 @@
   background-size: 17px 17px;
 }
 
-html {
-  color-scheme: light;
-}
+@layer base {
+  html {
+    color-scheme: light;
+  }
 
-body {
-  color: var(--text-body);
-  background: var(--bg-page);
-  font-family: var(--font-body-stack);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+  body {
+    color: var(--text-body);
+    background: var(--bg-page);
+    font-family: var(--font-body-stack);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-/* Display face + size-specific tracking for headings, matching the landing. */
-h1,
-h2,
-h3,
-h4,
-h5 {
-  font-family: var(--font-display-stack);
-  color: var(--text-heading);
-  line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-tight);
+  /* Display face + size-specific tracking for headings, matching the landing. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: var(--font-display-stack);
+    color: var(--text-heading);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+  }
 }
 
 :focus-visible {

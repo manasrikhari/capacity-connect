@@ -101,7 +101,7 @@ export default async function StudentMeetingsPage() {
                   />
                   Live now
                 </div>
-                <h3 className="text-2xl text-chalk">{activeMeeting.title}</h3>
+                <h3 className="text-2xl text-white">{activeMeeting.title}</h3>
                 {activeMeeting.description && (
                   <p className="text-sm text-chalk-muted">{activeMeeting.description}</p>
                 )}

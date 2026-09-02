@@ -190,7 +190,7 @@ export function MeetingsManager({
                 />
                 Live now
               </div>
-              <h2 className="text-2xl text-chalk">
+              <h2 className="text-2xl text-white">
                 {activeMeeting?.title || "Active class"}
               </h2>
               {liveSession ? (

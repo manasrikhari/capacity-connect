@@ -47,5 +47,8 @@ uploads/
 scratch/
 *.tsbuildinfo
 
-# Claude Code local tooling
+# Claude Code & AI Agent local tooling
 .claude/
+.agents/
+skills-lock.json
+.mcp.json

@@ -24,7 +24,7 @@ export default async function WelcomePage() {
         <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-plum-100 text-plum-600">
           <Grape className="size-7" />
         </div>
-        <h1 className="text-xl font-medium text-ink-900">Welcome to OpenGrapes</h1>
+        <h1 className="text-xl font-medium text-ink-900">Welcome to Capacity Connect</h1>
         <p className="mt-2 text-sm text-ink-500">
           Choose how you&apos;d like to get started — it only takes a second.
         </p>
@@ -38,8 +38,8 @@ export default async function WelcomePage() {
               <span className="flex size-11 items-center justify-center rounded-[10px] bg-plum-100 text-plum-600">
                 <GraduationCap className="size-6" />
               </span>
-              <span className="text-sm font-semibold text-ink-900">I&apos;m a teacher</span>
-              <span className="text-xs text-ink-500">Create a batch and invite students</span>
+              <span className="text-sm font-semibold text-ink-900">I&apos;m a trainer</span>
+              <span className="text-xs text-ink-500">Create a course and invite trainees</span>
             </button>
           </form>
           <form action={joinBatchIntentAction}>
@@ -50,8 +50,8 @@ export default async function WelcomePage() {
               <span className="flex size-11 items-center justify-center rounded-[10px] bg-plum-100 text-plum-600">
                 <BookOpen className="size-6" />
               </span>
-              <span className="text-sm font-semibold text-ink-900">I&apos;m a student</span>
-              <span className="text-xs text-ink-500">Join with a code from your teacher</span>
+              <span className="text-sm font-semibold text-ink-900">I&apos;m a trainee</span>
+              <span className="text-xs text-ink-500">Join with a course code from your trainer</span>
             </button>
           </form>
         </div>

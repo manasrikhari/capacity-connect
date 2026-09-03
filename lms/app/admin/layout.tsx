@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className="flex min-h-screen">
       <Sidebar
         variant="admin"
-        subtitle="Admin panel"
+        subtitle="Trainer panel"
         batchName={batch?.name}
         joinCode={batch?.joinCode}
         userName={session.user.name}
@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileSidebar
           variant="admin"
-          subtitle="Admin panel"
+          subtitle="Trainer panel"
           batchName={batch?.name}
           joinCode={batch?.joinCode}
           userName={session.user.name}

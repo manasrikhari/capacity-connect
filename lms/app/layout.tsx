@@ -31,8 +31,8 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "OpenGrapes",
-  description: "Live classes that remember everything.",
+  title: "Capacity Connect — MoES / IMD",
+  description: "Digital capacity building for India's weather and climate services.",
 };
 
 export default function RootLayout({

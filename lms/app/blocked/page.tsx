@@ -27,7 +27,7 @@ export default async function BlockedPage() {
         </h1>
         <p className="mt-2 text-sm text-ink-500">
           {isPending
-            ? "Your teacher account is awaiting approval from a platform administrator. You'll be able to sign in once approved."
+            ? "Your trainer account is awaiting approval from a MoES administrator. You'll be able to sign in once approved."
             : "Your account has been suspended. Please contact a platform administrator."}
         </p>
         <div className="mt-6 flex justify-center">

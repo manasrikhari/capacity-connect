@@ -20,7 +20,7 @@ export default async function StudentLayout({ children }: { children: ReactNode 
     <div className="flex min-h-screen">
       <Sidebar
         variant="student"
-        subtitle="Student"
+        subtitle="Trainee"
         batchName={batch?.name}
         userName={session.user.name}
         userEmail={session.user.email}
@@ -28,7 +28,7 @@ export default async function StudentLayout({ children }: { children: ReactNode 
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileSidebar
           variant="student"
-          subtitle="Student"
+          subtitle="Trainee"
           batchName={batch?.name}
           userName={session.user.name}
           userEmail={session.user.email}

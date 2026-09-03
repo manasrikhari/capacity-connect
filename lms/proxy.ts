@@ -5,10 +5,16 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
+  // Public Capacity Connect surfaces — certificate verifier and the
+  // announcements CMS — reachable by anyone, signed in or not.
+  const isPublic =
+    pathname === "/" ||
+    pathname.startsWith("/join") ||
+    pathname.startsWith("/verify") ||
+    pathname.startsWith("/announcements");
+
   if (!session) {
-    if (pathname === "/" || pathname.startsWith("/join")) {
-      return NextResponse.next();
-    }
+    if (isPublic) return NextResponse.next();
     return NextResponse.redirect(new URL("/", req.url));
   }
 
@@ -16,6 +22,11 @@ export default auth((req) => {
   // regardless of role/status. The page itself reads the `onboarded` flag
   // from the DB and bounces away if there's nothing left to choose.
   if (pathname === "/welcome") return NextResponse.next();
+
+  // Public pages stay reachable for authenticated users too.
+  if (pathname.startsWith("/verify") || pathname.startsWith("/announcements")) {
+    return NextResponse.next();
+  }
 
   const { role, status } = session.user;
 
@@ -29,10 +40,17 @@ export default auth((req) => {
       if (pathname === "/blocked") return NextResponse.next();
       return NextResponse.redirect(new URL("/blocked", req.url));
     }
+    // Fees are not part of the MoES portal — bounce the old routes.
+    if (pathname.startsWith("/admin/fees")) {
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    }
     if (pathname.startsWith("/admin")) return NextResponse.next();
     return NextResponse.redirect(new URL("/admin", req.url));
   }
 
+  if (pathname.startsWith("/student/fees")) {
+    return NextResponse.redirect(new URL("/student/dashboard", req.url));
+  }
   if (pathname === "/" || pathname.startsWith("/student") || pathname.startsWith("/join")) return NextResponse.next();
   return NextResponse.redirect(new URL("/student", req.url));
 });

@@ -1,17 +1,20 @@
 "use client";
 
 import {
+  Award,
   ClipboardList,
+  FolderOpen,
   Grid2x2,
   LayoutDashboard,
   Megaphone,
   Menu,
+  MessageSquare,
   NotebookText,
   Sparkles,
+  Target,
   User,
   Users,
   Video,
-  Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -38,21 +41,25 @@ export type SidebarVariant = "admin" | "student";
 const BATCH_NAV_ITEMS: Record<SidebarVariant, NavItem[]> = {
   admin: [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/students", label: "Students", icon: Users },
+    { href: "/admin/students", label: "Trainees", icon: Users },
     { href: "/admin/meetings", label: "Meetings", icon: Video },
     { href: "/admin/notes", label: "Notes", icon: NotebookText },
     { href: "/admin/notices", label: "Notices", icon: Megaphone },
     { href: "/admin/tests", label: "Tests", icon: ClipboardList },
-    { href: "/admin/fees", label: "Fees", icon: Wallet },
-    { href: "/admin/ai", label: "OpenGrapes AI", icon: Sparkles },
+    { href: "/admin/library", label: "Library", icon: FolderOpen },
+    { href: "/admin/competency", label: "Competency", icon: Target },
+    { href: "/admin/certificates", label: "Certificates", icon: Award },
+    { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
+    { href: "/admin/ai", label: "MeghDoot AI", icon: Sparkles },
   ],
   student: [
     { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/student/meetings", label: "Meetings", icon: Video },
     { href: "/student/notes", label: "Notes", icon: NotebookText },
     { href: "/student/tests", label: "Tests", icon: ClipboardList },
-    { href: "/student/fees", label: "Fees", icon: Wallet },
-    { href: "/student/ai", label: "OpenGrapes AI", icon: Sparkles },
+    { href: "/student/library", label: "Library", icon: FolderOpen },
+    { href: "/student/feedback", label: "Feedback", icon: MessageSquare },
+    { href: "/student/ai", label: "MeghDoot AI", icon: Sparkles },
   ],
 };
 
@@ -65,26 +72,26 @@ const HUB_NAV: Record<SidebarVariant, HubNavGroup[]> = {
   admin: [
     {
       label: "Workspace",
-      items: [
-        { href: "/admin", label: "All batches", icon: Grid2x2, exact: true },
-        { href: "/admin/fees-overview", label: "Fees overview", icon: Wallet },
-      ],
+      items: [{ href: "/admin", label: "All courses", icon: Grid2x2, exact: true }],
     },
     {
       label: "Account",
-      items: [{ href: "#", label: "Profile", icon: User }],
+      items: [{ href: "/admin/profile", label: "Profile", icon: User }],
     },
   ],
   student: [
     {
       label: "Learning",
       items: [
-        { href: "/student", label: "My batches", icon: Grid2x2, exact: true },
+        { href: "/student", label: "My courses", icon: Grid2x2, exact: true },
+        { href: "/student/recommendations", label: "Recommended for you", icon: Sparkles },
+        { href: "/student/competency", label: "My competencies", icon: Target },
+        { href: "/student/certificates", label: "My certificates", icon: Award },
       ],
     },
     {
       label: "Account",
-      items: [{ href: "#", label: "Profile", icon: User }],
+      items: [{ href: "/student/profile", label: "Profile", icon: User }],
     },
   ],
 };
@@ -196,7 +203,7 @@ function HubSidebarContent({
       <div className="flex items-center gap-2.5">
         <SphereLogo />
         <span className="font-display text-[17px] font-medium text-ink-900">
-          OpenGrapes
+          Capacity Connect
         </span>
       </div>
       {subtitle && (
@@ -214,19 +221,6 @@ function HubSidebarContent({
             {group.items.map((item) => {
               const Icon = item.icon;
               const itemClass = navItemClass(isActive(pathname, item));
-
-              if (item.label === "Profile") {
-                return (
-                  <button
-                    key="profile"
-                    onClick={onProfileClick}
-                    className={cn(itemClass, "w-full text-left")}
-                  >
-                    <Icon className="size-[18px]" />
-                    {item.label}
-                  </button>
-                );
-              }
 
               return (
                 <Link
@@ -327,7 +321,7 @@ function BatchSidebarContent({
       <div className="flex items-center gap-2.5 px-5 py-6">
         <SphereLogo />
         <div className="min-w-0">
-          <h1 className="font-display text-[17px] font-medium text-ink-900">OpenGrapes</h1>
+          <h1 className="font-display text-[17px] font-medium text-ink-900">Capacity Connect</h1>
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
             {variant === "admin" ? "Admin panel" : "Student"}
           </p>
@@ -457,7 +451,7 @@ export function MobileSidebar({
     }
   }, [open]);
 
-  const title = isHub ? "OpenGrapes" : batchName ?? "OpenGrapes";
+  const title = isHub ? "Capacity Connect" : batchName ?? "Capacity Connect";
 
   const handleProfileClick = () => {
     setOpen(false);

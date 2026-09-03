@@ -43,16 +43,42 @@ enum AttendanceStatus {
   ABSENT
 }
 
+// ── Capacity Connect (SIH 26075) enums ─────────────────────────────────────
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum CertificateStatus {
+  VALID
+  REVOKED
+}
+
+enum LibraryItemType {
+  RECORDED_LECTURE
+  PRESENTATION
+  DOCUMENT
+  MANUAL
+}
+
 // ── Tenant isolation unit ──────────────────────────────────────────────────
 model Batch {
   id        String      @id @default(cuid())
   name      String
-  subject   String?
-  grade     String?
+  subject   String?     // Capacity Connect: reused as the operational DOMAIN label
+  grade     String?     // Capacity Connect: reused as the course LEVEL label
   teacherId String
   teacher   User        @relation("OwnedBatches", fields: [teacherId], references: [id], onDelete: Cascade)
   status    BatchStatus @default(ACTIVE)
   joinCode  String      @unique
+
+  // ── Capacity Connect course metadata (all additive/nullable) ──
+  description String?
+  department  String?   // "IMD" | "NCMRWF" | "INCOIS" | "IITM" | "MoES"
+  wmoTier     String?   // "BIP-M" | "BIP-MT" | "Specialised" | "Refresher"
+  startDate   DateTime?
+  endDate     DateTime?
 
   enrollments  Enrollment[]
   meetings     Meeting[]
@@ -66,10 +92,18 @@ model Batch {
   attendances  Attendance[]
   notices      Notice[]
 
+  // ── Capacity Connect relations ──
+  skillRequirements BatchSkillRequirement[]
+  certificates      Certificate[]
+  feedbacks         Feedback[]
+  libraryItems      LibraryItem[]
+  knowledgeNodes    KnowledgeNode[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([teacherId])
+  @@index([department])
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
@@ -102,6 +136,15 @@ model User {
 
   // ADMIN only — notices they authored
   authoredNotices Notice[] @relation("AuthoredNotices")
+
+  // ── Capacity Connect: SUPER_ADMIN = Admin, ADMIN = Trainer, STUDENT = Trainee ──
+  profile              Profile?
+  trainerSkills        TrainerSkill[]
+  traineeSkills        TraineeSkill[]
+  certificates         Certificate[]  @relation("TraineeCertificates")
+  feedbacks            Feedback[]     @relation("TraineeFeedback")
+  uploadedLibraryItems LibraryItem[]  @relation("UploadedLibraryItems")
+  authoredAnnouncements Announcement[] @relation("AuthoredAnnouncements")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -222,6 +265,9 @@ model Note {
   content String
   fileUrl String?
 
+  // ── Capacity Connect: notes can back GraphRAG nodes ──
+  knowledgeNodes KnowledgeNode[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -237,6 +283,12 @@ model Test {
   isActive Boolean   @default(false)
   closesAt DateTime?
 
+  // ── Capacity Connect additions ──
+  durationMins Int?
+  passPercent  Int    @default(50)
+  skillId      String?
+  skill        Skill? @relation(fields: [skillId], references: [id], onDelete: SetNull)
+
   questions Question[]
   attempts  TestAttempt[]
 
@@ -244,6 +296,7 @@ model Test {
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
+  @@index([skillId])
 }
 
 model Question {
@@ -260,6 +313,14 @@ model Question {
   correctOption String
   marks         Int    @default(1)
   order         Int    @default(0)
+
+  // ── Capacity Connect additions ──
+  difficulty  Difficulty?
+  explanation String?
+  skillId     String?
+  skill       Skill?      @relation(fields: [skillId], references: [id], onDelete: SetNull)
+
+  @@index([skillId])
 }
 
 model TestAttempt {
@@ -374,3 +435,220 @@ model AiMessage {
   @@index([conversationId])
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CAPACITY CONNECT — SIH 2026 (PS 26075) — MoES / IMD Capacity Building Portal
+// SUPER_ADMIN = Admin (MoES)   ADMIN = Trainer (IMD)   STUDENT = Trainee
+// Course = Batch. All additive; see lib/roles.ts for display labels.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Profile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  designation      String?
+  department       String?
+  organisation     String?
+  postingLocation  String?
+  phone            String?
+  bio              String?
+  qualifications   Json?    // [{ degree, institution, year }]
+  yearsExperience  Float    @default(0)
+  interests        String[] @default([])
+  governmentIdType String?
+  governmentIdNum  String?
+  resumeUrl        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([organisation, department])
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trainerSkills     TrainerSkill[]
+  traineeSkills     TraineeSkill[]
+  batchRequirements BatchSkillRequirement[]
+  questions         Question[]
+  tests             Test[]
+  libraryItems      LibraryItem[]
+  knowledgeNode     KnowledgeNode?
+
+  @@index([category])
+}
+
+model TrainerSkill {
+  id              String   @id @default(cuid())
+  trainerId       String
+  trainer         User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  skillId         String
+  skill           Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency     Int      @default(1) // 1 Novice … 5 Expert
+  yearsExperience Float    @default(0)
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([trainerId, skillId])
+  @@index([skillId, proficiency])
+}
+
+model TraineeSkill {
+  id          String   @id @default(cuid())
+  traineeId   String
+  trainee     User     @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency Int      @default(1)
+  source      String?  // "SELF_DECLARED" | "TEST:<testId>" | "CERTIFICATE:<batchId>"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([traineeId, skillId])
+  @@index([skillId])
+}
+
+model BatchSkillRequirement {
+  id             String  @id @default(cuid())
+  batchId        String
+  batch          Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  skillId        String
+  skill          Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  minProficiency Int     @default(3)
+  weight         Float   @default(1.0)
+  isMandatory    Boolean @default(true)
+
+  @@unique([batchId, skillId])
+  @@index([skillId])
+}
+
+model KnowledgeNode {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        String   // lib/taxonomy.ts NODE_TYPES
+  category    String?
+  description String?
+  metadata    Json?    // { aliases?: string[], source?: string, equation?: string }
+
+  batchId             String?
+  batch               Batch?       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  skillId             String?      @unique
+  skill               Skill?       @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  sourceLibraryItemId String?
+  sourceLibraryItem   LibraryItem? @relation(fields: [sourceLibraryItemId], references: [id], onDelete: SetNull)
+  sourceNoteId        String?
+  sourceNote          Note?        @relation(fields: [sourceNoteId], references: [id], onDelete: SetNull)
+
+  outgoing KnowledgeRelation[] @relation("RelationSource")
+  incoming KnowledgeRelation[] @relation("RelationTarget")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([batchId])
+}
+
+model KnowledgeRelation {
+  id           String        @id @default(cuid())
+  sourceId     String
+  source       KnowledgeNode @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  targetId     String
+  target       KnowledgeNode @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  relationType String        // lib/taxonomy.ts RELATION_TYPES
+  weight       Float         @default(1.0)
+  createdAt    DateTime      @default(now())
+
+  @@unique([sourceId, targetId, relationType])
+  @@index([targetId])
+  @@index([relationType])
+}
+
+model Certificate {
+  id                String            @id @default(cuid())
+  certificateNumber String            @unique // "IMD-CC-2026-000123"
+  verificationHash  String            @unique // HMAC-SHA256, lib/certificate.ts
+  batchId           String
+  batch             Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  traineeId         String
+  trainee           User              @relation("TraineeCertificates", fields: [traineeId], references: [id], onDelete: Cascade)
+  issueDate         DateTime          @default(now())
+  grade             String?           // "Distinction" | "Merit" | "Pass"
+  scorePercent      Int?
+  status            CertificateStatus @default(VALID)
+  pdfUrl            String?
+  metadata          Json?
+  createdAt         DateTime          @default(now())
+
+  @@unique([batchId, traineeId])
+  @@index([traineeId])
+}
+
+model Feedback {
+  id                   String   @id @default(cuid())
+  batchId              String
+  batch                Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  traineeId            String
+  trainee              User     @relation("TraineeFeedback", fields: [traineeId], references: [id], onDelete: Cascade)
+  overallRating        Int
+  contentRating        Int?
+  trainerRating        Int?
+  infrastructureRating Int?
+  comments             String?
+  suggestions          String?
+  createdAt            DateTime @default(now())
+
+  @@unique([batchId, traineeId])
+  @@index([batchId])
+}
+
+model LibraryItem {
+  id            String          @id @default(cuid())
+  batchId       String
+  batch         Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  uploaderId    String
+  uploader      User            @relation("UploadedLibraryItems", fields: [uploaderId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  type          LibraryItemType
+  fileUrl       String          // "/api/files/<batchId>/<storedName>" or https://…
+  mimeType      String?
+  fileSizeBytes Int?
+  durationMins  Int?
+  subject       String?
+  skillId       String?
+  skill         Skill?          @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  knowledgeNodes KnowledgeNode[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId, type])
+  @@index([skillId])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  summary     String?
+  content     String    // markdown
+  category    String    @default("General") // lib/taxonomy.ts ANNOUNCEMENT_CATEGORIES
+  bannerUrl   String?
+  isPublished Boolean   @default(false)
+  isFeatured  Boolean   @default(false)
+  publishedAt DateTime?
+  viewCount   Int       @default(0)
+  authorId    String
+  author      User      @relation("AuthoredAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isPublished, publishedAt])
+  @@index([category])
+}

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { FormField, Input } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
 import { initialActionState } from "@/lib/action-state";
+import { toDatetimeLocalValue } from "@/lib/utils";
 
 export function TestFormModal({
   open,
@@ -41,6 +42,21 @@ export function TestFormModal({
         </FormField>
         <FormField label="Subject" htmlFor="subject" error={state?.fieldErrors?.subject?.[0]}>
           <Input id="subject" name="subject" defaultValue={test?.subject} placeholder="e.g. Mathematics" />
+        </FormField>
+        <FormField
+          label="Closes at (optional)"
+          htmlFor="closesAt"
+          error={state?.fieldErrors?.closesAt?.[0]}
+        >
+          <Input
+            id="closesAt"
+            name="closesAt"
+            type="datetime-local"
+            defaultValue={test?.closesAt ? toDatetimeLocalValue(test.closesAt) : ""}
+          />
+          <p className="mt-1 text-xs text-ink-300">
+            Leave empty to keep the test open until you deactivate it.
+          </p>
         </FormField>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>

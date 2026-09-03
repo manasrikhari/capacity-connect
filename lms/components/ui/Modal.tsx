@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function Modal({
@@ -18,6 +18,7 @@ export function Modal({
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -34,17 +35,23 @@ export function Modal({
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
+      aria-labelledby={titleId}
+      style={{ boxShadow: "var(--shadow-lg)" }}
       className={cn(
-        "m-auto w-full max-w-lg rounded-2xl border border-violet-100 bg-white p-0 shadow-xl backdrop:bg-slate-900/30 backdrop:backdrop-blur-sm",
+        "m-auto w-full max-w-lg rounded-2xl border border-hair bg-paper p-0",
+        "backdrop:bg-ink-900/30 backdrop:backdrop-blur-sm",
+        "reduce-transparency:backdrop:bg-ink-900/50 reduce-transparency:backdrop:backdrop-blur-none",
         className
       )}
     >
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-        <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
+      <div className="flex items-center justify-between border-b border-hair px-5 py-4">
+        <h2 id={titleId} className="text-lg font-medium text-ink-900">
+          {title}
+        </h2>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+          className="rounded-full p-1 text-ink-300 transition-colors hover:bg-sunken hover:text-ink-700"
           aria-label="Close"
         >
           <X className="size-5" />

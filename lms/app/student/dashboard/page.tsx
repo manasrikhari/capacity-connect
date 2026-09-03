@@ -1,46 +1,45 @@
-import {
-  ArrowRight,
-  ClipboardList,
-  NotebookText,
-  Video,
-  Wallet,
-} from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Badge, type BadgeColor } from "@/components/ui/Badge";
-import { buttonClasses } from "@/components/ui/Button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  StudentDashboard,
+  type DashboardData,
+} from "@/components/student/dashboard/StudentDashboard";
+import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
-import { JoinMeetingButton } from "@/components/student/JoinMeetingButton";
-import {
-  formatDateTime,
-  formatPaise,
-  getFeeStatus,
-  getEffectiveMeetingStatus,
-} from "@/lib/utils";
-import { LiveRefresh } from "@/components/realtime/LiveRefresh";
 import { batchChannel, PUSHER_EVENTS } from "@/lib/pusher-channels";
+import { formatDate } from "@/lib/utils";
 
-const FEE_STATUS_LABELS: Record<string, string> = {
-  PAID: "Paid",
-  PARTIAL: "Partially paid",
-  UNPAID: "Unpaid",
-};
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const FEE_STATUS_COLORS: Record<string, BadgeColor> = {
-  PAID: "green",
-  PARTIAL: "amber",
-  UNPAID: "red",
-};
+function startOfDay(d: Date): Date {
+  const c = new Date(d);
+  c.setHours(0, 0, 0, 0);
+  return c;
+}
 
-const MEETING_STATUS_COLORS: Record<string, BadgeColor> = {
-  UPCOMING: "blue",
-  LIVE: "green",
-  ENDED: "slate",
-};
+function sameDay(a: Date, b: Date): boolean {
+  return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
+
+function timeLabel(d: Date): string {
+  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+/** "Today · 16:00", "Thursday · 16:00", or "12 Sep · 16:00". */
+function whenLabel(d: Date, now: Date): string {
+  const days = Math.round((startOfDay(d).getTime() - startOfDay(now).getTime()) / DAY_MS);
+  const day =
+    days === 0
+      ? "Today"
+      : days === 1
+        ? "Tomorrow"
+        : days > 1 && days < 7
+          ? d.toLocaleDateString("en-IN", { weekday: "long" })
+          : formatDate(d);
+  return `${day} · ${timeLabel(d)}`;
+}
 
 export default async function StudentDashboardPage() {
   const session = await getSession();
@@ -49,56 +48,300 @@ export default async function StudentDashboardPage() {
   if (!batch) redirect("/student");
 
   const studentId = session.user.id;
+  const now = new Date();
 
-  const [meetings, notes, tests, fee, payments, liveSession] = await Promise.all([
+  const [
+    meetings,
+    attendanceRows,
+    myAttempts,
+    activeTests,
+    notes,
+    notesTotal,
+    fee,
+    payments,
+    liveSession,
+    notices,
+    enrolled,
+    doubts,
+    doubtsThisMonth,
+  ] = await Promise.all([
     prisma.meeting.findMany({
       where: { batchId: batch.id },
       orderBy: { date: "asc" },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        date: true,
+        durationMins: true,
+        status: true,
+      },
     }),
-    prisma.note.findMany({
-      where: { batchId: batch.id },
-      orderBy: { updatedAt: "desc" },
-      take: 3,
+    prisma.attendance.findMany({
+      where: { batchId: batch.id, studentId },
+      select: { meetingId: true, status: true },
+    }),
+    prisma.testAttempt.findMany({
+      where: { batchId: batch.id, studentId },
+      orderBy: { submittedAt: "desc" },
+      include: { test: { select: { title: true } } },
     }),
     prisma.test.findMany({
       where: { batchId: batch.id, isActive: true },
       include: {
         _count: { select: { questions: true } },
-        attempts: { where: { studentId } },
+        attempts: { where: { studentId }, select: { id: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.note.findMany({
+      where: { batchId: batch.id },
+      orderBy: { updatedAt: "desc" },
+      take: 4,
+      select: { id: true, title: true, subject: true, updatedAt: true },
+    }),
+    prisma.note.count({ where: { batchId: batch.id } }),
     prisma.fee.findUnique({
       where: { studentId_batchId: { studentId, batchId: batch.id } },
     }),
     prisma.payment.findMany({
       where: { studentId, batchId: batch.id },
+      orderBy: { date: "asc" },
     }),
-    prisma.liveSession.findFirst({
-      where: { batchId: batch.id, status: "live" },
+    prisma.liveSession.findFirst({ where: { batchId: batch.id, status: "live" } }),
+    prisma.notice.findMany({
+      where: { batchId: batch.id },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: { id: true, text: true, createdAt: true },
+    }),
+    prisma.enrollment.count({ where: { batchId: batch.id, status: "APPROVED" } }),
+    prisma.doubt.findMany({
+      where: { studentId, liveSession: { batchId: batch.id } },
+      orderBy: { timestamp: "desc" },
+      take: 3,
+      select: { doubtText: true, answer: true, timestamp: true },
+    }),
+    prisma.doubt.count({
+      where: {
+        studentId,
+        liveSession: { batchId: batch.id },
+        timestamp: { gte: new Date(now.getFullYear(), now.getMonth(), 1) },
+      },
     }),
   ]);
 
-  const upcomingMeetings = meetings.filter(
-    (m) => getEffectiveMeetingStatus(m) !== "ENDED"
-  );
-  const nextMeetings = upcomingMeetings.slice(0, 3);
+  const attendanceByMeeting = new Map(attendanceRows.map((a) => [a.meetingId, a.status]));
 
-  const totalNotes = await prisma.note.count({
-    where: { batchId: batch.id },
+  /* Ranks: pull every attempt for the tests this student attempted. */
+  const attemptedTestIds = myAttempts.map((a) => a.testId);
+  const cohortAttempts = attemptedTestIds.length
+    ? await prisma.testAttempt.findMany({
+        where: { testId: { in: attemptedTestIds } },
+        select: { testId: true, score: true },
+      })
+    : [];
+  const cohortByTest = new Map<string, number[]>();
+  for (const a of cohortAttempts) {
+    const list = cohortByTest.get(a.testId) ?? [];
+    list.push(a.score);
+    cohortByTest.set(a.testId, list);
+  }
+
+  /* A meeting is over once its scheduled span (plus a grace period) has
+     passed, or the teacher explicitly ended it. */
+  const isOver = (m: { date: Date; durationMins: number; status: string }) =>
+    m.status === "ENDED" ||
+    now.getTime() > m.date.getTime() + (m.durationMins + 30) * 60 * 1000;
+
+  const liveMeeting = liveSession
+    ? (meetings.find((m) => m.id === liveSession.roomId) ?? null)
+    : null;
+
+  /* ── The week strip (Mon..Sun of the current week) ── */
+  const monday = startOfDay(new Date(now.getTime() - ((now.getDay() + 6) % 7) * DAY_MS));
+  const meetingsWithAtt = meetings.map((m) => ({
+    ...m,
+    attended: attendanceByMeeting.has(m.id)
+      ? attendanceByMeeting.get(m.id) === "PRESENT"
+      : null,
+  }));
+  const week = WEEKDAYS.map((d, i) => {
+    const day = new Date(monday.getTime() + i * DAY_MS);
+    const dayMeetings = meetingsWithAtt.filter((m) => sameDay(m.date, day));
+    return {
+      d,
+      n: day.getDate(),
+      classes: dayMeetings.length,
+      missed: dayMeetings.some((m) => m.attended === false),
+      today: sameDay(day, now),
+    };
   });
 
-  const attempted = tests.filter((t) => t.attempts.length > 0).length;
-  const unattempted = tests.filter((t) => t.attempts.length === 0);
+  /* ── Today's blocks (the live one becomes the cut-out, not a block) ── */
+  const todayBlocks = meetingsWithAtt
+    .filter((m) => sameDay(m.date, now) && m.id !== liveSession?.roomId)
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      startAt: m.date.toISOString(),
+      durationMins: m.durationMins,
+      state: (isOver(m) ? "past" : "next") as "past" | "next",
+      attended: m.attended,
+      note: isOver(m) ? null : (m.description ?? null),
+    }));
 
-  const totalAmount = fee?.totalAmount ?? 0;
-  const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-  const outstanding = Math.max(totalAmount - paidAmount, 0);
-  const feeStatus = getFeeStatus(totalAmount, paidAmount);
-  const isTeacherJoined = liveSession?.teacherJoined ?? false;
+  /* ── Coming up: future meetings beyond today + the open test ── */
+  const futureMeetings = meetings.filter(
+    (m) => !sameDay(m.date, now) && m.date.getTime() > now.getTime() && !isOver(m)
+  );
+  const openTest =
+    activeTests.find(
+      (t) =>
+        t.attempts.length === 0 &&
+        (!t.closesAt || t.closesAt.getTime() > now.getTime())
+    ) ?? null;
+  const comingUp = [
+    ...futureMeetings.slice(0, 3).map((m) => ({
+      id: m.id,
+      title: m.title,
+      whenLabel: `${whenLabel(m.date, now)} · ${m.durationMins} min`,
+      note: m.description ?? null,
+      href: null,
+    })),
+    ...(openTest
+      ? [
+          {
+            id: openTest.id,
+            title: openTest.title,
+            whenLabel: openTest.closesAt
+              ? `Closes ${whenLabel(openTest.closesAt, now)} · ${openTest._count.questions} questions`
+              : `Open now · ${openTest._count.questions} questions`,
+            note: "One attempt",
+            href: `/student/tests/${openTest.id}`,
+          },
+        ]
+      : []),
+  ].slice(0, 4);
+
+  const nextMeeting =
+    meetings.find(
+      (m) => m.date.getTime() > now.getTime() && !isOver(m) && m.id !== liveSession?.roomId
+    ) ?? null;
+
+  /* ── Attendance (driven purely by marked registers) ── */
+  const markedMeetings = meetingsWithAtt
+    .filter((m) => m.attended !== null)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  const attended = markedMeetings.filter((m) => m.attended === true).length;
+  const attendance =
+    markedMeetings.length > 0
+      ? {
+          attended,
+          total: markedMeetings.length,
+          percent: Math.round((attended / markedMeetings.length) * 100),
+          register: markedMeetings.map((m) => (m.attended ? 1 : 0)),
+          missedCount: markedMeetings.length - attended,
+        }
+      : null;
+
+  /* ── Fees ── */
+  const paidPaise = payments.reduce((sum, p) => sum + p.amount, 0);
+  const fees =
+    fee && fee.totalAmount > 0
+      ? {
+          totalPaise: fee.totalAmount,
+          paidPaise,
+          duePaise: Math.max(fee.totalAmount - paidPaise, 0),
+          dueLabel: fee.dueDate ? formatDate(fee.dueDate) : null,
+          overdue:
+            !!fee.dueDate &&
+            fee.dueDate.getTime() < now.getTime() &&
+            fee.totalAmount - paidPaise > 0,
+          rows: payments.map((p, i) => ({
+            id: p.id,
+            label: p.note?.trim() || `Payment ${i + 1}`,
+            onLabel: `${formatDate(p.date)} · ${p.method}`,
+            amountPaise: p.amount,
+          })),
+        }
+      : null;
+
+  const teacherName = batch.teacher?.name ?? "your teacher";
+  const firstName = (session.user.name ?? "Student").split(" ")[0];
+
+  const data: DashboardData = {
+    studentShort: firstName,
+    batchLine: [
+      firstName,
+      [batch.subject, batch.name].filter(Boolean).join(" "),
+      teacherName,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    teacherName,
+    enrolled,
+    live:
+      liveSession != null
+        ? {
+            meetingId: liveSession.roomId,
+            title: liveMeeting?.title ?? "Live class",
+            startAt: (liveSession.startedAt ?? liveMeeting?.date ?? now).toISOString(),
+            durationMins: liveMeeting?.durationMins ?? 60,
+            teacherJoined: liveSession.teacherJoined,
+          }
+        : null,
+    nextClass: nextMeeting
+      ? {
+          title: nextMeeting.title,
+          whenLabel: whenLabel(nextMeeting.date, now),
+          durationMins: nextMeeting.durationMins,
+          note: nextMeeting.description ?? null,
+        }
+      : null,
+    week,
+    todayBlocks,
+    comingUp,
+    results: myAttempts.map((a) => {
+      const cohort = cohortByTest.get(a.testId) ?? [a.score];
+      return {
+        id: a.id,
+        title: a.test.title,
+        score: a.score,
+        outOf: a.totalMarks,
+        onLabel: formatDate(a.submittedAt),
+        rank: 1 + cohort.filter((s) => s > a.score).length,
+        cohort: cohort.length,
+      };
+    }),
+    notes: {
+      recent: notes.map((n) => ({
+        id: n.id,
+        title: n.title,
+        updatedLabel: formatDate(n.updatedAt),
+        subject: n.subject,
+      })),
+      total: notesTotal,
+    },
+    fees,
+    attendance,
+    notices: notices.map((n) => ({
+      id: n.id,
+      atLabel: formatDate(n.createdAt),
+      text: n.text,
+    })),
+    doubts: {
+      thisMonth: doubtsThisMonth,
+      recent: doubts.map((d) => ({
+        q: d.doubtText,
+        onLabel: formatDate(d.timestamp),
+        answered: d.answer.trim().length > 0,
+      })),
+    },
+  };
 
   return (
-    <div className="space-y-6">
+    <>
       <LiveRefresh
         channels={[batchChannel(batch.id)]}
         bindings={[
@@ -107,246 +350,7 @@ export default async function StudentDashboardPage() {
           { event: PUSHER_EVENTS.TEACHER_JOINED, toastMessageKey: "teacherJoined" },
         ]}
       />
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="wrap-break-word text-2xl font-bold text-slate-800">{batch.name}</h1>
-          {batch.grade && (
-          <p className="mt-1 text-sm text-slate-500">{batch.grade}</p>
-        )}
-        </div>
-        {liveSession ? (
-          isTeacherJoined ? (
-            <JoinMeetingButton meetingId={liveSession.roomId} />
-          ) : (
-            <button
-              type="button"
-              disabled
-              aria-label="Waiting for teacher to join class"
-              className="flex shrink-0 items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm font-medium text-amber-700 shadow-sm transition-all duration-200 ease-out cursor-not-allowed animate-pulse"
-            >
-              <Video className="size-4 animate-bounce" />
-              <span>Waiting for teacher...</span>
-            </button>
-          )
-        ) : (
-          <button
-            type="button"
-            disabled
-            aria-label="No active meeting at this time"
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-400 border border-slate-200 shadow-inner cursor-not-allowed"
-          >
-            <Video className="size-4" />
-            <span>No active class</span>
-          </button>
-        )}
-        
-      </div>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          icon={Video}
-          label="Upcoming"
-          value={upcomingMeetings.length}
-          color="blue"
-        />
-        <StatCard
-          icon={ClipboardList}
-          label="Tests"
-          value={tests.length}
-          hint={`${attempted} attempted`}
-          color="violet"
-        />
-        <StatCard
-          icon={NotebookText}
-          label="Notes"
-          value={totalNotes}
-          color="violet"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Fees"
-          value={
-            totalAmount === 0
-              ? "N/A"
-              : FEE_STATUS_LABELS[feeStatus]
-          }
-          hint={outstanding > 0 ? `${formatPaise(outstanding)} outstanding` : undefined}
-          color={FEE_STATUS_COLORS[feeStatus] ?? "slate"}
-        />
-      </div>
-
-      {/* Preview sections */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Upcoming meetings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming meetings</CardTitle>
-            <Link
-              href="/student/meetings"
-              className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
-            >
-              View all <ArrowRight className="size-3" />
-            </Link>
-          </CardHeader>
-          {nextMeetings.length === 0 ? (
-            <p className="text-sm text-slate-400">No upcoming meetings.</p>
-          ) : (
-            <ul className="space-y-3">
-              {nextMeetings.map((m) => {
-                const status = getEffectiveMeetingStatus(m);
-                return (
-                  <li
-                    key={m.id}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-800">
-                        {m.title}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {formatDateTime(m.date)}
-                      </p>
-                    </div>
-                    {status === "LIVE" ? (
-                      <a
-                        href={m.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={buttonClasses("primary", "sm")}
-                      >
-                        Join now
-                      </a>
-                    ) : (
-                      <Badge color={MEETING_STATUS_COLORS[status]}>
-                        {status === "UPCOMING" ? "Upcoming" : "Ended"}
-                      </Badge>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-
-        {/* Active tests */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Active tests</CardTitle>
-            <Link
-              href="/student/tests"
-              className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
-            >
-              View all <ArrowRight className="size-3" />
-            </Link>
-          </CardHeader>
-          {tests.length === 0 ? (
-            <p className="text-sm text-slate-400">No active tests.</p>
-          ) : unattempted.length === 0 ? (
-            <p className="text-sm text-slate-400">
-              All {tests.length} test{tests.length !== 1 && "s"} attempted.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {unattempted.slice(0, 3).map((t) => (
-                <li
-                  key={t.id}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">
-                      {t.title}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {t._count.questions} questions · {t.subject}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/student/tests/${t.id}`}
-                    className={buttonClasses("primary", "sm")}
-                  >
-                    Start
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        {/* Recent notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent notes</CardTitle>
-            <Link
-              href="/student/notes"
-              className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
-            >
-              View all <ArrowRight className="size-3" />
-            </Link>
-          </CardHeader>
-          {notes.length === 0 ? (
-            <p className="text-sm text-slate-400">No notes yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {notes.map((n) => (
-                <li key={n.id}>
-                  <Link
-                    href={`/student/notes/${n.id}`}
-                    className="group block"
-                  >
-                    <p className="text-sm font-medium text-slate-800 group-hover:text-violet-600">
-                      {n.title}
-                    </p>
-                    <p className="text-xs text-slate-500">{n.subject}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        {/* Fee summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Fees</CardTitle>
-            <Link
-              href="/student/fees"
-              className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
-            >
-              View all <ArrowRight className="size-3" />
-            </Link>
-          </CardHeader>
-          {totalAmount === 0 ? (
-            <p className="text-sm text-slate-400">No fee assigned yet.</p>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Total fee</span>
-                <span className="font-medium text-slate-800">
-                  {formatPaise(totalAmount)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Paid</span>
-                <span className="font-medium text-emerald-600">
-                  {formatPaise(paidAmount)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Outstanding</span>
-                <span className="font-medium text-amber-600">
-                  {formatPaise(outstanding)}
-                </span>
-              </div>
-              <div className="pt-1">
-                <Badge color={FEE_STATUS_COLORS[feeStatus]}>
-                  {FEE_STATUS_LABELS[feeStatus]}
-                </Badge>
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
-    </div>
+      <StudentDashboard data={data} />
+    </>
   );
 }

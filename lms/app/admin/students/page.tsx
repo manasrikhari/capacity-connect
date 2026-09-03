@@ -35,8 +35,8 @@ export default async function AdminStudentsPage() {
         bindings={[{ event: PUSHER_EVENTS.ENROLLMENT_REQUESTED, toastMessageKey: "enrollmentRequested" }]}
       />
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Students</h1>
-        <p className="mt-1 text-sm text-slate-500">Approve, reject, or manage student access to {batch.name}.</p>
+        <h1 className="text-2xl text-ink-900">Students</h1>
+        <p className="mt-1 text-sm text-ink-500">Approve, reject, or manage student access to {batch.name}.</p>
       </div>
 
       <Card>
@@ -50,15 +50,15 @@ export default async function AdminStudentsPage() {
             description="Students who join with your batch code will appear here for approval."
           />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-hair">
             {pending.map((e) => (
               <li
                 key={e.id}
                 className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{e.student.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-slate-500">{e.student.email}</p>
+                  <p className="text-sm font-medium text-ink-900">{e.student.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-ink-500">{e.student.email}</p>
                 </div>
                 <div className="flex gap-2">
                   <StudentStatusButton enrollmentId={e.id} status="APPROVED" variant="primary">
@@ -81,15 +81,15 @@ export default async function AdminStudentsPage() {
         {approved.length === 0 ? (
           <EmptyState icon={UserCheck} title="No approved students yet" />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-hair">
             {approved.map((e) => (
               <li
                 key={e.id}
                 className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{e.student.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm font-medium text-ink-900">{e.student.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-ink-500">
                     {e.student.email} · joined {formatDate(e.createdAt)}
                   </p>
                 </div>
@@ -112,15 +112,15 @@ export default async function AdminStudentsPage() {
         {rejected.length === 0 ? (
           <EmptyState icon={UserX} title="No rejected students" />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-hair">
             {rejected.map((e) => (
               <li
                 key={e.id}
                 className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{e.student.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-slate-500">{e.student.email}</p>
+                  <p className="text-sm font-medium text-ink-900">{e.student.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-ink-500">{e.student.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge color="red">Rejected</Badge>

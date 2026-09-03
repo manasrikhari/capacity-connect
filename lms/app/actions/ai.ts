@@ -5,6 +5,29 @@ import { prisma } from "@/lib/prisma";
 import { requestAI } from "@/lib/ai-provider";
 
 /**
+ * A user may use the AI companion for a batch only when they teach it or have
+ * an APPROVED enrollment in it. Throws (403-equivalent) otherwise.
+ */
+async function assertBatchAccess(userId: string, batchId: string): Promise<void> {
+  const batch = await prisma.batch.findUnique({
+    where: { id: batchId },
+    select: { teacherId: true },
+  });
+  if (!batch) {
+    throw new Error("Forbidden: batch not found.");
+  }
+  if (batch.teacherId === userId) return;
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { studentId_batchId: { studentId: userId, batchId } },
+    select: { status: true },
+  });
+  if (enrollment?.status !== "APPROVED") {
+    throw new Error("Forbidden: you do not have access to this batch.");
+  }
+}
+
+/**
  * Fetch all AI conversations for a user in a specific batch
  */
 export async function getConversationsAction(batchId: string) {
@@ -12,6 +35,8 @@ export async function getConversationsAction(batchId: string) {
   if (!session || !session.user) {
     throw new Error("Unauthorized: Please log in first.");
   }
+
+  await assertBatchAccess(session.user.id, batchId);
 
   return prisma.aiConversation.findMany({
     where: {
@@ -32,6 +57,8 @@ export async function createConversationAction(batchId: string, firstMessage: st
   if (!session || !session.user) {
     throw new Error("Unauthorized: Please log in first.");
   }
+
+  await assertBatchAccess(session.user.id, batchId);
 
   // Extract text query if firstMessage is JSON
   let queryText = firstMessage;

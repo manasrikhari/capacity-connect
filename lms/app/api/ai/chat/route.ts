@@ -3,6 +3,79 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { requestAI } from "@/lib/ai-provider";
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // ~5MB
+const IMAGE_FETCH_TIMEOUT_MS = 10_000;
+
+function isPrivateIpv4(hostname: string): boolean {
+  // The WHATWG URL parser normalizes exotic IPv4 forms (decimal, octal, hex)
+  // to dotted-quad, so matching the normalized hostname is sufficient.
+  const m = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return false;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  if (a === 0 || a === 10 || a === 127) return true; // "this", private, loopback
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  if (a === 169 && b === 254) return true; // link-local
+  if (a === 172 && b >= 16 && b <= 31) return true; // private
+  if (a === 192 && b === 168) return true; // private
+  return false;
+}
+
+function isBlockedIpv6(hostname: string): boolean {
+  if (!hostname.startsWith("[")) return false;
+  const v6 = hostname.slice(1, -1).toLowerCase();
+  return (
+    v6 === "::" ||
+    v6 === "::1" ||
+    v6.startsWith("::ffff:") || // v4-mapped — could hide a private v4
+    v6.startsWith("fe8") ||
+    v6.startsWith("fe9") ||
+    v6.startsWith("fea") ||
+    v6.startsWith("feb") || // link-local fe80::/10
+    v6.startsWith("fc") ||
+    v6.startsWith("fd") // unique-local fc00::/7
+  );
+}
+
+/** Only allow public http(s) URLs — no private/link-local/loopback hosts. */
+function getSafeImageUrl(raw: string): URL | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  const host = url.hostname.toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost")) return null;
+  if (host === "local" || host.endsWith(".local")) return null;
+  if (isPrivateIpv4(host) || isBlockedIpv6(host)) return null;
+  return url;
+}
+
+/** Read a response body with a hard byte cap; null when the cap is exceeded. */
+async function readBodyCapped(res: Response, cap: number): Promise<Buffer | null> {
+  const contentLength = Number(res.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > cap) return null;
+
+  const reader = res.body?.getReader();
+  if (!reader) return null;
+
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > cap) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
@@ -24,6 +97,25 @@ export async function POST(req: NextRequest) {
     }
 
     const batchId = conv.batchId;
+
+    // 1b. Verify the caller may use this batch: its teacher, or an APPROVED
+    // enrollment. (Guards against conversations created before access was
+    // revoked, and against context leaking across batches.)
+    const batch = await prisma.batch.findUnique({
+      where: { id: batchId },
+      select: { teacherId: true },
+    });
+    let hasBatchAccess = batch?.teacherId === session.user.id;
+    if (batch && !hasBatchAccess) {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: { studentId_batchId: { studentId: session.user.id, batchId } },
+        select: { status: true },
+      });
+      hasBatchAccess = enrollment?.status === "APPROVED";
+    }
+    if (!hasBatchAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     // Parse JSON message payload (Option A)
     let queryText = message;
@@ -156,12 +248,24 @@ export async function POST(req: NextRequest) {
               } as any);
             }
           }
-        } else if (attachedImage.startsWith("http://") || attachedImage.startsWith("https://")) {
+        } else {
+          const safeUrl = getSafeImageUrl(attachedImage);
+          if (!safeUrl) {
+            console.warn("[AI Chat Route] Skipped image with unsafe or non-http(s) URL");
+            continue;
+          }
           try {
-            const imgRes = await fetch(attachedImage);
+            const imgRes = await fetch(safeUrl, {
+              signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS),
+              redirect: "error", // a redirect could bounce to a private host
+            });
             if (imgRes.ok) {
-              const arrayBuffer = await imgRes.arrayBuffer();
-              const base64Data = Buffer.from(arrayBuffer).toString("base64");
+              const body = await readBodyCapped(imgRes, MAX_IMAGE_BYTES);
+              if (!body) {
+                console.warn("[AI Chat Route] Skipped image larger than the 5MB cap");
+                continue;
+              }
+              const base64Data = body.toString("base64");
               const contentType = imgRes.headers.get("content-type") || "image/jpeg";
               contents[contents.length - 1].parts.push({
                 inlineData: {

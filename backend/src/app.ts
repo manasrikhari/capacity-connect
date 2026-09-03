@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import { globalApiLimiter } from './middleware/rateLimiters';
 import { errorHandler } from './middleware/errorHandler';
+import { ENV } from './config/env';
 
 // Domain routers
 import authRouter from './routes/auth';
@@ -20,19 +21,29 @@ export const createApp = (): Express => {
   // Rate Limiting
   app.use(globalApiLimiter);
 
-  // CORS Configuration
+  // CORS Configuration — enforced allowlist
+  const allowedOrigins = new Set(
+    [
+      'http://localhost:3000',
+      'http://localhost:3002',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3002',
+      ENV.CLIENT_URL,
+      ENV.LIVE_CLIENT_URL,
+    ].filter(Boolean)
+  );
+  const opengrapesOriginPattern = /^https?:\/\/([a-z0-9-]+\.)*opengrapes\.com(:\d+)?$/i;
+
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow all local dev, custom domains, or server-to-server requests
+        // No Origin header: server-to-server / curl / same-origin requests
         if (!origin) return callback(null, true);
-        const isAllowed =
-          /^https?:\/\/(localhost|127\.0\.0\.1|opengrapes\.com)(:\d+)?$/.test(origin) ||
-          /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin);
-        if (isAllowed) {
+        if (allowedOrigins.has(origin) || opengrapesOriginPattern.test(origin)) {
           return callback(null, true);
         }
-        return callback(null, true); // Allow dev origins by default
+        // Disallowed: omit CORS headers so browsers block the response
+        return callback(null, false);
       },
       credentials: true,
     })

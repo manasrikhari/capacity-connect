@@ -25,6 +25,9 @@
   "devDependencies": {
     "concurrently": "^9.1.2"
   },
+  "overrides": {
+    "next": "16.2.9"
+  },
   "keywords": [
     "sih2026",
     "capacity-building",

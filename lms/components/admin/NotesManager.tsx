@@ -4,8 +4,7 @@ import { Link2, NotebookText, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
 import { deleteNote } from "@/app/admin/notes/actions";
-import type { Note } from "@/app/generated/prisma/client";
-import { NoteFormModal } from "@/components/admin/NoteFormModal";
+import { NoteFormModal, type EditableNote } from "@/components/admin/NoteFormModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -24,7 +23,7 @@ interface NoteDisplay {
 
 export function NotesManager({ notes }: { notes: NoteDisplay[] }) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Note | null>(null);
+  const [editing, setEditing] = useState<EditableNote | null>(null);
   const [pending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -33,8 +32,14 @@ export function NotesManager({ notes }: { notes: NoteDisplay[] }) {
     setModalOpen(true);
   }
 
-  function openEdit(note: any) {
-    setEditing(note);
+  function openEdit(note: NoteDisplay) {
+    setEditing({
+      id: note.id,
+      title: note.title,
+      subject: note.subject,
+      content: note.content,
+      fileUrl: note.fileUrl,
+    });
     setModalOpen(true);
   }
 
@@ -53,8 +58,8 @@ export function NotesManager({ notes }: { notes: NoteDisplay[] }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Notes</h1>
-          <p className="mt-1 text-sm text-slate-500">Share study material with your students.</p>
+          <h1 className="text-2xl font-medium text-ink-900">Notes</h1>
+          <p className="mt-1 text-sm text-ink-500">Share study material with your students.</p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="size-4" />
@@ -82,28 +87,30 @@ export function NotesManager({ notes }: { notes: NoteDisplay[] }) {
               <Card key={note.id} className="flex flex-col">
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-medium text-slate-800 truncate max-w-[200px]" title={note.title}>
+                    <h3 className="min-w-0 truncate font-medium text-ink-900" title={note.title}>
                       {note.title}
                     </h3>
                     <Badge color="violet">{note.subject}</Badge>
                   </div>
-                  <p className="mt-2 line-clamp-3 text-sm text-slate-500">{note.content}</p>
+                  <p className="mt-2 line-clamp-3 text-sm text-ink-500">{note.content}</p>
                   {note.fileUrl && (
                     <a
                       href={note.fileUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-xs text-violet-600 hover:underline"
+                      className="mt-2 inline-flex items-center gap-1 text-xs text-plum-700 hover:underline"
                     >
                       <Link2 className="size-3" />
                       Attachment
                     </a>
                   )}
-                  <p className="mt-2 text-xs text-slate-400">Updated {formatDate(note.updatedAt)}</p>
+                  <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                    Updated {formatDate(note.updatedAt)}
+                  </p>
                 </div>
                 {!note.isExported && (
                   <div className="mt-4 flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(note as Note)}>
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(note)}>
                       <Pencil className="size-3.5" /> Edit
                     </Button>
                     <Button size="sm" variant="danger" loading={isPending} onClick={() => handleDelete(note.id)}>

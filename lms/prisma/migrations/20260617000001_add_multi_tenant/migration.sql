@@ -54,7 +54,23 @@ DO $$
 DECLARE
     v_teacher_id TEXT;
     v_batch_id   TEXT := 'c_default_batch_0000001';
+    v_has_rows   BOOLEAN;
 BEGIN
+    -- A fresh database has nothing to backfill; only a legacy single-tenant
+    -- database (which always had admin@lms.com) needs the default batch.
+    SELECT EXISTS (SELECT 1 FROM "Meeting")
+        OR EXISTS (SELECT 1 FROM "Note")
+        OR EXISTS (SELECT 1 FROM "Test")
+        OR EXISTS (SELECT 1 FROM "Fee")
+        OR EXISTS (SELECT 1 FROM "Payment")
+        OR EXISTS (SELECT 1 FROM "TestAttempt")
+        OR EXISTS (SELECT 1 FROM "User" WHERE role = 'STUDENT')
+    INTO v_has_rows;
+
+    IF NOT v_has_rows THEN
+        RETURN;
+    END IF;
+
     SELECT id INTO v_teacher_id
     FROM "User"
     WHERE email = 'admin@lms.com'

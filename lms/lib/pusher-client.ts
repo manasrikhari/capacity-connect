@@ -33,7 +33,7 @@ export function getPusherClient(): PusherClient | null {
   if (!key || !cluster) {
     if (!warnedMissingConfig) {
       warnedMissingConfig = true;
-      console.error(
+      console.warn(
         "[Pusher] NEXT_PUBLIC_PUSHER_KEY/NEXT_PUBLIC_PUSHER_CLUSTER are not set — live updates are disabled for this session. The page still works, just without real-time updates until this is configured and redeployed."
       );
     }

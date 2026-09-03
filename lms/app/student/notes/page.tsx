@@ -8,6 +8,7 @@ import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { whiteboardPdfUrl } from "@/lib/whiteboard";
 
 export default async function StudentNotesPage() {
   const session = await getSession();
@@ -26,7 +27,7 @@ export default async function StudentNotesPage() {
     }),
   ]);
 
-  // Fetch corresponding meetings to get class name/title
+  // Fetch corresponding meetings to get the class name/title.
   const meetings = await prisma.meeting.findMany({
     where: { id: { in: liveSessions.map((s) => s.roomId) } },
   });
@@ -42,19 +43,18 @@ export default async function StudentNotesPage() {
     isExported: false,
   }));
 
-  const exportedNotes = liveSessions.map((session) => {
-    const meeting = meetingMap.get(session.roomId);
-    const className = meeting?.title || "Class Session";
-    const sessionTime = session.startedAt;
-    const formattedTitle = `${className} - ${formatDateTime(sessionTime)}`;
+  const exportedNotes = liveSessions.map((liveSession) => {
+    const meeting = meetingMap.get(liveSession.roomId);
+    const className = meeting?.title || "Class session";
+    const formattedTitle = `${className} — ${formatDateTime(liveSession.startedAt)}`;
 
     return {
-      id: `exported-${session.roomId}`,
+      id: `exported-${liveSession.roomId}`,
       title: formattedTitle,
-      subject: "Live Class",
-      content: `Handwritten whiteboard notes from class session.`,
-      fileUrl: `https://opengrapes-whiteboard-sync.manasrikhari23.workers.dev/api/pdf/${session.roomId}`,
-      updatedAt: session.endedAt || session.startedAt,
+      subject: "Live class",
+      content: "Handwritten whiteboard notes from a class session.",
+      fileUrl: whiteboardPdfUrl(liveSession.roomId),
+      updatedAt: liveSession.endedAt || liveSession.startedAt,
       isExported: true,
     };
   });
@@ -66,8 +66,8 @@ export default async function StudentNotesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Notes</h1>
-        <p className="mt-1 text-sm text-slate-500">Browse study material shared by your teacher.</p>
+        <h1 className="text-2xl font-medium text-ink-900">Notes</h1>
+        <p className="mt-1 text-sm text-ink-500">Browse study material shared by your teacher.</p>
       </div>
 
       {allNotes.length === 0 ? (
@@ -76,21 +76,23 @@ export default async function StudentNotesPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {allNotes.map((note) => {
             const cardMarkup = (
-              <Card className="flex h-full flex-col transition-shadow hover:shadow-md hover:shadow-violet-100 cursor-pointer">
+              <Card className="flex h-full cursor-pointer flex-col transition-colors hover:border-hair-strong">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-medium text-slate-800 truncate max-w-[200px]" title={note.title}>
+                  <h3 className="min-w-0 truncate font-medium text-ink-900" title={note.title}>
                     {note.title}
                   </h3>
                   <Badge color="violet">{note.subject}</Badge>
                 </div>
-                <p className="mt-2 line-clamp-3 flex-1 text-sm text-slate-500">{note.content}</p>
+                <p className="mt-2 line-clamp-3 flex-1 text-sm text-ink-500">{note.content}</p>
                 {note.fileUrl && (
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs text-violet-600">
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs text-plum-700">
                     <Link2 className="size-3" />
                     Attachment
                   </span>
                 )}
-                <p className="mt-2 text-xs text-slate-400">Updated {formatDate(note.updatedAt)}</p>
+                <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                  Updated {formatDate(note.updatedAt)}
+                </p>
               </Card>
             );
 

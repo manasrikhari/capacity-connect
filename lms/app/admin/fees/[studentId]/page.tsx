@@ -6,6 +6,11 @@ import { getSession } from "@/lib/session";
 import { getActiveBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
 
+/** A fee is overdue when its due date has passed and money is still owed. */
+function isOverdue(dueDate: Date | null, outstanding: number): boolean {
+  return dueDate ? dueDate.getTime() < Date.now() && outstanding > 0 : false;
+}
+
 export default async function AdminFeeDetailPage({ params }: { params: Promise<{ studentId: string }> }) {
   const session = await getSession();
   if (!session || session.user.role !== "ADMIN") redirect("/");
@@ -31,12 +36,17 @@ export default async function AdminFeeDetailPage({ params }: { params: Promise<{
     }),
   ]);
 
+  const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+  const outstanding = Math.max((fee?.totalAmount ?? 0) - paidAmount, 0);
+  const overdue = isOverdue(fee?.dueDate ?? null, outstanding);
+
   return (
     <div className="space-y-6">
-      <Link href="/admin/fees" className="inline-flex items-center gap-1 text-sm text-violet-600 hover:underline">
+      <Link href="/admin/fees" className="inline-flex items-center gap-1 text-sm text-plum-700 hover:underline">
         <ArrowLeft className="size-4" /> Back to fees
       </Link>
       <FeeDetailManager
+        overdue={overdue}
         student={{
           id: enrollment.student.id,
           name: enrollment.student.name,

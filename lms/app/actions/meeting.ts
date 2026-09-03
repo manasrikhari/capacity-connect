@@ -1,32 +1,19 @@
 "use server";
-import { SignJWT } from "jose";
+
+import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { generateLiveToken } from "@/lib/live-token";
+import { getEffectiveMeetingStatus } from "@/lib/utils";
 import { triggerMeetingStarted } from "@/lib/pusher-server";
 
-export async function generateTemporaryToken(user: any, role: "student" | "teacher", meetingId: string, batchId: string) {
-  const secret = new TextEncoder().encode(
-    process.env.LIVE_OPENGRAPES_JWT_SECRET || "fallback-secret"
-  );
-  
-  return await new SignJWT({
-    userId: user.id,
-    name: user.name || "Participant",
-    email: user.email,
-    role: role,
-    meetingId: meetingId,
-    batchId: batchId,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("15m")
-    .sign(secret);
-}
+type UrlOrError =
+  | { url: string; error?: undefined }
+  | { url?: undefined; error: string };
 
-export async function joinMeetingAction(
-  meetingId: string
-): Promise<{ url: string; error?: undefined } | { url?: undefined; error: string }> {
+const DEFAULT_DURATION_MINS = 60;
+
+export async function joinMeetingAction(meetingId: string): Promise<UrlOrError> {
   const session = await getSession();
   if (!session || !session.user || session.user.role !== "STUDENT") {
     return { error: "Unauthorized: Please log in as a student first." };
@@ -35,7 +22,6 @@ export async function joinMeetingAction(
   // 1. Fetch meeting & verify it exists
   const meeting = await prisma.meeting.findUnique({
     where: { id: meetingId },
-    include: { batch: true },
   });
 
   if (!meeting) {
@@ -56,24 +42,43 @@ export async function joinMeetingAction(
     return { error: "You are not enrolled in this batch." };
   }
 
-  // 3. Generate token for student role
-  const token = await generateTemporaryToken(session.user, "student", meeting.id, meeting.batchId);
+  // 3. Only allow joining while the class is actually live: either a live
+  // session row exists for this room, or the meeting itself is (effectively)
+  // LIVE — the 3-hour auto-end rule applies.
+  const liveSession = await prisma.liveSession.findUnique({
+    where: { roomId: meeting.id },
+    select: { status: true },
+  });
+  const meetingIsLive = getEffectiveMeetingStatus(meeting) === "LIVE";
+  if (liveSession?.status !== "live" && !meetingIsLive) {
+    return { error: "This class is not live right now." };
+  }
+
+  // 4. Generate token for student role
+  const token = await generateLiveToken(session.user, "student", meeting.id, meeting.batchId);
 
   const meetingPlatformUrl = process.env.MEETING_PLATFORM_URL || "http://localhost:3002";
 
-  // 4. Hand the URL back so the caller can open it (e.g. in a new tab)
+  // 5. Hand the URL back so the caller can open it (e.g. in a new tab)
   return { url: `${meetingPlatformUrl}/?token=${encodeURIComponent(token)}` };
 }
 
-export async function startClassAction(
-  batchId: string
-): Promise<{ url: string; error?: undefined } | { url?: undefined; error: string }> {
+export async function startClassAction(batchId: string): Promise<UrlOrError> {
   const session = await getSession();
   if (!session || !session.user || session.user.role !== "ADMIN") {
     return { error: "Unauthorized: Please log in as an administrator/teacher first." };
   }
 
-  // 1. Check if a class is already running for this batch
+  // 1. Verify the caller owns this batch
+  const batch = await prisma.batch.findUnique({
+    where: { id: batchId },
+    select: { id: true, name: true, teacherId: true },
+  });
+  if (!batch || batch.teacherId !== session.user.id) {
+    return { error: "You do not own this batch." };
+  }
+
+  // 2. Check if a class is already running for this batch
   const existingLiveSession = await prisma.liveSession.findFirst({
     where: { batchId, status: "live" },
   });
@@ -89,30 +94,30 @@ export async function startClassAction(
       day: "numeric",
       year: "numeric",
     });
-    
+
     const meeting = await prisma.meeting.create({
       data: {
         batchId,
         title: `Class - ${formattedDate}`,
         description: `Live class started on ${formattedDate}`,
         date: new Date(),
+        durationMins: DEFAULT_DURATION_MINS,
         link: process.env.MEETING_PLATFORM_URL || "http://localhost:3002",
         status: "LIVE",
       },
     });
     meetingId = meeting.id;
 
-    const batch = await prisma.batch.findUnique({ where: { id: batchId }, select: { name: true } });
     await triggerMeetingStarted({
       meetingId: meeting.id,
       batchId,
-      batchName: batch?.name ?? "",
+      batchName: batch.name,
       title: meeting.title,
     });
   }
 
-  // 2. Generate token for teacher role
-  const token = await generateTemporaryToken(session.user, "teacher", meetingId, batchId);
+  // 3. Generate token for teacher role
+  const token = await generateLiveToken(session.user, "teacher", meetingId, batchId);
 
   const meetingPlatformUrl = process.env.MEETING_PLATFORM_URL || "http://localhost:3002";
 
@@ -120,7 +125,6 @@ export async function startClassAction(
   revalidatePath("/student/meetings");
   revalidatePath("/admin/dashboard");
 
-  // 3. Hand the URL back so the caller can open it (e.g. in a new tab)
+  // 4. Hand the URL back so the caller can open it (e.g. in a new tab)
   return { url: `${meetingPlatformUrl}/?token=${encodeURIComponent(token)}` };
 }
-

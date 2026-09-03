@@ -1,5 +1,3 @@
-import { googleSignInAction } from "@/app/actions/auth-actions";
-
 export function LandingHeader() {
   return (
     <header className="site" id="hdr">
@@ -11,11 +9,9 @@ export function LandingHeader() {
           <a href="#ai">Platform</a>
         </nav>
         <div className="nav-actions">
-          <form action={googleSignInAction}>
-            <button type="submit" className="btn btn-primary">
-              Sign in
-            </button>
-          </form>
+          <a href="#signin" className="btn btn-primary">
+            Sign in
+          </a>
         </div>
       </div>
     </header>

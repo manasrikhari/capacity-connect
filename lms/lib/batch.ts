@@ -5,9 +5,25 @@ import { prisma } from "@/lib/prisma";
 
 const ACTIVE_BATCH_COOKIE = "active-batch-id";
 
-const BATCH_SELECT = { id: true, name: true, grade: true } as const;
+const BATCH_SELECT = {
+  id: true,
+  name: true,
+  grade: true,
+  subject: true,
+  teacher: { select: { name: true, status: true } },
+} as const;
 
 const TEACHER_BATCH_SELECT = { ...BATCH_SELECT, joinCode: true } as const;
+
+// Mirrors the 3-hour auto-end rule in lib/utils.ts (getEffectiveMeetingStatus):
+// a stored-LIVE meeting older than 3 hours is treated as ended, so it must not
+// count as live in the hubs either.
+const LIVE_WINDOW_MS = 3 * 60 * 60 * 1000;
+
+const liveMeetingsWhere = () => ({
+  status: "LIVE" as const,
+  date: { gte: new Date(Date.now() - LIVE_WINDOW_MS) },
+});
 
 // ── Student helpers ───────────────────────────────────────────────────────────
 
@@ -30,7 +46,7 @@ export const getActiveStudentBatch = cache(async (session: Session) => {
       where: {
         studentId_batchId: { studentId: session.user.id, batchId: cookieBatchId },
       },
-      include: { batch: { select: { ...BATCH_SELECT, teacher: { select: { status: true } } } } },
+      include: { batch: { select: BATCH_SELECT } },
     });
     if (enrollment?.status === "APPROVED" && enrollment.batch.teacher.status !== "SUSPENDED") {
       return enrollment.batch;
@@ -98,7 +114,7 @@ export const getTeacherHubData = cache(async (session: Session) => {
       joinCode: true,
       _count: { select: { tests: true } },
       enrollments: { select: { status: true } },
-      meetings: { where: { status: "LIVE" }, select: { id: true } },
+      meetings: { where: liveMeetingsWhere(), select: { id: true } },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -156,7 +172,7 @@ export const getStudentHubData = cache(async (session: Session) => {
           grade: true,
           teacher: { select: { name: true } },
           _count: { select: { meetings: true, notes: true } },
-          meetings: { where: { status: "LIVE" }, select: { id: true } },
+          meetings: { where: liveMeetingsWhere(), select: { id: true } },
           tests: { where: { isActive: true }, select: { id: true } },
         },
       },

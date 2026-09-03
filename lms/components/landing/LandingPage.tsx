@@ -6,12 +6,12 @@ import { LandingHero } from "./sections/LandingHero";
 import { LandingFeatures } from "./sections/LandingFeatures";
 import { LandingHowItWorks } from "./sections/LandingHowItWorks";
 import { LandingPlatform } from "./sections/LandingPlatform";
+import { LandingSignIn } from "./sections/LandingSignIn";
 import { LandingCTA } from "./sections/LandingCTA";
 import { LandingFooter } from "./sections/LandingFooter";
 export function LandingPage() {
   return (
     <>
-      {/* eslint-disable-next-line react/no-danger */}
       <style dangerouslySetInnerHTML={{ __html: allLandingStyles }} />
 
       <LandingScrollbar />
@@ -20,6 +20,7 @@ export function LandingPage() {
       <LandingFeatures />
       <LandingHowItWorks />
       <LandingPlatform />
+      <LandingSignIn />
       <LandingCTA />
       <LandingFooter />
 

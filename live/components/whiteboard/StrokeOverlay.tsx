@@ -59,7 +59,7 @@ interface RemoteCursor {
 
 /** Assigned colors per participant identity (deterministic, cycles through palette) */
 const CURSOR_COLORS = [
-  '#6366f1', // indigo
+  '#A98FCB', // indigo
   '#0ea5e9', // sky
   '#10b981', // emerald
   '#f59e0b', // amber
@@ -418,7 +418,7 @@ export default function StrokeOverlay({ editor, room, localParticipant }: Stroke
         const cy = cursor.y ?? cursor.targetY ?? 0;
 
         const isTeacherCursor = cursor.role === 'teacher';
-        const dotColor = isTeacherCursor ? '#6366f1' : cursor.color;
+        const dotColor = isTeacherCursor ? '#A98FCB' : cursor.color;
         const label = isTeacherCursor ? `${cursor.userName} (Teacher)` : cursor.userName;
 
         const DOT_RADIUS = 5;

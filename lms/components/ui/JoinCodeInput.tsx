@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import type { InputHTMLAttributes } from "react";
+import { fieldClasses } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
-
-const fieldClasses =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
 
 function format(raw: string): string {
   const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
@@ -21,11 +19,12 @@ export function JoinCodeInput({ className, defaultValue, ...props }: Props) {
 
   return (
     <input
+      aria-label="Join code"
       {...props}
       value={value}
       onChange={(e) => setValue(format(e.target.value))}
       maxLength={9}
-      className={cn(fieldClasses, className)}
+      className={cn(fieldClasses, "font-mono", className)}
     />
   );
 }

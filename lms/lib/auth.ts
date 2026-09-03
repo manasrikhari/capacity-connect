@@ -7,7 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { adminLoginSchema } from "@/lib/validations/auth";
 
 export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // Prisma 7's custom-output `prisma-client` generator produces a PrismaClient
+  // whose structural type @auth/prisma-adapter's signature doesn't accept,
+  // although it is a functioning PrismaClient at runtime. Cast to exactly the
+  // type the adapter expects at this one boundary.
+  adapter: PrismaAdapter(prisma as unknown as Parameters<typeof PrismaAdapter>[0]),
   session: { strategy: "jwt" },
   trustHost: true,
   pages: {
@@ -29,7 +33,19 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         const parsed = adminLoginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const { email, password } = parsed.data;
+        const { email: identifier, password } = parsed.data;
+        /* Bare usernames are a development convenience: "teacher" and
+           "student" map to the seeded demo pair (same batch), anything else
+           tries <name>@test.com. Production requires a full email. */
+        let email = identifier.toLowerCase();
+        if (!email.includes("@")) {
+          if (process.env.NODE_ENV === "production") return null;
+          const aliases: Record<string, string> = {
+            teacher: "teacher2@opengrapes.com",
+            student: "ishaan@test.com",
+          };
+          email = aliases[email] ?? `${email}@test.com`;
+        }
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
 
@@ -49,26 +65,13 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // TEMP DEBUG — remove once the new-user redirect path is confirmed.
-      console.log(
-        "[onboarding-debug] signIn callback: provider=%s email=%s role=%s status=%s email_verified=%s",
-        account?.provider,
-        user.email,
-        user.role,
-        user.status,
-        profile?.email_verified
-      );
-
       if (account?.provider === "google" && !profile?.email_verified) {
-        console.log("[onboarding-debug] signIn callback: rejected — unverified Google email");
         return false;
       }
       if (user.status === "SUSPENDED" || user.status === "REJECTED") {
-        console.log("[onboarding-debug] signIn callback: rejected — suspended/rejected user status");
         return false;
       }
       if ((user.role === "ADMIN" || user.role === "SUPER_ADMIN") && user.status !== "APPROVED") {
-        console.log("[onboarding-debug] signIn callback: rejected — admin/super-admin not approved");
         return false;
       }
       return true;

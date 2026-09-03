@@ -38,6 +38,11 @@ enum Plan {
   FREE
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
 // ── Tenant isolation unit ──────────────────────────────────────────────────
 model Batch {
   id        String      @id @default(cuid())
@@ -58,6 +63,8 @@ model Batch {
   testAttempts TestAttempt[]
   liveSessions LiveSession[]
   aiConversations AiConversation[]
+  attendances  Attendance[]
+  notices      Notice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -91,6 +98,10 @@ model User {
   testAttempts TestAttempt[]
   fees         Fee[]
   payments     Payment[]
+  attendances  Attendance[]
+
+  // ADMIN only — notices they authored
+  authoredNotices Notice[] @relation("AuthoredNotices")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -151,19 +162,55 @@ model Enrollment {
 
 // ── Content (all batch-scoped) ─────────────────────────────────────────────
 model Meeting {
-  id          String        @id @default(cuid())
-  batchId     String
-  batch       Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  title       String
-  description String?
-  date        DateTime
-  link        String
-  status      MeetingStatus @default(UPCOMING)
+  id           String        @id @default(cuid())
+  batchId      String
+  batch        Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  date         DateTime
+  durationMins Int           @default(60)
+  link         String
+  status       MeetingStatus @default(UPCOMING)
+
+  attendances Attendance[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
+}
+
+// ── Attendance (one mark per student per class held) ───────────────────────
+model Attendance {
+  id        String           @id @default(cuid())
+  meetingId String
+  meeting   Meeting          @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batchId   String
+  batch     Batch            @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  status    AttendanceStatus
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([meetingId, studentId])
+  @@index([batchId, studentId])
+  @@index([studentId])
+}
+
+// ── Notices (teacher-authored announcements to a batch) ────────────────────
+model Notice {
+  id        String @id @default(cuid())
+  batchId   String
+  batch     Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   User   @relation("AuthoredNotices", fields: [teacherId], references: [id], onDelete: Cascade)
+  text      String
+
+  createdAt DateTime @default(now())
+
+  @@index([batchId, createdAt])
 }
 
 model Note {
@@ -182,12 +229,13 @@ model Note {
 }
 
 model Test {
-  id       String  @id @default(cuid())
+  id       String    @id @default(cuid())
   batchId  String
-  batch    Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch    Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
   title    String
   subject  String
-  isActive Boolean @default(false)
+  isActive Boolean   @default(false)
+  closesAt DateTime?
 
   questions Question[]
   attempts  TestAttempt[]
@@ -233,12 +281,13 @@ model TestAttempt {
 }
 
 model Fee {
-  id          String @id @default(cuid())
+  id          String    @id @default(cuid())
   studentId   String
-  student     User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student     User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   batchId     String
-  batch       Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch       Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
   totalAmount Int
+  dueDate     DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

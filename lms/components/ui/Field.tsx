@@ -6,11 +6,12 @@ import type {
 } from "react";
 import { cn } from "@/lib/utils";
 
-const fieldClasses =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
+/** The one input recipe. Shared with JoinCodeInput and any custom control. */
+export const fieldClasses =
+  "w-full rounded-[10px] border border-hair bg-paper px-3 py-2 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-300 focus:border-plum-300 focus:ring-2 focus:ring-plum-100";
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("mb-1.5 block text-sm font-medium text-slate-700", className)} {...props} />;
+  return <label className={cn("mb-1.5 block text-sm font-medium text-ink-700", className)} {...props} />;
 }
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
@@ -27,7 +28,7 @@ export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectE
 
 export function FieldError({ children }: { children?: string }) {
   if (!children) return null;
-  return <p className="mt-1 text-xs text-red-600">{children}</p>;
+  return <p className="mt-1 text-xs text-status-unpaid">{children}</p>;
 }
 
 export function FormField({

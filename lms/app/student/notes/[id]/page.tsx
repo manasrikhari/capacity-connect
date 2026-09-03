@@ -25,7 +25,7 @@ export default async function StudentNoteDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link href="/student/notes" className="inline-flex items-center gap-1.5 text-sm text-violet-600 hover:underline">
+      <Link href="/student/notes" className="inline-flex items-center gap-1.5 text-sm text-plum-700 hover:underline">
         <ArrowLeft className="size-4" />
         Back to notes
       </Link>
@@ -33,8 +33,10 @@ export default async function StudentNoteDetailPage({
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{note.title}</h1>
-            <p className="mt-1 text-xs text-slate-400">Updated {formatDate(note.updatedAt)}</p>
+            <h1 className="text-2xl font-medium text-ink-900">{note.title}</h1>
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+              Updated {formatDate(note.updatedAt)}
+            </p>
           </div>
           <Badge color="violet">{note.subject}</Badge>
         </div>
@@ -44,14 +46,14 @@ export default async function StudentNoteDetailPage({
             href={note.fileUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 text-sm text-violet-600 hover:underline"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm text-plum-700 hover:underline"
           >
             <Link2 className="size-4" />
             Open attachment
           </a>
         )}
 
-        <div className="mt-4 border-t border-slate-100 pt-4">{renderMarkdown(note.content)}</div>
+        <div className="mt-4 border-t border-hair pt-4">{renderMarkdown(note.content)}</div>
       </Card>
     </div>
   );

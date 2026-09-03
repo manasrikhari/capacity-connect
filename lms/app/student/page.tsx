@@ -9,6 +9,12 @@ import { setActiveBatchAction, cancelEnrollmentAction } from "@/app/student/acti
 import { getSession } from "@/lib/session";
 import { getStudentHubData } from "@/lib/batch";
 import type { StudentHubBatch, StudentHubPending } from "@/lib/batch";
+import { prisma } from "@/lib/prisma";
+import { getRecommendationsForTrainee } from "@/lib/recommender-db";
+import {
+  RecommendationCard,
+  type RecommendationView,
+} from "@/components/recommendations/RecommendationCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatCard } from "@/components/ui/StatCard";
 import {
@@ -33,6 +39,27 @@ export default async function StudentHubPage({
 
   const hasAny = approved.length > 0 || pending.length > 0;
 
+  // Top course recommendations for the hub strip.
+  const recs = await getRecommendationsForTrainee(session.user.id, 3);
+  const recBatches = recs.length
+    ? await prisma.batch.findMany({
+        where: { id: { in: recs.map((r) => r.batchId) } },
+        select: { id: true, grade: true, wmoTier: true, teacher: { select: { name: true } } },
+      })
+    : [];
+  const recMeta = new Map(recBatches.map((b) => [b.id, b]));
+  const recViews: RecommendationView[] = recs.map((r) => ({
+    batchId: r.batchId,
+    name: r.name,
+    domain: r.domain,
+    level: recMeta.get(r.batchId)?.grade ?? null,
+    wmoTier: recMeta.get(r.batchId)?.wmoTier ?? null,
+    trainerName: recMeta.get(r.batchId)?.teacher.name ?? null,
+    score: r.score,
+    reasons: r.reasons.slice(0, 2),
+    enrollmentStatus: r.enrollmentStatus,
+  }));
+
   return (
     <div>
       <LiveRefresh
@@ -50,20 +77,39 @@ export default async function StudentHubPage({
       {/* Hero */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-normal text-ink-900">My batches</h1>
+          <h1 className="text-2xl font-normal text-ink-900">My courses</h1>
           <p className="mt-1 text-sm text-ink-500">
-            Pick a class to see its meetings, notes and tests.
+            Pick a course to see its sessions, notes and assessments.
           </p>
         </div>
         {hasAny && <JoinBatchTrigger variant="top-button" />}
       </div>
 
+      {recViews.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between border-b border-hair-strong pb-2">
+            <h2 className="text-sm font-semibold text-ink-900">Recommended for you</h2>
+            <a
+              href="/student/recommendations"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-plum-600 hover:text-plum-700"
+            >
+              See all
+            </a>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {recViews.map((v) => (
+              <RecommendationCard key={v.batchId} rec={v} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {!hasAny ? (
         <div className="mt-6">
           <EmptyState
             icon={GraduationCap}
-            title="No batches yet"
-            description="Enter a join code from your teacher to start accessing meetings, notes, and tests."
+            title="No courses yet"
+            description="Enter a course code from your trainer to start accessing sessions, notes, and assessments."
             action={<JoinBatchTrigger variant="empty-state" />}
           />
         </div>
@@ -71,18 +117,18 @@ export default async function StudentHubPage({
         <>
           {/* Stats */}
           <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3">
-            <StatCard value={stats.joinedBatches} label="Joined batches" />
+            <StatCard value={stats.joinedBatches} label="Joined courses" />
             <StatCard
               value={stats.liveNow}
               label="Live now"
               color={stats.liveNow > 0 ? "green" : "slate"}
             />
-            <StatCard value={stats.testsToAttempt} label="Tests to attempt" />
+            <StatCard value={stats.testsToAttempt} label="Assessments to attempt" />
           </div>
 
           {/* Section label */}
           <div className="mb-4 mt-8 flex items-center justify-between border-b border-hair-strong pb-2">
-            <h2 className="text-sm font-semibold text-ink-900">My batches</h2>
+            <h2 className="text-sm font-semibold text-ink-900">My courses</h2>
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
               {stats.joinedBatches} joined
               {pending.length > 0 && ` · ${pending.length} pending`}

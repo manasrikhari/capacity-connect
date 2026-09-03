@@ -1,8 +1,5 @@
 import { Video } from "lucide-react";
 import { redirect } from "next/navigation";
-import { Badge } from "@/components/ui/Badge";
-import { buttonClasses } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
@@ -39,11 +36,17 @@ export default async function StudentMeetingsPage() {
   // Get matching live sessions to check for MoM (meetingMinutes) and hasNotes
   const liveSessions = await prisma.liveSession.findMany({
     where: {
-      roomId: { in: meetings.map((m) => m.id) }
+      roomId: { in: meetings.map((m) => m.id) },
     },
     include: {
-      meetingMinutes: true
-    }
+      meetingMinutes: true,
+    },
+  });
+
+  // This student's own attendance across the batch's classes.
+  const attendance = await prisma.attendance.findMany({
+    where: { studentId: session.user.id, batchId: batch.id },
+    select: { meetingId: true, status: true },
   });
 
   const sessionMap = new Map(liveSessions.map((s) => [s.roomId, s]));
@@ -52,14 +55,14 @@ export default async function StudentMeetingsPage() {
   const pastMeetings = meetings.filter((m) => {
     if (m.id === liveSession?.roomId) return false;
 
-    const session = sessionMap.get(m.id);
-    if (session && session.status !== "live") return true;
+    const sess = sessionMap.get(m.id);
+    if (sess && sess.status !== "live") return true;
 
     return getEffectiveMeetingStatus(m) === "ENDED";
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <LiveRefresh
         channels={[batchChannel(batch.id)]}
         bindings={[
@@ -69,72 +72,84 @@ export default async function StudentMeetingsPage() {
         ]}
       />
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Meetings</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Join active live classes and check history.
+        <h1 className="text-2xl text-ink-900">Meetings</h1>
+        <p className="mt-1 text-sm text-ink-500">
+          Join the live class and revisit past ones.
         </p>
       </div>
 
-      {/* Active Class Section */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-700">Active Session</h2>
+      {/* Active class — the one raised, dark surface, only when live. */}
+      <section className="space-y-3">
+        <h2 className="border-b border-hair-strong pb-2 text-sm font-semibold text-ink-900">
+          Active session
+        </h2>
         {liveSession && activeMeeting ? (
-          <Card className="border-emerald-200 bg-emerald-50/30">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge color="green" className="animate-pulse">
-                    ● LIVE NOW
-                  </Badge>
-                  <h3 className="font-semibold text-slate-800">
-                    {activeMeeting.title}
-                  </h3>
+          <div
+            className="relative overflow-hidden rounded-3xl border border-board-edge bg-board p-6 text-chalk"
+            style={{ boxShadow: "var(--shadow-lg)" }}
+          >
+            <div
+              className="pointer-events-none absolute inset-0 text-chalk/5 bg-dot-grid"
+              aria-hidden
+            />
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-muted">
+                  <span
+                    className="inline-block size-2 rounded-full bg-status-live"
+                    style={{ animation: "live-pulse 1.8s var(--ease-out) infinite" }}
+                  />
+                  Live now
                 </div>
+                <h3 className="text-2xl text-white">{activeMeeting.title}</h3>
                 {activeMeeting.description && (
-                  <p className="mt-1 text-sm text-slate-500">
-                    {activeMeeting.description}
-                  </p>
+                  <p className="text-sm text-chalk-muted">{activeMeeting.description}</p>
                 )}
-                <p className="mt-1 text-xs text-slate-400">
-                  Started at {formatDateTime(liveSession.startedAt)}
+                <p className="font-mono text-xs text-chalk-muted">
+                  Started {formatDateTime(liveSession.startedAt)} · {activeMeeting.durationMins} min
                 </p>
               </div>
               <div className="shrink-0">
                 {isTeacherJoined ? (
                   <JoinMeetingButton
                     meetingId={activeMeeting.id}
-                    className={buttonClasses("primary", "sm")}
+                    className="bg-chalk text-board hover:bg-chalk/90"
                   >
                     Join now
                   </JoinMeetingButton>
                 ) : (
-                  <span className="inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800 animate-pulse">
-                    Waiting for teacher...
+                  <span className="inline-flex items-center gap-2 rounded-[10px] border border-chalk/30 px-3 py-1.5 text-sm font-medium text-chalk-muted">
+                    <span className="inline-block size-2 animate-pulse rounded-full bg-chalk-muted" />
+                    Waiting for teacher…
                   </span>
                 )}
               </div>
             </div>
-          </Card>
+          </div>
         ) : (
-          <Card className="border-dashed border-slate-200 bg-slate-50/30 py-8 text-center text-sm text-slate-500">
-            No active class. Your teacher has not started the class yet.
-          </Card>
+          <EmptyState
+            icon={Video}
+            title="No class on the board"
+            description="Your teacher hasn't started the class yet. It'll appear here the moment they do."
+          />
         )}
-      </div>
+      </section>
 
       {/* Past History */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-700">Past Classes</h2>
+      <section className="space-y-3">
+        <h2 className="border-b border-hair-strong pb-2 text-sm font-semibold text-ink-900">
+          Past classes
+        </h2>
         {pastMeetings.length === 0 ? (
           <EmptyState
             icon={Video}
             title="No past classes"
-            description="Your past ended classes will show up here."
+            description="Classes you've attended will show up here."
           />
         ) : (
-          <MeetingsList meetings={pastMeetings} liveSessions={liveSessions} />
+          <MeetingsList meetings={pastMeetings} liveSessions={liveSessions} attendance={attendance} />
         )}
-      </div>
+      </section>
     </div>
   );
 }

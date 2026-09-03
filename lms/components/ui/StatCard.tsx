@@ -1,15 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import type { BadgeColor } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
-const COLOR_CLASSES: Record<BadgeColor, string> = {
-  violet: "bg-violet-100 text-violet-600",
-  green: "bg-emerald-100 text-emerald-600",
-  amber: "bg-amber-100 text-amber-600",
-  red: "bg-red-100 text-red-600",
-  slate: "bg-slate-100 text-slate-600",
-  blue: "bg-blue-100 text-blue-600",
+/* Figure color: ink by default; terracotta for a due amount, sage for a
+   positive one. Other legacy keys all resolve to ink. */
+const VALUE_CLASSES: Partial<Record<BadgeColor, string>> = {
+  red: "text-status-unpaid",
+  green: "text-sage-700",
 };
 
 export function StatCard({
@@ -19,24 +16,27 @@ export function StatCard({
   hint,
   color = "violet",
 }: {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   label: string;
   value: string | number;
   hint?: string;
   color?: BadgeColor;
 }) {
   return (
-    <Card>
-      <div className="flex items-center gap-4">
-        <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", COLOR_CLASSES[color])}>
-          <Icon className="size-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-2xl font-semibold text-slate-800">{value}</p>
-          <p className="truncate text-sm text-slate-500">{label}</p>
-        </div>
-      </div>
-      {hint && <p className="mt-3 wrap-break-word text-xs text-slate-400">{hint}</p>}
-    </Card>
+    <div className="min-w-0 border-t border-hair-strong pt-3">
+      <p
+        className={cn(
+          "truncate font-display text-3xl font-normal tabular-nums",
+          VALUE_CLASSES[color] ?? "text-ink-900"
+        )}
+      >
+        {value}
+      </p>
+      <p className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-medium text-ink-500">
+        {Icon && <Icon aria-hidden="true" className="size-3.5 shrink-0 text-ink-300" />}
+        <span className="truncate">{label}</span>
+      </p>
+      {hint && <p className="mt-1 wrap-break-word text-[11.5px] text-ink-300">{hint}</p>}
+    </div>
   );
 }

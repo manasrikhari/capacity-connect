@@ -14,11 +14,11 @@ export default async function JoinDonePage({
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md text-center">
-        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-green-100 text-green-600">
+        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-sage-100 text-sage-600">
           <CheckCircle2 className="size-7" />
         </div>
-        <h1 className="text-xl font-semibold text-slate-800">You&apos;re in!</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-xl font-medium text-ink-900">You&apos;re in!</h1>
+        <p className="mt-2 text-sm text-ink-500">
           Request sent — {batch}. Your teacher will approve you shortly.
         </p>
         <a href="/student" className={buttonClasses("primary", "md", "mt-6 inline-flex")}>

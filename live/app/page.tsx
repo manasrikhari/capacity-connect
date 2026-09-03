@@ -88,7 +88,7 @@ function ClassroomWrapper({
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-[#6366F1] hover:bg-[#4f46e5] rounded-lg text-sm transition-colors cursor-pointer text-white w-full font-semibold"
+            className="px-6 py-2 bg-[#A98FCB] hover:bg-[#9077B8] rounded-lg text-sm transition-colors cursor-pointer text-white w-full font-semibold"
           >
             Retry Connection
           </button>
@@ -138,14 +138,14 @@ function ClassroomWrapper({
       {hasJoined && !isFullyConnected && (
         <div className="absolute inset-0 z-50 bg-[#030712] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#6366F1]/10 blur-[130px] animate-pulse" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#A98FCB]/10 blur-[130px] animate-pulse" />
           </div>
 
           <div className="text-center space-y-8 z-10">
             <div className="space-y-3">
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#E2E8F0] leading-relaxed max-w-xl mx-auto">
                 Connecting you to{' '}
-                <span className="text-[#6366F1]">{teacherName}</span>
+                <span className="text-[#A98FCB]">{teacherName}</span>
                 's{' '}
                 <span className="text-indigo-400">{className ? className.toUpperCase() : roomName.toUpperCase()}</span>
               </h1>
@@ -157,7 +157,7 @@ function ClassroomWrapper({
             <div className="relative w-16 h-16 mx-auto">
               <div className="absolute inset-0 rounded-full border-4 border-white/5" />
               <div className="absolute inset-0 rounded-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-              <div className="absolute inset-0 rounded-full bg-[#6366F1]/10 blur-md animate-pulse pointer-events-none" />
+              <div className="absolute inset-0 rounded-full bg-[#A98FCB]/10 blur-md animate-pulse pointer-events-none" />
             </div>
           </div>
         </div>

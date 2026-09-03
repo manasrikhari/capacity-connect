@@ -135,7 +135,7 @@ export default function FloatingTeacherTile({
         zIndex: 250,
         touchAction: 'none',
       }}
-      className="w-40 md:w-52 lg:w-64 aspect-video rounded-xl overflow-hidden border border-[#6366f1]/30 bg-[#111827]/80 backdrop-blur-md shadow-2xl cursor-grab active:cursor-grabbing select-none group floating-teacher-tile"
+      className="w-40 md:w-52 lg:w-64 aspect-video rounded-xl overflow-hidden border border-[#A98FCB]/30 bg-[#111827]/80 backdrop-blur-md shadow-2xl cursor-grab active:cursor-grabbing select-none group floating-teacher-tile"
     >
       {/* Close button to hide tile temporarily */}
       <button

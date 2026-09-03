@@ -1,27 +1,38 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Spectral, Hanken_Grotesk, Spline_Sans_Mono, Caveat } from "next/font/google";
 import { Toaster } from "@/components/ui/Toaster";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/* The four OpenGrapes voices. Spectral is the institution, Hanken Grotesk the
+   interface, Spline Sans Mono the machine, and Caveat the teacher's hand —
+   the last reserved for teacher-authored annotation, never UI chrome. */
+const spectral = Spectral({
+  variable: "--font-spectral",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const splineSansMono = Spline_Sans_Mono({
+  variable: "--font-spline-mono",
   subsets: ["latin"],
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
+const caveat = Caveat({
+  variable: "--font-caveat",
   subsets: ["latin"],
+  weight: ["600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Batch LMS",
-  description: "A simple learning management system for your batch",
+  title: "OpenGrapes",
+  description: "Live classes that remember everything.",
 };
 
 export default function RootLayout({
@@ -32,9 +43,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${plusJakartaSans.variable} antialiased`}
+      className={`${spectral.variable} ${hankenGrotesk.variable} ${splineSansMono.variable} ${caveat.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-linear-to-br from-purple-50 via-violet-100 to-indigo-50">
+      <body className="min-h-screen flex flex-col bg-page">
         {children}
         <Toaster />
       </body>

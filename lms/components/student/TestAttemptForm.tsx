@@ -3,14 +3,31 @@
 import { useActionState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { submitTest } from "@/app/student/tests/actions";
-import type { Question } from "@/app/generated/prisma/client";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { initialActionState } from "@/lib/action-state";
 
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
 
-export function TestAttemptForm({ testId, questions }: { testId: string; questions: Question[] }) {
+/** The question shape safe to send to the client — never carries correctOption. */
+export type AttemptQuestion = {
+  id: string;
+  question: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  marks: number;
+  order: number;
+};
+
+export function TestAttemptForm({
+  testId,
+  questions,
+}: {
+  testId: string;
+  questions: AttemptQuestion[];
+}) {
   const [state, formAction, pending] = useActionState(submitTest.bind(null, testId), initialActionState);
 
   useEffect(() => {
@@ -36,19 +53,25 @@ export function TestAttemptForm({ testId, questions }: { testId: string; questio
         };
         return (
           <Card key={question.id}>
-            <p className="font-medium text-slate-800">
+            <p className="font-medium text-ink-900">
               {index + 1}. {question.question}
-              <span className="ml-2 text-xs font-normal text-slate-400">
-                ({question.marks} mark{question.marks === 1 ? "" : "s"})
+              <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.14em] font-normal text-ink-300">
+                {question.marks} mark{question.marks === 1 ? "" : "s"}
               </span>
             </p>
             <div className="mt-3 space-y-2">
               {OPTION_LETTERS.map((letter) => (
                 <label
                   key={letter}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-violet-50 has-[:checked]:border-violet-400 has-[:checked]:bg-violet-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-[10px] border border-hair px-3 py-2 text-sm text-ink-700 transition-colors hover:bg-plum-50 has-[:checked]:border-plum-300 has-[:checked]:bg-plum-50"
                 >
-                  <input type="radio" name={`answer-${question.id}`} value={letter} required className="accent-violet-600" />
+                  <input
+                    type="radio"
+                    name={`answer-${question.id}`}
+                    value={letter}
+                    required
+                    className="accent-plum-600"
+                  />
                   <span className="font-medium">{letter}.</span> {options[letter]}
                 </label>
               ))}

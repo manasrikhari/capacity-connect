@@ -46,3 +46,9 @@ opengrapes.db
 uploads/
 scratch/
 *.tsbuildinfo
+
+# Claude Code & AI Agent local tooling
+.claude/
+.agents/
+skills-lock.json
+.mcp.json

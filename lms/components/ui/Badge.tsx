@@ -3,13 +3,15 @@ import { cn } from "@/lib/utils";
 
 export type BadgeColor = "violet" | "green" | "amber" | "red" | "slate" | "blue";
 
+/* Legacy key names kept for source compatibility; the values now map onto the
+   OpenGrapes roles (violet→plum, green→sage, amber→partial, red→unpaid). */
 const COLOR_CLASSES: Record<BadgeColor, string> = {
-  violet: "bg-violet-100 text-violet-700",
-  green: "bg-emerald-100 text-emerald-700",
-  amber: "bg-amber-100 text-amber-700",
-  red: "bg-red-100 text-red-700",
-  slate: "bg-slate-100 text-slate-600",
-  blue: "bg-blue-100 text-blue-700",
+  violet: "bg-plum-100 text-plum-700",
+  green: "bg-sage-100 text-sage-700",
+  amber: "bg-status-partial/15 text-status-partial",
+  red: "bg-status-unpaid/12 text-status-unpaid",
+  slate: "bg-sunken text-ink-500",
+  blue: "bg-paper border border-hair text-ink-500",
 };
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -20,7 +22,7 @@ export function Badge({ className, color = "slate", ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium",
+        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-[6px] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em]",
         COLOR_CLASSES[color],
         className
       )}

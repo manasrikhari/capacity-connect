@@ -111,7 +111,7 @@ gitGraph
    ```
 
 5. **Run Applications**:
-   - Run Backend API (Port 5000):
+   - Run Backend API (Port 3001):
      ```bash
      npm run dev:backend
      ```
@@ -119,7 +119,7 @@ gitGraph
      ```bash
      npm run dev:lms
      ```
-   - Run Live Classroom (Port 3001):
+   - Run Live Classroom (Port 3002):
      ```bash
      npm run dev:live
      ```

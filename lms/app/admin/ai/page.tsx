@@ -47,24 +47,15 @@ export default async function AdminAiPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* <div>
-        <h1 className="text-2xl font-bold text-slate-800">OpenGrapes AI</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Your batch AI teaching assistant and lesson Planner for {batch.name}.
-        </p>
-      </div> */}
-
-      <AiCompanion
-        batchId={batch.id}
-        batchName={batch.name}
-        userId={session.user.id}
-        variant="admin"
-        initialConversations={conversations}
-        notes={notes}
-        summaries={summaries}
-        doubts={doubts}
-      />
-    </div>
+    <AiCompanion
+      batchId={batch.id}
+      batchName={batch.name}
+      userId={session.user.id}
+      variant="admin"
+      initialConversations={conversations}
+      notes={notes}
+      summaries={summaries}
+      doubts={doubts}
+    />
   );
 }

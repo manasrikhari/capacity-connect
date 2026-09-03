@@ -16,11 +16,11 @@ export function CopyJoinCode({ code }: { code: string }) {
     <button
       type="button"
       onClick={copy}
-      className="inline-flex cursor-pointer items-center gap-1 rounded-md p-0.5 text-slate-400 transition-colors hover:text-violet-600"
+      className="inline-flex cursor-pointer items-center gap-1 rounded-[6px] p-0.5 text-ink-300 transition-colors hover:text-plum-700"
       aria-label="Copy join code"
     >
       {copied ? (
-        <Check className="size-3.5 text-emerald-500" />
+        <Check className="size-3.5 text-sage-600" />
       ) : (
         <Copy className="size-3.5" />
       )}

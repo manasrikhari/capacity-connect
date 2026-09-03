@@ -85,7 +85,7 @@ export default async function AdminDashboardPage() {
 
   const meetingStatusColor = {
     UPCOMING: "blue" as const,
-    LIVE: "green" as const,
+    LIVE: "red" as const,
     ENDED: "slate" as const,
   };
 
@@ -107,13 +107,13 @@ export default async function AdminDashboardPage() {
       />
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="wrap-break-word text-2xl font-bold text-slate-800">{batch.name}</h1>
-          <p className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+          <h1 className="wrap-break-word text-2xl font-normal text-ink-900">{batch.name}</h1>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink-500">
             {batch.grade && <span>{batch.grade}</span>}
-            {batch.grade && <span className="text-slate-300">·</span>}
-            <span className="inline-flex items-center gap-1">
-              Join code:{" "}
-              <span className="font-mono font-semibold text-violet-600">
+            {batch.grade && <span className="text-ink-300">·</span>}
+            <span className="inline-flex items-center gap-1.5">
+              Join code
+              <span className="font-mono text-plum-700">
                 {batch.joinCode}
               </span>
               <CopyJoinCode code={batch.joinCode} />
@@ -123,18 +123,16 @@ export default async function AdminDashboardPage() {
         <StartMeetingButton batchId={batch.id} isLive={!!liveSession} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <StatCard
           icon={Users}
           label="Approved students"
           value={approvedCount}
-          color="violet"
         />
         <StatCard
           icon={ClipboardList}
           label="Active tests"
           value={activeTests}
-          color="violet"
         />
       </div>
 
@@ -152,14 +150,14 @@ export default async function AdminDashboardPage() {
             {pendingEnrollments.length > 0 && (
               <Link
                 href="/admin/students"
-                className="flex shrink-0 items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
+                className="flex shrink-0 items-center gap-1 text-xs font-medium text-plum-700 hover:underline"
               >
                 View all <ArrowRight className="size-3" />
               </Link>
             )}
           </CardHeader>
           {pendingEnrollments.length === 0 ? (
-            <p className="text-sm text-slate-400">No pending requests.</p>
+            <p className="text-sm text-ink-500">No pending requests.</p>
           ) : (
             <ul className="space-y-3">
               {pendingEnrollments.slice(0, 5).map((e) => (
@@ -168,10 +166,10 @@ export default async function AdminDashboardPage() {
                   className="flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">
+                    <p className="truncate text-sm font-medium text-ink-900">
                       {e.student.name ?? "Unnamed"}
                     </p>
-                    <p className="truncate text-xs text-slate-500">
+                    <p className="truncate text-xs text-ink-500">
                       {e.student.email}
                     </p>
                   </div>
@@ -206,13 +204,13 @@ export default async function AdminDashboardPage() {
             </CardTitle>
             <Link
               href="/admin/meetings"
-              className="flex shrink-0 items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
+              className="flex shrink-0 items-center gap-1 text-xs font-medium text-plum-700 hover:underline"
             >
               View all <ArrowRight className="size-3" />
             </Link>
           </CardHeader>
           {nextMeetings.length === 0 ? (
-            <p className="text-sm text-slate-400">No upcoming meetings.</p>
+            <p className="text-sm text-ink-500">No upcoming meetings.</p>
           ) : (
             <ul className="space-y-3">
               {nextMeetings.map((m) => {
@@ -223,11 +221,11 @@ export default async function AdminDashboardPage() {
                     className="flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-800">
+                      <p className="truncate text-sm font-medium text-ink-900">
                         {m.title}
                       </p>
-                      <p className="text-xs text-slate-500">
-                        {formatDateTime(m.date)}
+                      <p className="truncate font-mono text-xs text-ink-500">
+                        {formatDateTime(m.date)} · {m.durationMins} min
                       </p>
                     </div>
                     <Badge color={meetingStatusColor[status]}>
@@ -249,21 +247,21 @@ export default async function AdminDashboardPage() {
             </CardTitle>
             <Link
               href="/admin/notes"
-              className="flex shrink-0 items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
+              className="flex shrink-0 items-center gap-1 text-xs font-medium text-plum-700 hover:underline"
             >
               View all <ArrowRight className="size-3" />
             </Link>
           </CardHeader>
           {notes.length === 0 ? (
-            <p className="text-sm text-slate-400">No notes yet.</p>
+            <p className="text-sm text-ink-500">No notes yet.</p>
           ) : (
             <ul className="space-y-3">
               {notes.map((n) => (
                 <li key={n.id} className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-800">
+                  <p className="truncate text-sm font-medium text-ink-900">
                     {n.title}
                   </p>
-                  <p className="truncate text-xs text-slate-500">{n.subject}</p>
+                  <p className="truncate text-xs text-ink-500">{n.subject}</p>
                 </li>
               ))}
             </ul>
@@ -284,27 +282,29 @@ export default async function AdminDashboardPage() {
             </CardTitle>
             <Link
               href="/admin/fees"
-              className="flex shrink-0 items-center gap-1 text-xs font-medium text-violet-600 hover:underline"
+              className="flex shrink-0 items-center gap-1 text-xs font-medium text-plum-700 hover:underline"
             >
               View all <ArrowRight className="size-3" />
             </Link>
           </CardHeader>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Total due</span>
-              <span className="font-medium text-slate-800">
+              <span className="text-ink-500">Total due</span>
+              <span className="font-mono tabular-nums text-ink-900">
                 {formatPaise(totalFees)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Collected</span>
-              <span className="font-medium text-emerald-600">
+              <span className="text-ink-500">Collected</span>
+              <span className="font-mono tabular-nums text-sage-700">
                 {formatPaise(totalPaid)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Outstanding</span>
-              <span className="font-medium text-amber-600">
+              <span className="text-ink-500">Outstanding</span>
+              <span
+                className={`font-mono tabular-nums ${outstanding > 0 ? "text-status-unpaid" : "text-ink-900"}`}
+              >
                 {formatPaise(outstanding)}
               </span>
             </div>

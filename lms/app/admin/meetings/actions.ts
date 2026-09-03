@@ -7,12 +7,15 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { meetingSchema } from "@/lib/validations/meeting";
 import { triggerMeetingEnded } from "@/lib/pusher-server";
+import { generateLiveToken } from "@/lib/live-token";
+import { getEffectiveMeetingStatus } from "@/lib/utils";
 
 function parseMeetingForm(formData: FormData) {
   return meetingSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description"),
     date: formData.get("date"),
+    durationMins: formData.get("durationMins"),
     link: formData.get("link"),
   });
 }
@@ -38,7 +41,8 @@ export async function createMeeting(_prev: ActionState, formData: FormData): Pro
       title: parsed.data.title,
       description: parsed.data.description || null,
       date,
-      link: parsed.data.link,
+      durationMins: parsed.data.durationMins,
+      link: parsed.data.link ?? "",
       status: "UPCOMING",
     },
   });
@@ -78,7 +82,8 @@ export async function updateMeeting(
       title: parsed.data.title,
       description: parsed.data.description || null,
       date,
-      link: parsed.data.link,
+      durationMins: parsed.data.durationMins,
+      link: parsed.data.link ?? "",
     },
   });
 
@@ -86,8 +91,6 @@ export async function updateMeeting(
   revalidatePath("/student/meetings");
   return { success: true };
 }
-
-import { generateTemporaryToken } from "@/app/actions/meeting";
 
 export async function setMeetingStatus(id: string, status: "LIVE" | "ENDED" | "UPCOMING") {
   const session = await requireAdmin();
@@ -117,7 +120,7 @@ export async function setMeetingStatus(id: string, status: "LIVE" | "ENDED" | "U
     const meetingPlatformApiUrl = process.env.MEETING_PLATFORM_API_URL;
     if (meetingPlatformApiUrl) {
       try {
-        const token = await generateTemporaryToken(session.user, "teacher", id, batch.id);
+        const token = await generateLiveToken(session.user, "teacher", id, batch.id);
         const res = await fetch(`${meetingPlatformApiUrl}/api/end-class`, {
           method: "POST",
           headers: {
@@ -157,4 +160,67 @@ export async function deleteMeeting(id: string) {
   revalidatePath("/admin/meetings");
   revalidatePath("/student/meetings");
   return { success: true as const };
+}
+
+type AttendanceRecord = { studentId: string; status: "PRESENT" | "ABSENT" };
+
+/**
+ * Save the attendance roster for a class that has already happened.
+ * Upserts one Attendance row per (approved) student, keyed on the
+ * [meetingId, studentId] unique. Only allowed once the class has ended.
+ */
+export async function saveAttendance(
+  meetingId: string,
+  records: AttendanceRecord[]
+): Promise<ActionState> {
+  const session = await requireAdmin();
+  const batch = await getActiveBatch(session);
+  if (!batch) return { error: "No active batch" };
+
+  const meeting = await prisma.meeting.findUnique({ where: { id: meetingId } });
+  if (!meeting || meeting.batchId !== batch.id) {
+    return { error: "Meeting not found" };
+  }
+
+  // Guard: attendance is only for classes that have actually happened.
+  if (getEffectiveMeetingStatus(meeting) !== "ENDED") {
+    return { error: "You can only mark attendance for classes that have ended" };
+  }
+
+  // Only mark students who are approved in this batch.
+  const enrollments = await prisma.enrollment.findMany({
+    where: { batchId: meeting.batchId, status: "APPROVED" },
+    select: { studentId: true },
+  });
+  const approvedIds = new Set(enrollments.map((e) => e.studentId));
+
+  const clean = records.filter(
+    (r) =>
+      approvedIds.has(r.studentId) &&
+      (r.status === "PRESENT" || r.status === "ABSENT")
+  );
+
+  if (clean.length === 0) {
+    return { error: "No students to mark" };
+  }
+
+  await prisma.$transaction(
+    clean.map((r) =>
+      prisma.attendance.upsert({
+        where: { meetingId_studentId: { meetingId, studentId: r.studentId } },
+        create: {
+          meetingId,
+          studentId: r.studentId,
+          batchId: meeting.batchId,
+          status: r.status,
+        },
+        update: { status: r.status },
+      })
+    )
+  );
+
+  revalidatePath("/admin/meetings");
+  revalidatePath("/student/meetings");
+  revalidatePath("/student/dashboard");
+  return { success: true };
 }

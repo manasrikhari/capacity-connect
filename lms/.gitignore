@@ -46,6 +46,9 @@ next-env.d.ts
 
 /app/generated/prisma
 
+# library uploads (local storage adapter — see lib/storage.ts)
+/uploads
+
 # database
 /prisma/dev.db
 /dev.db

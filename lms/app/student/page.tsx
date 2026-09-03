@@ -5,6 +5,7 @@ import {
   X,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { setActiveBatchAction, cancelEnrollmentAction } from "@/app/student/actions";
 import { getSession } from "@/lib/session";
 import { getStudentHubData } from "@/lib/batch";
@@ -89,12 +90,12 @@ export default async function StudentHubPage({
         <section className="mt-8">
           <div className="mb-4 flex items-center justify-between border-b border-hair-strong pb-2">
             <h2 className="text-sm font-semibold text-ink-900">Recommended for you</h2>
-            <a
+            <Link
               href="/student/recommendations"
               className="font-mono text-[10px] uppercase tracking-[0.14em] text-plum-600 hover:text-plum-700"
             >
               See all
-            </a>
+            </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {recViews.map((v) => (

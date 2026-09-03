@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function LandingFooter() {
   return (
     <footer className="site">
@@ -6,46 +8,46 @@ export function LandingFooter() {
           <div>
             <div className="brand">
               <span className="dot" />
-              OpenGrapes
+              Capacity Connect
             </div>
             <p>
-              An all-in-one live teaching platform for independent educators.
-              Teach live. Let AI handle the rest.
+              MoES &amp; India Meteorological Department&apos;s platform for digital capacity building
+              in weather and climate services. Train live. Certify. Track national capacity.
             </p>
           </div>
           <div>
-            <h6>Product</h6>
+            <h6>Platform</h6>
             <ul>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#ai">AI layer</a></li>
-              <li><a href="#lms">Platform</a></li>
-              <li><a href="#how">How it works</a></li>
+              <li><a href="#features">Live classroom</a></li>
+              <li><a href="#features">MeghDoot AI</a></li>
+              <li><a href="#courses">Courses</a></li>
+              <li><a href="#announcements">Announcements</a></li>
             </ul>
           </div>
           <div>
-            <h6>For teachers</h6>
+            <h6>For members</h6>
             <ul>
-              <li><a href="#">Live classroom</a></li>
-              <li><a href="#">Whiteboard</a></li>
-              <li><a href="#">Tests &amp; notes</a></li>
-              <li><a href="#">Fees</a></li>
+              <li><a href="#signin">Trainees</a></li>
+              <li><a href="#signin">Trainers</a></li>
+              <li><a href="#signin">Ministry admins</a></li>
+              <li><Link href="/verify">Verify a certificate</Link></li>
             </ul>
           </div>
           <div>
-            <h6>Company</h6>
+            <h6>Ministry</h6>
             <ul>
-              <li><a href="#">About</a></li>
-              <li><a href="#">Sign in</a></li>
-              <li><a href="#">Contact</a></li>
+              <li><a href="#">About MoES</a></li>
+              <li><a href="#signin">Sign in</a></li>
+              <li><a href="#announcements">Advisories</a></li>
               <li><a href="#">Privacy</a></li>
             </ul>
           </div>
         </div>
         <div className="foot-base">
-          <span>© 2026 OpenGrapes. All rights reserved.</span>
-          <span>Teach live. Let AI handle the rest.</span>
+          <span>© 2026 Ministry of Earth Sciences · India Meteorological Department.</span>
+          <span>Digital capacity building for India&apos;s weather and climate services.</span>
         </div>
-        <div className="foot-credit">Created &amp; maintained by Manas &amp; Manas</div>
+        <div className="foot-credit">Capacity Connect — a national training platform</div>
       </div>
     </footer>
   );

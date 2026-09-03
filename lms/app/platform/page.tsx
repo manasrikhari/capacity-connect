@@ -1,23 +1,33 @@
 import {
+  Award,
   BookOpen,
+  CheckCircle2,
   Clock,
   GraduationCap,
   LinkIcon,
-  TrendingUp,
+  Percent,
+  Target,
   Users,
-  Wallet,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import { CapacityMetrics } from "@/components/platform/CapacityMetrics";
+import { DepartmentBars } from "@/components/platform/DepartmentBars";
+import { DomainBars } from "@/components/platform/DomainBars";
 import { TeacherStatusButton } from "@/components/platform/TeacherStatusButton";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatCard } from "@/components/ui/StatCard";
 import { auth } from "@/lib/auth";
+import { getCapacityMetrics } from "@/lib/metrics-db";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatPaise, formatPaiseCompact } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 const TABLE_HEAD = "font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300";
+
+function pctLabel(v: number | null) {
+  return v == null ? "—" : `${v}%`;
+}
 
 export default async function PlatformPage() {
   const session = await auth();
@@ -25,21 +35,17 @@ export default async function PlatformPage() {
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const [
+    metrics,
     teachers,
     batchCounts,
     totalStudents,
     totalEnrollments,
-    feeAgg,
-    paymentAgg,
-    recentTeachers7d,
-    recentTeachers30d,
     recentStudents7d,
-    recentStudents30d,
     batches,
   ] = await Promise.all([
+    getCapacityMetrics(),
     prisma.user.findMany({
       where: { role: "ADMIN" },
       include: {
@@ -56,12 +62,7 @@ export default async function PlatformPage() {
     }),
     prisma.user.count({ where: { role: "STUDENT" } }),
     prisma.enrollment.count(),
-    prisma.fee.aggregate({ _sum: { totalAmount: true } }),
-    prisma.payment.aggregate({ _sum: { amount: true } }),
-    prisma.user.count({ where: { role: "ADMIN", createdAt: { gte: sevenDaysAgo } } }),
-    prisma.user.count({ where: { role: "ADMIN", createdAt: { gte: thirtyDaysAgo } } }),
     prisma.user.count({ where: { role: "STUDENT", createdAt: { gte: sevenDaysAgo } } }),
-    prisma.user.count({ where: { role: "STUDENT", createdAt: { gte: thirtyDaysAgo } } }),
     prisma.batch.findMany({
       include: {
         teacher: { select: { name: true, email: true } },
@@ -79,69 +80,70 @@ export default async function PlatformPage() {
   const archivedBatches = batchCounts.find((b) => b.status === "ARCHIVED")?._count ?? 0;
   const totalBatches = activeBatches + archivedBatches;
 
-  const totalFees = feeAgg._sum.totalAmount ?? 0;
-  const totalPaid = paymentAgg._sum.amount ?? 0;
-  const outstanding = Math.max(totalFees - totalPaid, 0);
-
   function studentCount(teacher: (typeof teachers)[number]) {
     return teacher.ownedBatches.reduce((sum, b) => sum + b._count.enrollments, 0);
   }
 
+  const passColor =
+    metrics.passRatePercent == null ? "violet" : metrics.passRatePercent >= 60 ? "green" : "red";
+
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div>
-        <h1 className="text-2xl font-normal text-ink-900">Platform dashboard</h1>
-        <p className="mt-1 text-sm text-ink-500">Overview across all teachers, batches, and students.</p>
+        <h1 className="font-display text-2xl font-normal text-ink-900">Capacity dashboard</h1>
+        <p className="mt-1 text-sm text-ink-500">
+          National training capacity across trainers, courses, and trainees.
+        </p>
       </div>
 
-      {/* ── Stat cards ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-6 lg:grid-cols-3 xl:grid-cols-6">
+      {/* ── Headline capacity + counts ─────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 xl:grid-cols-4">
+        <StatCard icon={Percent} label="Attendance" value={pctLabel(metrics.attendancePercent)} hint={`${metrics.totals.attendanceMarks} marks`} />
+        <StatCard icon={CheckCircle2} label="Completion" value={pctLabel(metrics.completionPercent)} hint={`${metrics.certifiedCount}/${metrics.totals.enrollments} enrolments`} />
+        <StatCard icon={Award} label="Certified personnel" value={metrics.certifiedCount} color="green" />
+        <StatCard
+          icon={Target}
+          label="Assessment pass rate"
+          value={pctLabel(metrics.passRatePercent)}
+          hint={`${metrics.totals.attempts} attempts`}
+          color={passColor}
+        />
         <StatCard
           icon={Users}
-          label="Teachers"
+          label="Trainers"
           value={teachers.length}
-          hint={`${approvedTeachers.length} approved · ${pendingTeachers.length} pending · ${suspendedTeachers.length} suspended`}
+          hint={`${approvedTeachers.length} approved · ${pendingTeachers.length} pending`}
         />
         <StatCard
           icon={BookOpen}
-          label="Batches"
+          label="Courses"
           value={totalBatches}
           hint={`${activeBatches} active · ${archivedBatches} archived`}
         />
-        <StatCard
-          icon={GraduationCap}
-          label="Students"
-          value={totalStudents}
-        />
+        <StatCard icon={GraduationCap} label="Trainees" value={totalStudents} hint={`${recentStudents7d} new this week`} />
         <StatCard
           icon={LinkIcon}
-          label="Enrollments"
+          label="Enrolments"
           value={totalEnrollments}
-          hint={totalEnrollments > totalStudents ? `${totalEnrollments - totalStudents} multi-batch` : undefined}
-        />
-        <StatCard
-          icon={Wallet}
-          label="Collected"
-          value={formatPaiseCompact(totalPaid)}
-          hint={outstanding > 0 ? `${formatPaise(outstanding)} outstanding` : undefined}
-          color="green"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="New signups"
-          value={recentTeachers7d + recentStudents7d}
-          hint={`7d: ${recentTeachers7d} teachers, ${recentStudents7d} students · 30d: ${recentTeachers30d} + ${recentStudents30d}`}
+          hint={totalEnrollments > totalStudents ? `${totalEnrollments - totalStudents} multi-course` : undefined}
         />
       </div>
 
-      {/* ── Pending teachers ───────────────────────────────────────────── */}
+      {/* ── Capacity metrics + breakdowns ──────────────────────────────── */}
+      <CapacityMetrics metrics={metrics} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <DepartmentBars byDepartment={metrics.byDepartment} />
+        <DomainBars byDomain={metrics.byDomain} />
+      </div>
+
+      {/* ── Pending trainers ───────────────────────────────────────────── */}
       {pendingTeachers.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>
               <span className="flex items-center gap-2">
                 <Clock className="size-5 text-status-partial" />
-                Pending teachers ({pendingTeachers.length})
+                Pending trainers ({pendingTeachers.length})
               </span>
             </CardTitle>
           </CardHeader>
@@ -168,23 +170,23 @@ export default async function PlatformPage() {
         </Card>
       )}
 
-      {/* ── Teachers table ─────────────────────────────────────────────── */}
+      {/* ── Trainers table ─────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>All teachers ({teachers.length})</CardTitle>
+          <CardTitle>All trainers ({teachers.length})</CardTitle>
         </CardHeader>
         {teachers.length === 0 ? (
-          <EmptyState icon={Users} title="No teachers yet" />
+          <EmptyState icon={Users} title="No trainers yet" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className={`border-b border-hair-strong ${TABLE_HEAD}`}>
-                  <th className="py-2 pr-4 font-normal">Teacher</th>
+                  <th className="py-2 pr-4 font-normal">Trainer</th>
                   <th className="py-2 pr-4 font-normal">Status</th>
                   <th className="py-2 pr-4 font-normal">Plan</th>
-                  <th className="py-2 pr-4 text-right font-normal">Batches</th>
-                  <th className="py-2 pr-4 text-right font-normal">Students</th>
+                  <th className="py-2 pr-4 text-right font-normal">Courses</th>
+                  <th className="py-2 pr-4 text-right font-normal">Trainees</th>
                   <th className="py-2 font-normal">Actions</th>
                 </tr>
               </thead>
@@ -241,21 +243,21 @@ export default async function PlatformPage() {
         )}
       </Card>
 
-      {/* ── Batches overview ───────────────────────────────────────────── */}
+      {/* ── Courses overview ───────────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>All batches ({batches.length})</CardTitle>
+          <CardTitle>All courses ({batches.length})</CardTitle>
         </CardHeader>
         {batches.length === 0 ? (
-          <EmptyState icon={BookOpen} title="No batches yet" />
+          <EmptyState icon={BookOpen} title="No courses yet" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className={`border-b border-hair-strong ${TABLE_HEAD}`}>
-                  <th className="py-2 pr-4 font-normal">Batch</th>
-                  <th className="py-2 pr-4 font-normal">Teacher</th>
-                  <th className="py-2 pr-4 text-right font-normal">Students</th>
+                  <th className="py-2 pr-4 font-normal">Course</th>
+                  <th className="py-2 pr-4 font-normal">Trainer</th>
+                  <th className="py-2 pr-4 text-right font-normal">Trainees</th>
                   <th className="py-2 pr-4 font-normal">Status</th>
                   <th className="py-2 font-normal">Created</th>
                 </tr>
@@ -265,7 +267,7 @@ export default async function PlatformPage() {
                   <tr key={b.id}>
                     <td className="py-3 pr-4">
                       <p className="font-medium text-ink-900">{b.name}</p>
-                      {b.grade && <p className="text-xs text-ink-500">{b.grade}</p>}
+                      {b.subject && <p className="text-xs text-ink-500">{b.subject}</p>}
                     </td>
                     <td className="py-3 pr-4">
                       <p className="text-ink-900">{b.teacher.name ?? "Unnamed"}</p>
@@ -286,11 +288,11 @@ export default async function PlatformPage() {
         )}
       </Card>
 
-      {/* ── Suspended teachers ─────────────────────────────────────────── */}
+      {/* ── Suspended trainers ─────────────────────────────────────────── */}
       {suspendedTeachers.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Suspended teachers ({suspendedTeachers.length})</CardTitle>
+            <CardTitle>Suspended trainers ({suspendedTeachers.length})</CardTitle>
           </CardHeader>
           <ul className="divide-y divide-hair">
             {suspendedTeachers.map((t) => (
@@ -298,7 +300,7 @@ export default async function PlatformPage() {
                 <div>
                   <p className="text-sm font-medium text-ink-900">{t.name ?? "Unnamed"}</p>
                   <p className="text-xs text-ink-500">
-                    {t.email} · {t._count.ownedBatches} batch{t._count.ownedBatches !== 1 ? "es" : ""}
+                    {t.email} · {t._count.ownedBatches} course{t._count.ownedBatches !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

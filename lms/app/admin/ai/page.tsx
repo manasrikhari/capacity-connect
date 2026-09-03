@@ -2,13 +2,21 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getActiveBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { AiCompanion } from "@/components/ai/AiCompanion";
 
-export default async function AdminAiPage() {
+export default async function AdminAiPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
   const session = await getSession();
   if (!session || session.user.role !== "ADMIN") {
     redirect("/");
   }
+
+  const { mode } = await searchParams;
+  const isMeghDoot = mode === "meghdoot";
 
   const batch = await getActiveBatch(session);
   if (!batch) {
@@ -47,15 +55,41 @@ export default async function AdminAiPage() {
   });
 
   return (
-    <AiCompanion
-      batchId={batch.id}
-      batchName={batch.name}
-      userId={session.user.id}
-      variant="admin"
-      initialConversations={conversations}
-      notes={notes}
-      summaries={summaries}
-      doubts={doubts}
-    />
+    <div className="space-y-4">
+      <div className="inline-flex items-center gap-1 rounded-[10px] border border-hair bg-sunken/40 p-1">
+        <Link
+          href="/admin/ai"
+          className={`rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors ${
+            !isMeghDoot
+              ? "bg-paper text-plum-700 shadow-[var(--shadow-sm)]"
+              : "text-ink-500 hover:text-ink-900"
+          }`}
+        >
+          Course assistant
+        </Link>
+        <Link
+          href="/admin/ai?mode=meghdoot"
+          className={`rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors ${
+            isMeghDoot
+              ? "bg-paper text-plum-700 shadow-[var(--shadow-sm)]"
+              : "text-ink-500 hover:text-ink-900"
+          }`}
+        >
+          MeghDoot Copilot
+        </Link>
+      </div>
+
+      <AiCompanion
+        batchId={batch.id}
+        batchName={batch.name}
+        userId={session.user.id}
+        variant="admin"
+        initialConversations={conversations}
+        notes={notes}
+        summaries={summaries}
+        doubts={doubts}
+        mode={isMeghDoot ? "meghdoot" : "classroom"}
+      />
+    </div>
   );
 }

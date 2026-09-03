@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import MarkdownRenderer from "./MarkdownRenderer";
+import { CitationChips } from "./CitationChips";
+import { splitCitations } from "@/lib/graphrag";
 import {
   Sparkles,
   MessageSquare,
@@ -74,6 +76,7 @@ interface AiCompanionProps {
   notes: NoteItem[];
   summaries: SummaryItem[];
   doubts: DoubtItem[];
+  mode?: "classroom" | "meghdoot";
 }
 
 export function AiCompanion({
@@ -85,7 +88,10 @@ export function AiCompanion({
   notes,
   summaries,
   doubts,
+  mode = "classroom",
 }: AiCompanionProps) {
+  const isMeghDoot = mode === "meghdoot";
+  const assistantLabel = isMeghDoot ? "MeghDoot Copilot" : "OpenGrapes AI";
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -377,7 +383,7 @@ export function AiCompanion({
       }
 
       // 4. Hit streaming Route Handler
-      const response = await fetch("/api/ai/chat", {
+      const response = await fetch(isMeghDoot ? "/api/ai/meghdoot" : "/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -581,7 +587,7 @@ export function AiCompanion({
             {/* Header metadata */}
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-plum-700">
-                OpenGrapes AI
+                {assistantLabel}
               </span>
               {m.createdAt && (
                 <span className="font-mono text-[10px] text-ink-300">
@@ -598,7 +604,13 @@ export function AiCompanion({
               <div className="flex items-center gap-2 py-1 text-xs text-plum-600 font-medium italic animate-pulse">
                 <Loader2 className="size-3.5 animate-spin" />
                 <span>
-                  {phase === "context" ? "Reading classroom context…" : "Thinking deeply…"}
+                  {phase === "context"
+                    ? isMeghDoot
+                      ? "Walking the knowledge graph…"
+                      : "Reading classroom context…"
+                    : isMeghDoot
+                      ? "Walking the knowledge graph…"
+                      : "Thinking deeply…"}
                 </span>
               </div>
             )}
@@ -631,12 +643,24 @@ export function AiCompanion({
               </div>
             )}
 
-            {/* Answer solution text */}
-            {(!isTemp || answerText.trim()) && (
-              <div className="text-ink-700 text-xs leading-relaxed">
-                <MarkdownRenderer content={answerText} />
-              </div>
-            )}
+            {/* Answer solution text (+ MeghDoot citation chips) */}
+            {(() => {
+              // In MeghDoot mode the answer body carries a trailing citations
+              // sentinel (both while streaming and in persisted history); split
+              // it off so the visible text stays clean and chips render below.
+              const { text: displayText, citations } = isMeghDoot
+                ? splitCitations(answerText)
+                : { text: answerText, citations: [] };
+
+              return (
+                (!isTemp || displayText.trim()) && (
+                  <div className="text-ink-700 text-xs leading-relaxed">
+                    <MarkdownRenderer content={displayText} />
+                    {isMeghDoot && <CitationChips citations={citations} />}
+                  </div>
+                )
+              );
+            })()}
           </div>
         </div>
       );

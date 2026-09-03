@@ -85,6 +85,36 @@ export async function submitTest(testId: string, _prev: ActionState, formData: F
     throw error;
   }
 
+  // Task 3.5: a graded attempt updates the trainee's proficiency in the test's
+  // competency. A certificate-backed level is authoritative and is never lowered
+  // by a test result.
+  if (test.skillId) {
+    const percent = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
+    const proficiency = percent >= 85 ? 4 : percent >= 60 ? 3 : percent >= 40 ? 2 : 1;
+    try {
+      const existing = await prisma.traineeSkill.findUnique({
+        where: { traineeId_skillId: { traineeId: studentId, skillId: test.skillId } },
+      });
+      const certLocked =
+        existing?.source?.startsWith("CERTIFICATE:") && existing.proficiency >= proficiency;
+      if (!certLocked) {
+        await prisma.traineeSkill.upsert({
+          where: { traineeId_skillId: { traineeId: studentId, skillId: test.skillId } },
+          create: {
+            traineeId: studentId,
+            skillId: test.skillId,
+            proficiency,
+            source: `TEST:${testId}`,
+          },
+          update: { proficiency, source: `TEST:${testId}` },
+        });
+      }
+    } catch {
+      // The attempt is already recorded; a competency-update failure must not
+      // block the trainee from seeing their result.
+    }
+  }
+
   revalidatePath("/student/tests");
   revalidatePath(`/student/tests/${testId}`);
   redirect(`/student/tests/${testId}`);

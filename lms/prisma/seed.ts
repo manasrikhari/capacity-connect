@@ -218,7 +218,8 @@ async function main() {
     },
   });
 
-  const trHydro = await makeUser({
+  // PENDING trainer — populates the MoES admin approval queue (not referenced later).
+  await makeUser({
     email: "trainer.hydro@imd.gov.in",
     name: "Dr. Vandana Rao",
     password: pwTrainer,

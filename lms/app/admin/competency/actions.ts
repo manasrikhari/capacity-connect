@@ -7,7 +7,7 @@ import { getActiveBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { setBatchRequirements } from "@/lib/competency-db";
-import { batchRequirementSchema, trainerSkillSchema } from "@/lib/validations/skill";
+import { trainerSkillSchema } from "@/lib/validations/skill";
 
 const requirementsPayload = z.array(
   z.object({

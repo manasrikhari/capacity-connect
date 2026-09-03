@@ -82,7 +82,6 @@ interface AiCompanionProps {
 export function AiCompanion({
   batchId,
   batchName,
-  userId,
   variant,
   initialConversations,
   notes,

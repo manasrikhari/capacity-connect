@@ -40,11 +40,15 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         let email = identifier.toLowerCase();
         if (!email.includes("@")) {
           if (process.env.NODE_ENV === "production") return null;
+          // Capacity Connect demo aliases → seeded MoES/IMD accounts.
           const aliases: Record<string, string> = {
-            teacher: "teacher2@opengrapes.com",
-            student: "ishaan@test.com",
+            admin: "admin@moes.gov.in",
+            teacher: "trainer.radar@imd.gov.in",
+            trainer: "trainer.radar@imd.gov.in",
+            student: "trainee.sat@imd.gov.in",
+            trainee: "trainee.sat@imd.gov.in",
           };
-          email = aliases[email] ?? `${email}@test.com`;
+          email = aliases[email] ?? `${email}@imd.gov.in`;
         }
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;

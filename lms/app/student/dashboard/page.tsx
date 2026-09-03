@@ -1,9 +1,12 @@
+import { MessageSquareHeart } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   StudentDashboard,
   type DashboardData,
 } from "@/components/student/dashboard/StudentDashboard";
 import { LiveRefresh } from "@/components/realtime/LiveRefresh";
+import { Card } from "@/components/ui/Card";
 import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
@@ -340,6 +343,17 @@ export default async function StudentDashboardPage() {
     },
   };
 
+  /* ── Feedback prompt: course has ended and no feedback left yet ── */
+  const [courseMeta, existingFeedback] = await Promise.all([
+    prisma.batch.findUnique({ where: { id: batch.id }, select: { endDate: true } }),
+    prisma.feedback.findUnique({
+      where: { batchId_traineeId: { batchId: batch.id, traineeId: studentId } },
+      select: { id: true },
+    }),
+  ]);
+  const showFeedbackPrompt =
+    !!courseMeta?.endDate && courseMeta.endDate.getTime() < now.getTime() && !existingFeedback;
+
   return (
     <>
       <LiveRefresh
@@ -350,6 +364,17 @@ export default async function StudentDashboardPage() {
           { event: PUSHER_EVENTS.TEACHER_JOINED, toastMessageKey: "teacherJoined" },
         ]}
       />
+      {showFeedbackPrompt && (
+        <Link href="/student/feedback" className="mb-6 block">
+          <Card className="flex items-center gap-3 transition-colors hover:border-hair-strong">
+            <MessageSquareHeart aria-hidden="true" className="size-5 shrink-0 text-plum-600" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-ink-900">This course has ended — share your feedback</p>
+              <p className="text-sm text-ink-500">Rate the course and trainer to help us improve.</p>
+            </div>
+          </Card>
+        </Link>
+      )}
       <StudentDashboard data={data} />
     </>
   );

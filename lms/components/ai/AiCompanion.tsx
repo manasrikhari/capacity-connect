@@ -91,7 +91,7 @@ export function AiCompanion({
   mode = "classroom",
 }: AiCompanionProps) {
   const isMeghDoot = mode === "meghdoot";
-  const assistantLabel = isMeghDoot ? "MeghDoot Copilot" : "OpenGrapes AI";
+  const assistantLabel = isMeghDoot ? "MeghDoot Copilot" : "Capacity Connect AI";
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -780,7 +780,7 @@ export function AiCompanion({
                 <Sparkles className="size-8" />
               </div>
               <div>
-                <h3 className="font-medium text-ink-900 text-lg">Chat with OpenGrapes AI</h3>
+                <h3 className="font-medium text-ink-900 text-lg">Chat with {assistantLabel}</h3>
                 <p className="text-ink-500 text-sm mt-1">
                   Ask doubts, summarise concepts, or request explanations based on your batch notes
                   and classroom meetings.

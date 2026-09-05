@@ -4,7 +4,11 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { CapacityMetrics } from "@/lib/metrics";
 
-/** Certification-completion % per department, tallest first. */
+/**
+ * Share of each department's trainees who hold a certificate.
+ * Rows are ordered by department size (see lib/metrics.ts), NOT by the
+ * percentage drawn, so the bars are deliberately not monotonic.
+ */
 export function DepartmentBars({ byDepartment }: { byDepartment: CapacityMetrics["byDepartment"] }) {
   const rows = byDepartment.map((d) => ({
     label: d.department,
@@ -16,8 +20,12 @@ export function DepartmentBars({ byDepartment }: { byDepartment: CapacityMetrics
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Completion by department</CardTitle>
+        <CardTitle>Certified by department</CardTitle>
       </CardHeader>
+      <p className="mb-4 text-xs text-ink-500">
+        Share of each department&rsquo;s trainees who are certified. Full bar = 100%. Largest
+        department first.
+      </p>
       {rows.length === 0 ? (
         <EmptyState icon={Building2} title="No department data yet" />
       ) : (

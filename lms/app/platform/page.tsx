@@ -10,7 +10,6 @@ import {
   Users,
 } from "lucide-react";
 import { redirect } from "next/navigation";
-import { CapacityMetrics } from "@/components/platform/CapacityMetrics";
 import { DepartmentBars } from "@/components/platform/DepartmentBars";
 import { DomainBars } from "@/components/platform/DomainBars";
 import { TeacherStatusButton } from "@/components/platform/TeacherStatusButton";
@@ -24,6 +23,11 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 
 const TABLE_HEAD = "font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300";
+
+/** An attempt counts as a pass at or above this share of the marks (lib/metrics.ts). */
+const PASS_MARK_PERCENT = 50;
+/** A cohort pass rate at or above this is shown green. */
+const PASS_RATE_TARGET = 60;
 
 function pctLabel(v: number | null) {
   return v == null ? "—" : `${v}%`;
@@ -84,8 +88,14 @@ export default async function PlatformPage() {
     return teacher.ownedBatches.reduce((sum, b) => sum + b._count.enrollments, 0);
   }
 
+  // The bar the pass rate is judged against, shown in the card hint rather
+  // than left as an invisible magic number.
   const passColor =
-    metrics.passRatePercent == null ? "violet" : metrics.passRatePercent >= 60 ? "green" : "red";
+    metrics.passRatePercent == null
+      ? "violet"
+      : metrics.passRatePercent >= PASS_RATE_TARGET
+        ? "green"
+        : "red";
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -96,57 +106,25 @@ export default async function PlatformPage() {
         </p>
       </div>
 
-      {/* ── Headline capacity + counts ─────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 xl:grid-cols-4">
-        <StatCard icon={Percent} label="Attendance" value={pctLabel(metrics.attendancePercent)} hint={`${metrics.totals.attendanceMarks} marks`} />
-        <StatCard icon={CheckCircle2} label="Completion" value={pctLabel(metrics.completionPercent)} hint={`${metrics.certifiedCount}/${metrics.totals.enrollments} enrolments`} />
-        <StatCard icon={Award} label="Certified personnel" value={metrics.certifiedCount} color="green" />
-        <StatCard
-          icon={Target}
-          label="Assessment pass rate"
-          value={pctLabel(metrics.passRatePercent)}
-          hint={`${metrics.totals.attempts} attempts`}
-          color={passColor}
-        />
-        <StatCard
-          icon={Users}
-          label="Trainers"
-          value={teachers.length}
-          hint={`${approvedTeachers.length} approved · ${pendingTeachers.length} pending`}
-        />
-        <StatCard
-          icon={BookOpen}
-          label="Courses"
-          value={totalBatches}
-          hint={`${activeBatches} active · ${archivedBatches} archived`}
-        />
-        <StatCard icon={GraduationCap} label="Trainees" value={totalStudents} hint={`${recentStudents7d} new this week`} />
-        <StatCard
-          icon={LinkIcon}
-          label="Enrolments"
-          value={totalEnrollments}
-          hint={totalEnrollments > totalStudents ? `${totalEnrollments - totalStudents} multi-course` : undefined}
-        />
-      </div>
-
-      {/* ── Capacity metrics + breakdowns ──────────────────────────────── */}
-      <CapacityMetrics metrics={metrics} />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <DepartmentBars byDepartment={metrics.byDepartment} />
-        <DomainBars byDomain={metrics.byDomain} />
-      </div>
-
-      {/* ── Pending trainers ───────────────────────────────────────────── */}
-      {pendingTeachers.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <span className="flex items-center gap-2">
-                <Clock className="size-5 text-status-partial" />
-                Pending trainers ({pendingTeachers.length})
-              </span>
-            </CardTitle>
-          </CardHeader>
+      {/* ── Action queue: always rendered so its position never moves ──── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <span className="flex items-center gap-2">
+              <Clock
+                className={
+                  pendingTeachers.length > 0 ? "size-5 text-status-partial" : "size-5 text-ink-300"
+                }
+              />
+              Awaiting approval ({pendingTeachers.length})
+            </span>
+          </CardTitle>
+        </CardHeader>
+        {pendingTeachers.length === 0 ? (
+          <p className="py-2 text-sm text-ink-500">
+            No trainers are waiting for approval.
+          </p>
+        ) : (
           <ul className="divide-y divide-hair">
             {pendingTeachers.map((t) => (
               <li key={t.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -167,8 +145,85 @@ export default async function PlatformPage() {
               </li>
             ))}
           </ul>
-        </Card>
-      )}
+        )}
+      </Card>
+
+      {/* ── Outcomes: how the system is performing ────────────────────── */}
+      <section>
+        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+          Outcomes
+        </h2>
+        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+          <StatCard
+            icon={Percent}
+            label="Attendance"
+            value={pctLabel(metrics.attendancePercent)}
+            hint={`${metrics.totals.attendanceMarks} marks recorded`}
+          />
+          <StatCard
+            icon={CheckCircle2}
+            label="Certification rate"
+            value={pctLabel(metrics.completionPercent)}
+            hint={`${metrics.certifiedCount} of ${metrics.totals.enrollments} enrolments certified`}
+          />
+          <StatCard
+            icon={Target}
+            label="Assessment pass rate"
+            value={pctLabel(metrics.passRatePercent)}
+            hint={`${metrics.totals.attempts} attempts · pass mark ${PASS_MARK_PERCENT}%`}
+            color={passColor}
+          />
+          <StatCard
+            icon={Award}
+            label="Certified personnel"
+            value={metrics.certifiedCount}
+            hint="valid certificates"
+            color="green"
+          />
+        </div>
+      </section>
+
+      {/* ── Scale: how big the system is ──────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+          Scale
+        </h2>
+        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+          <StatCard
+            icon={Users}
+            label="Trainers"
+            value={teachers.length}
+            hint={`${approvedTeachers.length} approved · ${pendingTeachers.length} pending`}
+          />
+          <StatCard
+            icon={BookOpen}
+            label="Courses"
+            value={totalBatches}
+            hint={`${activeBatches} active · ${archivedBatches} archived`}
+          />
+          <StatCard
+            icon={GraduationCap}
+            label="Trainees"
+            value={totalStudents}
+            hint={`${recentStudents7d} new this week`}
+          />
+          <StatCard
+            icon={LinkIcon}
+            label="Enrolments"
+            value={totalEnrollments}
+            hint={
+              totalEnrollments > totalStudents
+                ? `${totalEnrollments - totalStudents} multi-course`
+                : "one course each"
+            }
+          />
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <DepartmentBars byDepartment={metrics.byDepartment} />
+        <DomainBars byDomain={metrics.byDomain} />
+      </div>
 
       {/* ── Trainers table ─────────────────────────────────────────────── */}
       <Card>

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { allLandingStyles } from "@/components/landing/styles";
 import { LandingInit } from "@/components/landing/LandingInit";
 import { LandingScrollbar } from "@/components/landing/sections/LandingScrollbar";
+import { GovBanner } from "@/components/layout/GovBanner";
 import { LandingHeader } from "@/components/landing/sections/LandingHeader";
 import { LandingHero } from "@/components/landing/sections/LandingHero";
 import { LandingFeatures } from "@/components/landing/sections/LandingFeatures";
@@ -91,6 +92,7 @@ export default async function Home() {
         <style dangerouslySetInnerHTML={{ __html: allLandingStyles }} />
 
         <LandingScrollbar />
+        <GovBanner />
         <LandingHeader />
         <LandingHero />
         <LandingFeatures />

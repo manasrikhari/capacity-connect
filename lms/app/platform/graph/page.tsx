@@ -1,7 +1,10 @@
+import { Sparkles } from "lucide-react";
 import { redirect } from "next/navigation";
 import { GraphTable } from "@/components/graph/GraphTable";
 import { NodeForm } from "@/components/graph/NodeForm";
 import { RelationForm } from "@/components/graph/RelationForm";
+import Link from "next/link";
+import { buttonClasses } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -38,11 +41,17 @@ export default async function PlatformGraphPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-normal text-ink-900">Knowledge graph</h1>
-        <p className="mt-1 text-sm text-ink-500">
-          Curate the GraphRAG knowledge base. Every change is picked up by MeghDoot immediately.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-normal text-ink-900">Knowledge graph</h1>
+          <p className="mt-1 text-sm text-ink-500">
+            Curate the GraphRAG knowledge base. Every change is picked up by MeghDoot immediately.
+          </p>
+        </div>
+        <Link href="/platform/graph/import" className={buttonClasses("primary")}>
+          <Sparkles className="size-4" />
+          Import from a PDF or link
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

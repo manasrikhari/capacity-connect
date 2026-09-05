@@ -71,6 +71,8 @@ export async function POST(req: NextRequest) {
     const kg = await getKnowledgeContext(queryText, {
       maxHops: Math.min(MAX_HOPS, 3),
       maxPaths: 12,
+      // National concepts plus this course's own; never another course's.
+      batchId,
     });
 
     // 3. Build history from prior messages; strip citation sentinels from prior

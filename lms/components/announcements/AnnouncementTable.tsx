@@ -58,7 +58,7 @@ export function AnnouncementTable({ announcements }: { announcements: Announceme
         <EmptyState
           icon={Megaphone}
           title="No announcements yet"
-          description="Publish a training-calendar note, MoES advisory, or achievement to feature it on the public homepage."
+          description="Publish a training-calendar note, ministry advisory, or achievement to feature it on the public homepage."
           action={<Button onClick={() => setNewOpen(true)}>New announcement</Button>}
         />
       ) : (

@@ -11,7 +11,7 @@ export function LandingFooter() {
               Capacity Connect
             </div>
             <p>
-              MoES &amp; India Meteorological Department&apos;s platform for digital capacity building
+              The Ministry of Earth Sciences &amp; India Meteorological Department&apos;s platform for digital capacity building
               in weather and climate services. Train live. Certify. Track national capacity.
             </p>
           </div>
@@ -36,7 +36,7 @@ export function LandingFooter() {
           <div>
             <h6>Ministry</h6>
             <ul>
-              <li><a href="#">About MoES</a></li>
+              <li><a href="#">About the Ministry</a></li>
               <li><a href="#signin">Sign in</a></li>
               <li><a href="#announcements">Advisories</a></li>
               <li><a href="#">Privacy</a></li>

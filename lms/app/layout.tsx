@@ -31,7 +31,7 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "Capacity Connect — MoES / IMD",
+  title: "Capacity Connect — Ministry of Earth Sciences",
   description: "Digital capacity building for India's weather and climate services.",
 };
 

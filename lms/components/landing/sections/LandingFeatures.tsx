@@ -106,7 +106,7 @@ export function LandingFeatures() {
               </div>
               <div className="pl-item">
                 <i data-lucide="landmark" />
-                <span>Admin (MoES)</span>
+                <span>Admin (Ministry of Earth Sciences)</span>
                 <em>govern</em>
               </div>
               <div className="pl-item">

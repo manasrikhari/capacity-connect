@@ -27,7 +27,7 @@ export function LandingAnnouncements({ announcements }: { announcements: Landing
             Notices, advisories &amp; <em>achievements.</em>
           </h2>
           <p>
-            Training-calendar updates, MoES advisories, and milestones from India&apos;s national
+            Training-calendar updates, ministry advisories, and milestones from India&apos;s national
             capacity-building programme.
           </p>
         </div>

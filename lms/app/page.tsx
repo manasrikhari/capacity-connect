@@ -92,7 +92,7 @@ export default async function Home() {
         <style dangerouslySetInnerHTML={{ __html: allLandingStyles }} />
 
         <LandingScrollbar />
-        <GovBanner />
+        <GovBanner container="mx-auto w-full max-w-[1180px] px-7" />
         <LandingHeader />
         <LandingHero />
         <LandingFeatures />

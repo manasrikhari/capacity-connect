@@ -1280,7 +1280,7 @@ async function main() {
       viewCount: 312,
     },
     {
-      title: "MoES adopts WMO BIP-M aligned competency framework",
+      title: "Ministry of Earth Sciences adopts WMO BIP-M aligned competency framework",
       summary: "All operational meteorologists to be mapped against BIP-M core competencies.",
       content:
         "In line with **WMO-No. 1083**, the Ministry has adopted a competency framework aligned to the Basic Instruction Package for Meteorologists (**BIP-M**).\n\nEvery training course on the portal now declares the skills it builds and the proficiency it targets, and each trainee's profile carries a live competency map drawn from assessments and certificates.\n\nHeads of divisions are requested to review their teams' competency gaps and nominate staff to the recommended courses accordingly.",

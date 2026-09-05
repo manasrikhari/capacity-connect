@@ -14,10 +14,22 @@ import { GOV_EMBLEM_SRC } from "@/lib/gov-emblem";
  * of Improper Use) Act, 2005, so displaying it is the deploying team's call to
  * make, not this component's.
  */
-export function GovBanner() {
+/**
+ * `container` should match the width of the site header rendered directly
+ * below, so the two rows line up. The landing page centres a 1180px column;
+ * PublicHeader uses a narrower one, which is the default here.
+ */
+export function GovBanner({
+  container = "mx-auto w-full max-w-4xl px-4 md:px-6",
+}: {
+  container?: string;
+} = {}) {
   return (
-    <div className="border-b border-hair bg-paper">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5 md:px-6">
+    // Transparent rather than a fixed surface colour: the landing page paints a
+    // cream body while the app shell paints a cool grey, and a masthead that
+    // picks either one reads as a mismatched strip on the other.
+    <div className="border-b border-hair/70 bg-transparent">
+      <div className={`${container} flex items-center justify-between gap-4 py-2.5`}>
         <div className="flex min-w-0 items-center gap-3">
           {GOV_EMBLEM_SRC ? (
             // Plain <img>: the file is a fixed-size local asset, so the

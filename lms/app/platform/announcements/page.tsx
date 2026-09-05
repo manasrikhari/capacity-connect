@@ -28,7 +28,7 @@ export default async function PlatformAnnouncementsPage() {
       <div>
         <h1 className="font-display text-2xl font-normal text-ink-900">Announcements</h1>
         <p className="mt-1 text-sm text-ink-500">
-          Publish training-calendar notes, MoES advisories, and achievements to the public homepage.
+          Publish training-calendar notes, ministry advisories, and achievements to the public homepage.
         </p>
       </div>
 

@@ -3,7 +3,7 @@ export function LandingHero() {
     <section className="hero">
       <div className="wrap hero-grid">
         <div className="hero-copy">
-          <div className="eyebrow reveal">MoES · India Meteorological Department</div>
+          <div className="eyebrow reveal">Ministry of Earth Sciences · India Meteorological Department</div>
           <h1 className="reveal d1" id="heroTitle">
             Capacity building that
             <br />

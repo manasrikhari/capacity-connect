@@ -86,25 +86,6 @@ export default async function StudentHubPage({
         {hasAny && <JoinBatchTrigger variant="top-button" />}
       </div>
 
-      {recViews.length > 0 && (
-        <section className="mt-8">
-          <div className="mb-4 flex items-center justify-between border-b border-hair-strong pb-2">
-            <h2 className="text-sm font-semibold text-ink-900">Recommended for you</h2>
-            <Link
-              href="/student/recommendations"
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-plum-600 hover:text-plum-700"
-            >
-              See all
-            </Link>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {recViews.map((v) => (
-              <RecommendationCard key={v.batchId} rec={v} />
-            ))}
-          </div>
-        </section>
-      )}
-
       {!hasAny ? (
         <div className="mt-6">
           <EmptyState
@@ -147,6 +128,25 @@ export default async function StudentHubPage({
             <JoinBatchTrigger variant="card" />
           </div>
         </>
+      )}
+
+      {recViews.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between border-b border-hair-strong pb-2">
+            <h2 className="text-sm font-semibold text-ink-900">Recommended for you</h2>
+            <Link
+              href="/student/recommendations"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-plum-600 hover:text-plum-700"
+            >
+              See all
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {recViews.map((v) => (
+              <RecommendationCard key={v.batchId} rec={v} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

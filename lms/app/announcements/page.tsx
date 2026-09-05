@@ -1,6 +1,7 @@
-import { ArrowLeft, Megaphone } from "lucide-react";
+import { Megaphone } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { prisma } from "@/lib/prisma";
@@ -9,7 +10,7 @@ import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Announcements — Capacity Connect",
-  description: "Training calendar, MoES advisories, and achievements from IMD's capacity-building programme.",
+  description: "Training calendar, ministry advisories, and achievements from IMD's capacity-building programme.",
 };
 
 export default async function AnnouncementsPage({
@@ -37,22 +38,20 @@ export default async function AnnouncementsPage({
   });
 
   return (
-    <main className="min-h-screen bg-page">
-      <header className="border-b border-hair bg-paper">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 md:px-6">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-900">
-            <ArrowLeft className="size-4" />
-            Capacity Connect
-          </Link>
+    <>
+      <PublicHeader
+        right={
           <Link href="/verify" className="text-sm text-plum-700 hover:underline">
             Verify a certificate
           </Link>
-        </div>
-      </header>
+        }
+      />
+
+      <main className="flex-1 bg-page">
 
       <div className="mx-auto max-w-4xl px-4 py-10 md:px-6">
         <div className="mb-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-300">MoES · IMD</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-300">Ministry of Earth Sciences · India Meteorological Department</p>
           <h1 className="mt-2 font-display text-4xl font-normal text-ink-900">Announcements</h1>
           <p className="mt-2 max-w-2xl text-ink-500">
             Training calendar, ministry advisories, and achievements from India&apos;s national capacity-building
@@ -104,7 +103,8 @@ export default async function AnnouncementsPage({
           </ul>
         )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 

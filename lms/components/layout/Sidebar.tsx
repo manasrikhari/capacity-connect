@@ -5,12 +5,14 @@ import {
   ClipboardList,
   FolderOpen,
   Grid2x2,
+  Layers,
   LayoutDashboard,
   Megaphone,
   Network,
   Menu,
   MessageSquare,
   NotebookText,
+  ShieldCheck,
   Sparkles,
   Target,
   User,
@@ -28,6 +30,7 @@ import { JoinBatchTrigger } from "@/components/join/JoinBatchTrigger";
 import { CopyJoinCode } from "@/components/ui/CopyJoinCode";
 import { getInitials, plumSphere } from "@/components/ui/avatar";
 import { ProfileDrawer } from "@/components/profile/ProfileDrawer";
+import { GOV_EMBLEM_SRC } from "@/lib/gov-emblem";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -37,7 +40,14 @@ interface NavItem {
   exact?: boolean;
 }
 
-export type SidebarVariant = "admin" | "student";
+export type SidebarVariant = "admin" | "student" | "platform";
+
+/** Top-level ("hub") route for each variant. */
+const HUB_PATH: Record<SidebarVariant, string> = {
+  admin: "/admin",
+  student: "/student",
+  platform: "/platform",
+};
 
 const BATCH_NAV_ITEMS: Record<SidebarVariant, NavItem[]> = {
   admin: [
@@ -63,6 +73,9 @@ const BATCH_NAV_ITEMS: Record<SidebarVariant, NavItem[]> = {
     { href: "/student/feedback", label: "Feedback", icon: MessageSquare },
     { href: "/student/ai", label: "MeghDoot AI", icon: Sparkles },
   ],
+  // The ministry admin owns no single course, so it never enters a batch
+  // workspace — an empty list keeps it on the hub view permanently.
+  platform: [],
 };
 
 interface HubNavGroup {
@@ -96,6 +109,27 @@ const HUB_NAV: Record<SidebarVariant, HubNavGroup[]> = {
       items: [{ href: "/student/profile", label: "Profile", icon: User }],
     },
   ],
+  platform: [
+    {
+      label: "Ministry",
+      items: [
+        { href: "/platform", label: "Dashboard", icon: LayoutDashboard, exact: true },
+        { href: "/platform/competency", label: "Competency", icon: Target },
+        { href: "/platform/skills", label: "Skills", icon: Layers },
+      ],
+    },
+    {
+      label: "Content",
+      items: [
+        { href: "/platform/announcements", label: "Announcements", icon: Megaphone },
+        { href: "/platform/graph", label: "Knowledge base", icon: Network },
+      ],
+    },
+    {
+      label: "Public",
+      items: [{ href: "/platform/verify", label: "Verify a certificate", icon: ShieldCheck }],
+    },
+  ],
 };
 
 function isActive(pathname: string, item: NavItem) {
@@ -114,6 +148,18 @@ function navItemClass(active: boolean) {
 }
 
 function SphereLogo({ className }: { className?: string }) {
+  // When the deploying team has supplied the State Emblem, the brand mark is
+  // the emblem; otherwise it stays the plum sphere. See lib/gov-emblem.ts.
+  if (GOV_EMBLEM_SRC) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={GOV_EMBLEM_SRC}
+        alt="State Emblem of India"
+        className={cn("block h-9 w-auto shrink-0", className)}
+      />
+    );
+  }
   return (
     <span
       aria-hidden="true"
@@ -140,7 +186,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
-  const hubPath = variant === "admin" ? "/admin" : "/student";
+  const hubPath = HUB_PATH[variant];
   const isInBatch = BATCH_NAV_ITEMS[variant].some(
     (item) => pathname === item.href || pathname.startsWith(item.href + "/")
   );
@@ -156,7 +202,7 @@ export function Sidebar({
             pathname={pathname}
             userName={userName}
             userEmail={userEmail}
-            onProfileClick={() => setProfileOpen(true)}
+            onProfileClick={variant === "platform" ? undefined : () => setProfileOpen(true)}
           />
         ) : (
           <BatchSidebarContent
@@ -167,18 +213,20 @@ export function Sidebar({
             pathname={pathname}
             userName={userName}
             userEmail={userEmail}
-            onProfileClick={() => setProfileOpen(true)}
+            onProfileClick={variant === "platform" ? undefined : () => setProfileOpen(true)}
           />
         )}
       </aside>
 
-      <ProfileDrawer
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        variant={variant}
-        userName={userName}
-        userEmail={userEmail}
-      />
+      {variant !== "platform" && (
+        <ProfileDrawer
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          variant={variant}
+          userName={userName}
+          userEmail={userEmail}
+        />
+      )}
     </>
   );
 }
@@ -196,24 +244,25 @@ function HubSidebarContent({
   pathname: string;
   userName?: string | null;
   userEmail?: string | null;
-  onProfileClick: () => void;
+  onProfileClick?: () => void;
 }) {
   const groups = HUB_NAV[variant];
 
   return (
     <div className="flex h-full flex-col px-5 py-6">
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-start gap-2.5">
         <SphereLogo />
-        <span className="font-display text-[17px] font-medium text-ink-900">
-          Capacity Connect
-        </span>
+        <div className="min-w-0">
+          <p className="font-display text-[15px] font-medium leading-snug text-ink-900">
+            Ministry of Earth Sciences
+          </p>
+          {subtitle && (
+            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
-      {subtitle && (
-        <p className="ml-[42px] mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
-          {subtitle}
-        </p>
-      )}
-
       <div className="mt-6 flex flex-1 flex-col gap-1">
         {groups.map((group) => (
           <div key={group.label}>
@@ -314,7 +363,7 @@ function BatchSidebarContent({
   pathname: string;
   userName?: string | null;
   userEmail?: string | null;
-  onProfileClick: () => void;
+  onProfileClick?: () => void;
 }) {
   const items = BATCH_NAV_ITEMS[variant];
 
@@ -323,9 +372,11 @@ function BatchSidebarContent({
       <div className="flex items-center gap-2.5 px-5 py-6">
         <SphereLogo />
         <div className="min-w-0">
-          <h1 className="font-display text-[17px] font-medium text-ink-900">Capacity Connect</h1>
+          <h1 className="font-display text-[15px] font-medium leading-snug text-ink-900">
+            Ministry of Earth Sciences
+          </h1>
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
-            {variant === "admin" ? "Admin panel" : "Student"}
+            {variant === "admin" ? "Admin panel" : variant === "student" ? "Student" : "Ministry"}
           </p>
         </div>
       </div>
@@ -405,7 +456,7 @@ export function MobileSidebar({
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const skipFocusMove = useRef(true);
 
-  const hubPath = variant === "admin" ? "/admin" : "/student";
+  const hubPath = HUB_PATH[variant];
   const isInBatch = BATCH_NAV_ITEMS[variant].some(
     (item) => pathname === item.href || pathname.startsWith(item.href + "/")
   );
@@ -525,7 +576,7 @@ export function MobileSidebar({
                     pathname={pathname}
                     userName={userName}
                     userEmail={userEmail}
-                    onProfileClick={handleProfileClick}
+                    onProfileClick={variant === "platform" ? undefined : handleProfileClick}
                   />
                 ) : (
                   <BatchSidebarContent
@@ -536,7 +587,7 @@ export function MobileSidebar({
                     pathname={pathname}
                     userName={userName}
                     userEmail={userEmail}
-                    onProfileClick={handleProfileClick}
+                    onProfileClick={variant === "platform" ? undefined : handleProfileClick}
                   />
                 )}
               </div>
@@ -545,13 +596,15 @@ export function MobileSidebar({
           document.body
         )}
 
-      <ProfileDrawer
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        variant={variant}
-        userName={userName}
-        userEmail={userEmail}
-      />
+      {variant !== "platform" && (
+        <ProfileDrawer
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          variant={variant}
+          userName={userName}
+          userEmail={userEmail}
+        />
+      )}
     </>
   );
 }

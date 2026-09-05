@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { VerifyResult, type VerifyView } from "@/components/certificates/VerifyResult";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { buttonClasses } from "@/components/ui/Button";
 import { verifyCertificate } from "@/lib/certificate-db";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
@@ -44,27 +45,37 @@ export default async function VerifyByQueryPage({
   const view: VerifyView | null = allowed ? toView(await verifyCertificate(decoded)) : null;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-xl px-4 py-12 sm:py-16">
-      <header className="text-center">
-        <h1 className="font-display text-3xl text-ink-900">Certificate verification</h1>
-        <p className="mt-2 font-mono text-xs break-all text-ink-500">{decoded}</p>
-      </header>
+    <>
+      <PublicHeader
+        right={
+          <Link href="/announcements" className="text-sm text-plum-700 hover:underline">
+            Announcements
+          </Link>
+        }
+      />
 
-      <div className="mt-8">
-        {allowed && view ? (
-          <VerifyResult view={view} />
-        ) : (
-          <div className="rounded-2xl border border-hair-strong bg-sunken/40 p-5 text-center text-sm text-ink-500">
-            Too many checks in a short time. Please wait a moment and try again.
-          </div>
-        )}
-      </div>
+      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-12 sm:py-16">
+        <header className="text-center">
+          <h1 className="font-display text-3xl text-ink-900">Certificate verification</h1>
+          <p className="mt-2 font-mono text-xs break-all text-ink-500">{decoded}</p>
+        </header>
 
-      <div className="mt-8 text-center">
-        <Link href="/verify" className={buttonClasses("secondary", "sm")}>
-          Verify another certificate
-        </Link>
-      </div>
-    </main>
+        <div className="mt-8">
+          {allowed && view ? (
+            <VerifyResult view={view} />
+          ) : (
+            <div className="rounded-2xl border border-hair-strong bg-sunken/40 p-5 text-center text-sm text-ink-500">
+              Too many checks in a short time. Please wait a moment and try again.
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link href="/verify" className={buttonClasses("secondary", "sm")}>
+            Verify another certificate
+          </Link>
+        </div>
+      </main>
+    </>
   );
 }

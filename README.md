@@ -1,159 +1,250 @@
-# 🍇 Capacity Connect — SIH 2026 (Problem Statement 26075)
-> **Comprehensive Capacity Building & Training Management LMS Platform**
+# Capacity Connect
 
-Capacity Connect is an enterprise-grade capacity building, trainer competency mapping, and live interactive classroom ecosystem developed for **Smart India Hackathon (SIH 2026, PS 26075)**.
+**Smart India Hackathon 2026 — Problem Statement 26075**
+
+Capacity Connect is a capacity-building and training-management platform for the Ministry of Earth Sciences (MoES) and the India Meteorological Department (IMD). It covers the full training lifecycle: trainee and trainer profiles, course enrolment, study material, timed assessments, competency mapping, verifiable certificates, course feedback, a public announcements portal, and a live WebRTC classroom with a collaborative whiteboard.
 
 ---
 
-## 🏛️ Monorepo Architecture & Port Mapping
+## Workspaces
 
-This monorepo is partitioned into three decoupled workspaces so developers and AI agents can build features concurrently without merge conflicts:
+The repository is an npm workspaces monorepo partitioned into three independently runnable applications, so several developers can work concurrently without contending for the same files.
 
-| Workspace | Port | Purpose | Key Technologies |
+| Workspace | Port | Responsibility | Key technologies |
 | :--- | :--- | :--- | :--- |
-| **[`lms/`](./lms)** | `3000` | Admin/Student Dashboards, Batches, Quizzes, Fees, Competency Mapping, Public CMS | Next.js 16 (App Router), React 19, Tailwind CSS, Auth.js, Pusher |
-| **[`backend/`](./backend)** | `3001` | Modular REST Backend API, LiveKit Token Exchange, AI Doubt Solver, Prisma ORM | Node.js, Express, TypeScript, Prisma, LiveKit Server SDK, Gemini AI |
-| **[`live/`](./live)** | `3002` | LiveKit WebRTC Video Classroom, Collaborative Tldraw Whiteboard, Speech Transcriber | Next.js 16, LiveKit Client SDK, Tldraw Sync, Silero VAD (ONNX) |
+| [`lms/`](./lms) | 3000 | Admin, trainer and trainee portals; courses, assessments, competency mapping, certificates, trainer library, announcements CMS, public verifier, MeghDoot AI assistant | Next.js 16 (App Router), React 19, Tailwind CSS v4, Prisma 7, Auth.js v5, Pusher |
+| [`backend/`](./backend) | 3001 | Live-classroom token exchange, LiveKit access tokens, AI doubt solver | Node.js, Express, TypeScript, Prisma 6, LiveKit Server SDK, Gemini |
+| [`live/`](./live) | 3002 | LiveKit WebRTC classroom, collaborative tldraw whiteboard, speech transcription | Next.js 16, LiveKit Client SDK, tldraw sync, Silero VAD (ONNX) |
+
+The two Prisma workspaces use **separate databases**. The LMS owns the application data model; the backend database serves the live-classroom bridge only. See [Architecture notes](#architecture-notes).
+
+### Repository layout
 
 ```
 capacity-connect/
-├── package.json              # Root npm workspaces orchestrator
-├── README.md                 # Complete system guide & setup instructions
-├── TEAM_WORKFLOW.md          # Git branching, dev assignments & conflict prevention
-├── AGENTS.md                 # AI agent (Claude/Antigravity/Cursor) operating guidelines
-├── CLAUDE.md                 # Claude code assistant instructions
+├── package.json              Root npm workspaces orchestrator
+├── README.md                 This file
+├── TEAM_WORKFLOW.md          Branching model and developer assignments
+├── AGENTS.md                 Operating guidelines for AI coding agents
+├── CLAUDE.md                 Claude Code assistant instructions
 │
-├── backend/                  # Express + TypeScript Modular API (Port 3001)
-│   ├── prisma/
-│   │   └── schema.prisma     # SIH 2026 PostgreSQL Database Schema
+├── lms/                      Next.js LMS portal (port 3000)
+│   ├── app/                  Route groups: /platform (admin), /admin (trainer),
+│   │                         /student (trainee), /verify, /announcements, /api
+│   ├── components/           UI primitives and feature components
+│   ├── lib/                  Pure domain logic, Prisma wrappers, auth, session
+│   │   └── __tests__/        Vitest unit tests for the pure modules
+│   └── prisma/               Schema, migrations, and the MoES/IMD seed
+│
+├── backend/                  Express + TypeScript API (port 3001)
+│   ├── prisma/schema.prisma  Backend database schema
 │   └── src/
-│       ├── app.ts            # Route pipeline & middleware registration
-│       ├── index.ts          # Server entrypoint
-│       ├── config/           # env.ts, db.ts (Prisma singleton), livekit.ts
-│       ├── middleware/       # auth.ts (RBAC), rateLimiters.ts, errorHandler.ts
-│       ├── routes/           # Domain-isolated API routes (auth, competency, certs, liveMeeting)
-│       └── services/         # Decoupled business logic & AI providers
+│       ├── app.ts            Middleware and router registration
+│       ├── config/           Environment, Prisma singleton, LiveKit config
+│       ├── middleware/       Authentication, rate limiting, error handling
+│       ├── routes/           Domain-isolated routers
+│       └── services/         Business logic and AI providers
 │
-├── lms/                      # Next.js LMS Application (Port 3000)
-│   ├── app/                  # Multi-role portals (/admin, /student, /join, /welcome)
-│   ├── components/           # Admin/Student UI components
-│   └── lib/                  # Auth, Session, Prisma, Pusher realtime sync
-│
-└── live/                     # Next.js Live Classroom Application (Port 3002)
-    ├── app/                  # Classroom view (/ & /ended & /desktop-overlay)
-    ├── components/           # VideoRoom, Whiteboard, LeftRail, Classroom Controls
-    ├── hooks/                # Decoupled hooks (useDeviceDetection, useAudioTranscriber)
-    └── public/vad/           # Silero VAD & ONNX WebAssembly models
+└── live/                     Next.js live classroom (port 3002)
+    ├── app/                  Classroom, ended, and desktop-overlay views
+    ├── components/           Video room, whiteboard, classroom controls
+    ├── hooks/                Device detection, audio transcription
+    └── public/vad/           Silero VAD and ONNX WebAssembly models
 ```
 
 ---
 
-## ⚡ Quick Start & Running the Codebase
+## Getting started
 
-### 1. Prerequisites
-- **Node.js**: v18+ or v20+
-- **PostgreSQL Database**: Neon DB, Supabase, or local PostgreSQL
-- **LiveKit Cloud**: `wss://livekit.opengrapes.com` (No Docker required!)
+### Prerequisites
 
-### 2. Install Dependencies
-Run from the root directory to install dependencies across all workspaces:
+- Node.js 20 or later
+- PostgreSQL, either local or hosted (Neon, Supabase, or equivalent)
+- A LiveKit endpoint. The team instance is `wss://livekit.opengrapes.com`; no local Docker is required.
+
+### 1. Install dependencies
+
+Run from the repository root to install every workspace:
+
 ```bash
 npm install
 ```
 
-### 3. Generate Prisma Database Client
+The LMS `postinstall` hook generates its Prisma client automatically. The backend client is generated separately:
+
 ```bash
-npm run prisma:generate
+npm run prisma:generate     # generates the backend Prisma client only
 ```
 
-### 4. Configure Environment Variables
-Copy `.env.example` files if not already populated:
-```bash
-# Backend (.env)
-cp backend/.env.example backend/.env
+### 2. Configure environment variables
 
-# LMS (.env)
+Copy the example files and fill in your values:
+
+```bash
 cp lms/.env.example lms/.env
-
-# Live Classroom (.env.local)
-cp live/.env.example live/.env.local
+cp backend/.env.example backend/.env
 ```
 
-### 5. Launch All Services Concurrently
-Run all three services simultaneously with unified colored terminal logging:
+The `live/` workspace needs no environment file for local development. It reads a single optional variable, `NEXT_PUBLIC_SYNC_WORKER_URL`, for the hosted whiteboard sync worker.
+
+The variables that most often need attention:
+
+| Workspace | Variable | Purpose |
+| :--- | :--- | :--- |
+| `lms/` | `DATABASE_URL` | Pooled Postgres connection string used at runtime |
+| `lms/` | `DIRECT_URL` | Direct (non-pooled) connection string used by Prisma Migrate |
+| `lms/` | `NEXTAUTH_URL`, `NEXTAUTH_SECRET` | Auth.js base URL and session signing secret |
+| `lms/` | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth for trainee sign-in |
+| `lms/` | `CERTIFICATE_SECRET` | HMAC-SHA256 secret for certificate verification hashes. Minimum 16 characters. Keep it stable, or previously issued certificates stop verifying. |
+| `lms/` | `UPLOAD_DIR` | Directory for trainer-library uploads. Defaults to `./uploads`, which is gitignored. |
+| `lms/` | `DEEPSEEK_API_KEY` | Optional. Enables the language model behind MeghDoot and the assessment generator. |
+| `lms/` | `MEETING_PLATFORM_URL`, `MEETING_PLATFORM_API_URL` | Live classroom UI and API endpoints |
+| `lms/`, `backend/` | `LIVE_OPENGRAPES_JWT_SECRET` | Shared signing secret for the live-classroom handoff. **Must be identical in both files.** |
+| `backend/` | `DATABASE_URL` | Backend Postgres connection string, a different database from the LMS |
+| `backend/` | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit Cloud credentials |
+| `backend/` | `GEMINI_API_KEY` | Optional. Enables OCR in the live-class doubt tab. |
+
+### 3. Prepare the database
+
+From `lms/`, apply migrations and load the demonstration dataset:
+
+```bash
+cd lms
+npx prisma migrate deploy    # or: npm run db:migrate  (development)
+npm run db:seed
+```
+
+The seed is destructive and idempotent. It clears application tables and rebuilds a complete MoES/IMD dataset: 15 users, four courses, 16 competencies, a 34-node knowledge graph, assessments with recorded attempts, certificates, announcements, and library items.
+
+### 4. Run the services
+
+All three concurrently, with per-workspace coloured logging:
+
 ```bash
 npm run dev:all
 ```
 
-Or run individual services:
+Or individually:
+
 ```bash
-npm run dev:backend   # Express API (http://localhost:3001)
-npm run dev:lms       # LMS Portal (http://localhost:3000)
-npm run dev:live      # Live Classroom (http://localhost:3002)
+npm run dev:lms       # http://localhost:3000
+npm run dev:backend   # http://localhost:3001
+npm run dev:live      # http://localhost:3002
 ```
+
+Do not change these ports. The live-classroom handoff and CORS configuration depend on them.
 
 ---
 
-## 🎥 Live Meeting Workflow (How LMS & Live Connect)
+## Demonstration credentials
+
+Created by `npm run db:seed`. Bare usernames are a development convenience and are rejected when `NODE_ENV=production`.
+
+| Role in the database | Portal label | Landing route | Sign-in |
+| :--- | :--- | :--- | :--- |
+| `SUPER_ADMIN` | Admin (MoES) | `/platform` | `admin` / `Admin@2026` |
+| `ADMIN` | Trainer (IMD) | `/admin` | `trainer` / `1234` |
+| `STUDENT` | Trainee | `/student` | `trainee` / `1234` |
+
+Additional seeded accounts use their full email address with the password `trainer123` or `trainee123`, for example `trainer.nwp@imd.gov.in` and `trainee.radar@imd.gov.in`. The role enum values are retained from the platform's origins and mapped to ministry-facing labels in `lms/lib/roles.ts`.
+
+The home page, `/announcements`, and `/verify` are public and require no session.
+
+## Behaviour without a language-model key
+
+Every AI feature degrades deterministically, so the platform is fully demonstrable offline. When `DEEPSEEK_API_KEY` is unset:
+
+- **MeghDoot** answers from the knowledge graph alone, rendering the traversal paths and source citations that grounded the answer instead of prose from a model.
+- **The assessment generator** draws from a curated offline question bank of operational meteorology items and labels the result accordingly in the review step.
+- **The course recommender** and **competency mapping** are unaffected. Both are deterministic scoring functions with no model dependency.
+
+---
+
+## Live classroom handoff
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Teacher as Trainer / Teacher
-    participant LMS as LMS Portal (:3000)
-    participant LiveApp as Live Classroom (:3002)
+    actor Trainer
+    participant LMS as LMS portal (:3000)
+    participant LiveApp as Live classroom (:3002)
     participant Backend as Backend API (:3001)
-    participant LiveKit as LiveKit Cloud (wss://livekit.opengrapes.com)
+    participant LiveKit as LiveKit Cloud
 
-    Teacher->>LMS: Clicks "Start Meeting"
-    LMS->>LMS: Generates 15-min signed JWT (LIVE_OPENGRAPES_JWT_SECRET)
-    LMS-->>Teacher: Redirects to http://localhost:3002/?token=<jwt>
-    Teacher->>LiveApp: Browser loads Live Classroom
-    LiveApp->>Backend: POST /api/exchange-lms-token (proxied to :3001)
-    Backend->>Backend: Validates JWT signature & user enrollment
-    Backend-->>LiveApp: Returns session access token
+    Trainer->>LMS: Starts a scheduled class
+    LMS->>LMS: Signs a short-lived JWT (LIVE_OPENGRAPES_JWT_SECRET)
+    LMS-->>Trainer: Redirects to the live classroom with the token
+    Trainer->>LiveApp: Browser loads the classroom
+    LiveApp->>Backend: POST /api/exchange-lms-token
+    Backend->>Backend: Verifies the signature and the user's enrolment
+    Backend-->>LiveApp: Returns a session access token
     LiveApp->>Backend: POST /api/token
-    Backend->>LiveKit: Creates WebRTC AccessToken with permissions
-    Backend-->>LiveApp: Returns LiveKit connection token
-    LiveApp->>LiveKit: Connects WebRTC Video + Audio + Tldraw Whiteboard
+    Backend->>LiveKit: Mints a LiveKit access token with room permissions
+    Backend-->>LiveApp: Returns the connection token
+    LiveApp->>LiveKit: Joins WebRTC audio, video and the shared whiteboard
 ```
 
 ---
 
-## 🛡️ How to Make Changes Without Merge Conflicts
+## Architecture notes
 
-To enable **4-5 human developers** and **AI assistants (Claude, Antigravity, Cursor, ChatGPT)** to work on this repository simultaneously without conflicts, follow these golden rules:
+**The LMS is the application.** All domain features are implemented inside `lms/` as Next.js Server Actions over the LMS database. Scoring, graph traversal, and certificate logic live as dependency-free modules in `lms/lib/` with unit tests, and thin Prisma wrappers supply their data.
 
-### 📁 1. Strict Domain-File Isolation Rule
-- **Backend**: Never add business logic directly into `app.ts` or `index.ts`. Always create a new file in `backend/src/routes/<domain>.ts` and matching `backend/src/services/<domain>.service.ts`.
-- **LMS**: Place each feature in its own subfolder under `lms/app/admin/<feature>/` or `lms/app/student/<feature>/`.
-- **Live Classroom**: Extract stateful UI logic into `live/hooks/` and UI pieces into `live/components/classroom/`.
+**The backend serves the live classroom.** Its routers for profiles, competency, certificates, feedback, announcements, and analytics are historical and are deliberately not called by the LMS. Bridging them would require reconciling two user tables, two Prisma major versions, and two authentication systems for no functional gain, so the two valuable algorithms from that codebase, competency scoring and certificate signing, were ported into `lms/lib/` instead. Only the live-meeting endpoints are on the critical path. Treat the remaining routers as dormant, and do not build new features against them.
 
-### 🌿 2. Git Branch Strategy
-1. **Never commit directly to `main` or `dev`**.
-2. Create dedicated feature branches:
-   ```bash
-   git checkout dev
-   git pull origin dev
-   git checkout -b feature/<your-name-or-agent>-<feature-description>
-   ```
-3. Example branch names:
-   - `feature/claude-competency-radar-chart`
-   - `feature/dev2-certificate-pdf-template`
-   - `feature/dev4-whiteboard-pdf-upload`
+**Certificates are verifiable without an account.** Each certificate carries an HMAC-SHA256 hash over its number, recipient, course, and issue date. The public verifier at `/verify` recomputes that hash, so a tampered record is detected rather than trusted, and the check needs no session.
 
-### 🗄️ 3. Database Schema Changes Protocol
-- Before modifying `backend/prisma/schema.prisma`, coordinate with the Backend Lead (**Dev 1**).
-- Always add additive changes (new models/fields) rather than renaming active columns.
-- Run `npm run prisma:generate` after editing the schema.
-
-### 🤖 4. Guidelines for AI Assistants (Claude / LLMs)
-When asking an AI agent to build a feature:
-1. **Specify the exact workspace**: Tell the AI whether you are modifying `lms/`, `live/`, or `backend/`.
-2. **Tell the AI to create new files**: Instruct the AI: *"Create a new service file under `src/services/` rather than modifying existing service files"*.
-3. Refer the AI to [`AGENTS.md`](./AGENTS.md) and [`TEAM_WORKFLOW.md`](./TEAM_WORKFLOW.md).
+**File storage is local by design.** Trainer-library uploads are written to `UPLOAD_DIR` and streamed back through an authenticated route that enforces course access and supports range requests. Serverless hosts have no persistent disk; to deploy there, replace the single adapter in `lms/lib/storage.ts` with object storage. No caller changes are needed.
 
 ---
 
-## 📜 License
-Developed for Smart India Hackathon (SIH 2026) — OpenGrapes Team.
+## Verification
+
+Run from `lms/`:
+
+```bash
+npx tsc --noEmit         # type checking
+npm run lint             # ESLint
+npm run test             # Vitest unit tests
+npm run build            # applies migrations, then builds
+```
+
+The backend and live workspaces build with `npm run build:backend` and `npm run build:live` from the repository root.
+
+---
+
+## Contributing
+
+The following conventions keep several developers and AI agents productive in one repository.
+
+### Isolate changes by domain
+
+- **Backend**: never place business logic in `app.ts` or `index.ts`. Add `src/routes/<domain>.ts` with a matching `src/services/<domain>.service.ts`.
+- **LMS**: give each feature its own folder under `app/platform/`, `app/admin/`, or `app/student/`, with a local `actions.ts`. Keep pure logic in `lib/` and cover it with tests.
+- **Live classroom**: extract stateful logic into `live/hooks/` and presentation into `live/components/`.
+
+Prefer additive changes. Adding a file is always safer than restructuring a shared one.
+
+### Branching
+
+Never commit directly to `main` or `dev`. Branch from `dev`:
+
+```bash
+git checkout dev
+git pull origin dev
+git checkout -b feature/<owner>-<short-description>
+```
+
+### Schema changes
+
+Coordinate before editing either `schema.prisma`. Add new models and nullable fields rather than renaming or dropping active columns, since the LMS build runs `prisma migrate deploy`. Regenerate the client after any edit.
+
+### Working with AI agents
+
+State the target workspace explicitly, ask for new files rather than edits to shared ones, and point the agent at [`AGENTS.md`](./AGENTS.md) and [`TEAM_WORKFLOW.md`](./TEAM_WORKFLOW.md).
+
+---
+
+## License
+
+MIT. Developed by Team OpenGrapes for Smart India Hackathon 2026.

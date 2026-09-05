@@ -1,34 +1,32 @@
 import { TextSizeControl } from "@/components/layout/TextSizeControl";
 
+import { GOV_EMBLEM_SRC } from "@/lib/gov-emblem";
+
 /**
  * The national identity masthead that sits above a government site's own
  * header, following the pattern used across gov.in and the Guidelines for
  * Indian Government Websites (GIGW).
  *
- * ── About the State Emblem ────────────────────────────────────────────────
- * No emblem image ships with this repo, deliberately. The State Emblem of
- * India is restricted by the State Emblem of India (Prohibition of Improper
- * Use) Act, 2005, and copying the file from moes.gov.in would both breach that
- * and hotlink someone else's asset. If your team is authorised to display it,
- * save the official SVG at `public/gov/emblem.svg` and set EMBLEM_SRC below;
- * the layout already reserves the space. Until then the masthead is
- * typographic, which is honest and carries no licensing risk.
+ * The State Emblem is opt-in by presence: drop the official artwork at
+ * `public/gov/emblem.svg` (or .png) and it appears. No file, no broken image —
+ * the masthead just stays typographic. Nothing is bundled with the repo
+ * because the emblem is restricted by the State Emblem of India (Prohibition
+ * of Improper Use) Act, 2005, so displaying it is the deploying team's call to
+ * make, not this component's.
  */
-const EMBLEM_SRC: string | null = null;
-
 export function GovBanner() {
   return (
     <div className="border-b border-hair bg-paper">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5 md:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          {EMBLEM_SRC ? (
+          {GOV_EMBLEM_SRC ? (
+            // Plain <img>: the file is a fixed-size local asset, so the
+            // optimiser would add a request for nothing.
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={EMBLEM_SRC}
+              src={GOV_EMBLEM_SRC}
               alt="State Emblem of India"
-              className="h-10 w-auto shrink-0"
-              width={40}
-              height={40}
+              className="h-11 w-auto shrink-0"
             />
           ) : (
             <span

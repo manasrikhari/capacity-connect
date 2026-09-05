@@ -1,8 +1,17 @@
 // Unified usage counters for Gemini key rotation in LMS project
+/**
+ * Gemini model names. The 2.5 family returns 404 "no longer available to new
+ * users" on keys issued recently, so the default is a current model and both
+ * are overridable by env without touching code.
+ */
+const PRIMARY_MODEL = process.env.GEMINI_MODEL_NAME || 'gemini-3.7-flash';
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL_NAME || 'gemini-3.5-flash';
+type GeminiModel = string;
+
 class KeyRotationManager {
   private keys: string[];
   private lastResetDate: string;
-  private counts: Record<string, { 'gemini-2.5-flash': number; 'gemini-2.5-flash-lite': number }>;
+  private counts: Record<string, Record<GeminiModel, number>>;
   private isRotationEnabled: boolean;
 
   constructor() {
@@ -26,7 +35,7 @@ class KeyRotationManager {
     this.lastResetDate = new Date().toISOString().split('T')[0];
     this.counts = {};
     this.keys.forEach(k => {
-      this.counts[k] = { 'gemini-2.5-flash': 0, 'gemini-2.5-flash-lite': 0 };
+      this.counts[k] = { [PRIMARY_MODEL]: 0, [FALLBACK_MODEL]: 0 };
     });
   }
 
@@ -35,13 +44,13 @@ class KeyRotationManager {
     if (today !== this.lastResetDate) {
       this.lastResetDate = today;
       this.keys.forEach(k => {
-        this.counts[k] = { 'gemini-2.5-flash': 0, 'gemini-2.5-flash-lite': 0 };
+        this.counts[k] = { [PRIMARY_MODEL]: 0, [FALLBACK_MODEL]: 0 };
       });
       console.log(`[KeyRotation] Usage counters reset for new UTC day: ${today}`);
     }
   }
 
-  public getNextKey(model: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite'): string | null {
+  public getNextKey(model: GeminiModel): string | null {
     if (!this.isRotationEnabled) {
       return this.keys[0] || null;
     }
@@ -55,7 +64,7 @@ class KeyRotationManager {
     return null;
   }
 
-  public increment(key: string, model: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite') {
+  public increment(key: string, model: GeminiModel) {
     if (!this.isRotationEnabled) return;
     if (this.counts[key]) {
       this.counts[key][model]++;
@@ -63,7 +72,7 @@ class KeyRotationManager {
     }
   }
 
-  public exhaust(key: string, model: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite') {
+  public exhaust(key: string, model: GeminiModel) {
     if (!this.isRotationEnabled) return;
     if (this.counts[key]) {
       this.counts[key][model] = 20;
@@ -78,7 +87,7 @@ export const rotationManager = new KeyRotationManager();
 export async function transcribeImage(attachedImage: any): Promise<string> {
   const promptText = "Extract all text verbatim from this JEE/NEET doubt image. Write all mathematical equations, symbols, and formulas in standard LaTeX format. If there is a diagram, graph, or circuit, write a detailed textual description of its components, shapes, values, directions, and connections. Do not solve the question, only output the transcription.";
 
-  const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'] as const;
+  const models = [PRIMARY_MODEL, FALLBACK_MODEL] as const;
 
   for (const model of models) {
     let key = rotationManager.getNextKey(model);
@@ -227,23 +236,34 @@ export async function requestAI(
   const isDoubtRequest = streamRequested || !!systemInstructionText;
   const enableThinking = body.enableThinking !== undefined ? body.enableThinking : isDoubtRequest;
   
+  const siliconFlowKey = process.env.DEEPSEEK_API_KEY || '';
+  const siliconFlowBaseUrl = (process.env.DEEPSEEK_API_BASE_URL || 'https://api.siliconflow.com/v1').replace(/\/+$/, '');
+
   const deepseekBody: any = {
     model: process.env.DEEPSEEK_MODEL_NAME || 'deepseek-ai/DeepSeek-V4-Flash',
     messages,
     stream: streamRequested
   };
 
-  if (enableThinking) {
-    deepseekBody.enable_thinking = true;
+  // `enable_thinking` / `reasoning_effort` are SiliconFlow extensions. Groq
+  // rejects them outright ("property 'enable_thinking' is unsupported"), so
+  // they are only sent to a provider that understands them.
+  const supportsThinkingParams = !siliconFlowBaseUrl.includes("api.groq.com");
+  if (supportsThinkingParams) {
+    if (enableThinking) {
+      deepseekBody.enable_thinking = true;
+      deepseekBody.reasoning_effort = "high";
+    } else {
+      deepseekBody.enable_thinking = false;
+    }
+  } else if (enableThinking) {
+    // Groq accepts only low | medium | high here, and rejects the request
+    // outright for anything else.
     deepseekBody.reasoning_effort = "high";
-  } else {
-    deepseekBody.enable_thinking = false;
   }
 
   console.log(`[AI Provider] Routing text reasoning to DeepSeek (thinking: ${deepseekBody.enable_thinking})...`);
 
-  const siliconFlowKey = process.env.DEEPSEEK_API_KEY || '';
-  const siliconFlowBaseUrl = (process.env.DEEPSEEK_API_BASE_URL || 'https://api.siliconflow.com/v1').replace(/\/+$/, '');
 
   const response = await fetch(`${siliconFlowBaseUrl}/chat/completions`, {
     method: 'POST',

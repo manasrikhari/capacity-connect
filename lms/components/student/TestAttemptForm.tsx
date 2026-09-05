@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { submitTest } from "@/app/student/tests/actions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { MathText } from "@/components/ui/MathText";
 import { initialActionState } from "@/lib/action-state";
 import { cn } from "@/lib/utils";
 
@@ -131,7 +132,7 @@ export function TestAttemptForm({
         return (
           <Card key={question.id}>
             <p className="font-medium text-ink-900">
-              {index + 1}. {question.question}
+              {index + 1}. <MathText text={question.question} />
               <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.14em] font-normal text-ink-300">
                 {question.marks} mark{question.marks === 1 ? "" : "s"}
               </span>
@@ -149,7 +150,7 @@ export function TestAttemptForm({
                     required
                     className="accent-plum-600"
                   />
-                  <span className="font-medium">{letter}.</span> {options[letter]}
+                  <span className="font-medium">{letter}.</span> <MathText text={options[letter]} />
                 </label>
               ))}
             </div>

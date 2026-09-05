@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input, Label, Select, Textarea } from "@/components/ui/Field";
+import { MathText } from "@/components/ui/MathText";
 import { initialActionState } from "@/lib/action-state";
+import { hasMath } from "@/lib/math-segments";
 import type { GeneratedQuestion } from "@/lib/validations/generated-question";
 
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
@@ -94,6 +96,14 @@ export function GeneratedQuestionsPreview({
                 onChange={(e) => patch(index, { question: e.target.value })}
                 className="min-h-20"
               />
+              {hasMath(q.question) && (
+                <p className="rounded-[10px] bg-sunken px-3 py-2 text-sm text-ink-700">
+                  <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                    Preview
+                  </span>
+                  <MathText text={q.question} />
+                </p>
+              )}
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {OPTION_LETTERS.map((letter) => (

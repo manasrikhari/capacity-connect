@@ -6,6 +6,7 @@ import { TestAttemptForm, type AttemptQuestion } from "@/components/student/Test
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MathText } from "@/components/ui/MathText";
 import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
@@ -69,7 +70,7 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
               <Card key={question.id}>
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-ink-900">
-                    {index + 1}. {question.question}
+                    {index + 1}. <MathText text={question.question} />
                   </p>
                   <Badge color={isCorrect ? "green" : "red"}>{isCorrect ? "Correct" : "Incorrect"}</Badge>
                 </div>
@@ -89,7 +90,7 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
                               : "border-hair text-ink-700"
                         )}
                       >
-                        <span className="font-medium">{letter}.</span> {options[letter]}
+                        <span className="font-medium">{letter}.</span> <MathText text={options[letter]} />
                         {isSelected && !isAnswer && <span className="ml-2 text-xs">(your answer)</span>}
                         {isAnswer && <span className="ml-2 text-xs">(correct answer)</span>}
                       </div>
@@ -98,7 +99,7 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
                 </div>
                 {question.explanation && (
                   <p className="mt-3 rounded-[10px] bg-sunken px-3 py-2 text-sm text-ink-700">
-                    <span className="font-medium text-ink-900">Why:</span> {question.explanation}
+                    <span className="font-medium text-ink-900">Why:</span> <MathText text={question.explanation} />
                   </p>
                 )}
                 {question.skill && (

@@ -53,7 +53,7 @@ export async function saveKnowledgeProposalAction(
     const first = parsed.error.issues[0];
     return { error: `Check the highlighted rows: ${first?.message ?? "invalid proposal"}.` };
   }
-  const { nodes, relations, sourceLabel } = parsed.data;
+  const { nodes, relations, sourceLabel, kind, url } = parsed.data;
 
   // Resolve scope server-side; never trust the client's claim.
   let targetBatchId: string | null = null;
@@ -72,8 +72,22 @@ export async function saveKnowledgeProposalAction(
   let reused = 0;
   let skipped = 0;
   let relationCount = 0;
+  let sourceId: string | null = null;
 
   await prisma.$transaction(async (tx) => {
+    // The document itself is the unit staff manage in the knowledge library.
+    const source = await tx.knowledgeSource.create({
+      data: {
+        title: sourceLabel,
+        kind,
+        url: url || null,
+        batchId: targetBatchId,
+        addedById: session.user.id,
+      },
+      select: { id: true },
+    });
+    sourceId = source.id;
+
     const existingRows = await tx.knowledgeNode.findMany({
       select: { id: true, name: true, batchId: true, description: true, category: true, metadata: true },
     });
@@ -96,6 +110,7 @@ export async function saveKnowledgeProposalAction(
             category: n.category || null,
             description: n.description,
             batchId: targetBatchId,
+            sourceId,
             metadata: metadata as Prisma.InputJsonValue,
           },
           select: { id: true },
@@ -134,14 +149,15 @@ export async function saveKnowledgeProposalAction(
       merged++;
     }
 
+    // NB: these are graph edge endpoints, not the document `sourceId` above.
     const relationData = relations.flatMap((r) => {
-      const sourceId = idByName.get(normaliseName(r.sourceName));
-      const targetId = idByName.get(normaliseName(r.targetName));
-      if (!sourceId || !targetId || sourceId === targetId) {
+      const fromId = idByName.get(normaliseName(r.sourceName));
+      const toId = idByName.get(normaliseName(r.targetName));
+      if (!fromId || !toId || fromId === toId) {
         skipped++;
         return [];
       }
-      return [{ sourceId, targetId, relationType: r.relationType, weight: r.weight }];
+      return [{ sourceId: fromId, targetId: toId, relationType: r.relationType, weight: r.weight }];
     });
 
     if (relationData.length > 0) {
@@ -164,3 +180,40 @@ export async function saveKnowledgeProposalAction(
     summary: { created, merged, reused, relations: relationCount, skipped },
   };
 }
+
+/**
+ * Remove an ingested document and everything it taught. Nodes cascade from the
+ * source, and their relations cascade from the nodes, so the graph never keeps
+ * orphans of a document that was withdrawn.
+ *
+ * A trainer may only remove sources belonging to their own course; the
+ * ministry may only remove national ones.
+ */
+export async function removeKnowledgeSourceAction(id: string) {
+  const session = await requireStaff();
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+
+  const source = await prisma.knowledgeSource.findUnique({
+    where: { id },
+    select: { id: true, batchId: true },
+  });
+  if (!source) return { error: "That entry no longer exists." };
+
+  if (isSuperAdmin) {
+    if (source.batchId !== null) return { error: "That belongs to a course." };
+  } else {
+    const owns = await prisma.batch.findFirst({
+      where: { id: source.batchId ?? "", teacherId: session.user.id },
+      select: { id: true },
+    });
+    if (!owns) return { error: "That is not yours to remove." };
+  }
+
+  await prisma.knowledgeSource.delete({ where: { id } });
+
+  invalidateGraphCache();
+  revalidatePath("/platform/graph");
+  revalidatePath("/admin/knowledge");
+  return { success: true as const };
+}
+

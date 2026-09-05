@@ -21,6 +21,8 @@ export type Proposal = {
   warnings: string[];
   sourceLabel: string;
   scope: "course" | "national";
+  kind: "PDF" | "LINK" | "TEXT";
+  url?: string | null;
 };
 
 const initial: SaveKnowledgeState = null;
@@ -68,6 +70,8 @@ export function ProposedGraphPreview({
   const payload = JSON.stringify({
     scope: proposal.scope,
     sourceLabel: proposal.sourceLabel,
+    kind: proposal.kind,
+    url: proposal.url ?? "",
     nodes,
     relations: relations.filter(
       (r) => names.includes(r.sourceName) && names.includes(r.targetName),
@@ -107,7 +111,7 @@ export function ProposedGraphPreview({
       {nodes.length === 0 ? (
         <Card>
           <p className="text-sm text-ink-500">
-            Nothing left to save. Extract again, or add concepts by hand.
+            Nothing left to save. Upload a different document to try again.
           </p>
         </Card>
       ) : (

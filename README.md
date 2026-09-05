@@ -63,7 +63,7 @@ Signing in routes each role to its own portal, and every page re-checks the role
 
 ## Admin (MoES)
 
-The ministry portal at `/platform`. Top navigation: Dashboard, Competency, Skills, Announcements, Knowledge graph, Verify.
+The ministry portal at `/platform`. Top navigation: Dashboard, Competency, Skills, Announcements, Knowledge base, Verify.
 
 ### Capacity dashboard `/platform`
 
@@ -97,15 +97,13 @@ Publish training-calendar notes, MoES advisories and achievements to the public 
 - Compose with a title, summary, category, banner URL and a markdown body with a **Write / Preview** tab pair.
 - Publish or unpublish, feature or unfeature, edit and delete. The public URL slug is derived from the title and de-duplicated automatically, and `publishedAt` is stamped only on the first publish.
 
-### Knowledge graph editor `/platform/graph`
+### Knowledge base `/platform/graph`
 
-Curate the knowledge base that grounds the MeghDoot assistant.
+Everything MeghDoot has read, and the way to add more.
 
-**Import from a PDF or link** drafts concepts and links for review exactly as the trainer page does, but saves them nationally so every course can cite them. The manual forms below remain for precise edits.
-
-- **Add a node**: name, one of ten types (concept, instrument, model, skill, standard, product, process, organisation, hazard, dataset), category, description, a citable source, an equation, and aliases.
-- **Add a relation**: source node, target node, one of twenty relation types such as `MEASURES`, `REQUIRES_SKILL`, `GOVERNED_BY` or `PREREQUISITE_OF`, and a weight from 0.1 to 5.
-- Filterable node and relation tables with delete. Every write invalidates the cache immediately, so a node added here is cited by the assistant on the very next question. That makes a compelling live demo.
+- **Upload a PDF, paste a link, or paste a passage.** The concepts inside come back as an editable draft; nothing is saved until you press save.
+- **The library** lists every document that has been ingested, with its type, how many concepts it contributed, who added it and when. A link can be reopened, and removing an entry removes what it taught.
+- Anything added here is national, so every course can cite it. Core concepts that ship with the platform are counted separately and cannot be removed.
 
 ---
 

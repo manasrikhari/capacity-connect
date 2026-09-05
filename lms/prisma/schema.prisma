@@ -55,6 +55,12 @@ enum CertificateStatus {
   REVOKED
 }
 
+enum KnowledgeSourceKind {
+  PDF
+  LINK
+  TEXT
+}
+
 enum LibraryItemType {
   RECORDED_LECTURE
   PRESENTATION
@@ -66,8 +72,8 @@ enum LibraryItemType {
 model Batch {
   id        String      @id @default(cuid())
   name      String
-  subject   String?     // Capacity Connect: reused as the operational DOMAIN label
-  grade     String?     // Capacity Connect: reused as the course LEVEL label
+  subject   String? // Capacity Connect: reused as the operational DOMAIN label
+  grade     String? // Capacity Connect: reused as the course LEVEL label
   teacherId String
   teacher   User        @relation("OwnedBatches", fields: [teacherId], references: [id], onDelete: Cascade)
   status    BatchStatus @default(ACTIVE)
@@ -75,22 +81,22 @@ model Batch {
 
   // ── Capacity Connect course metadata (all additive/nullable) ──
   description String?
-  department  String?   // "IMD" | "NCMRWF" | "INCOIS" | "IITM" | "MoES"
-  wmoTier     String?   // "BIP-M" | "BIP-MT" | "Specialised" | "Refresher"
+  department  String? // "IMD" | "NCMRWF" | "INCOIS" | "IITM" | "MoES"
+  wmoTier     String? // "BIP-M" | "BIP-MT" | "Specialised" | "Refresher"
   startDate   DateTime?
   endDate     DateTime?
 
-  enrollments  Enrollment[]
-  meetings     Meeting[]
-  notes        Note[]
-  tests        Test[]
-  fees         Fee[]
-  payments     Payment[]
-  testAttempts TestAttempt[]
-  liveSessions LiveSession[]
+  enrollments     Enrollment[]
+  meetings        Meeting[]
+  notes           Note[]
+  tests           Test[]
+  fees            Fee[]
+  payments        Payment[]
+  testAttempts    TestAttempt[]
+  liveSessions    LiveSession[]
   aiConversations AiConversation[]
-  attendances  Attendance[]
-  notices      Notice[]
+  attendances     Attendance[]
+  notices         Notice[]
 
   // ── Capacity Connect relations ──
   skillRequirements BatchSkillRequirement[]
@@ -98,6 +104,7 @@ model Batch {
   feedbacks         Feedback[]
   libraryItems      LibraryItem[]
   knowledgeNodes    KnowledgeNode[]
+  knowledgeSources  KnowledgeSource[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -119,8 +126,8 @@ model User {
   plan          Plan           @default(FREE)
   onboarded     Boolean        @default(false)
 
-  enrollments Enrollment[]
-  doubts       Doubt[]
+  enrollments     Enrollment[]
+  doubts          Doubt[]
   aiConversations AiConversation[]
 
   accounts Account[]
@@ -138,13 +145,14 @@ model User {
   authoredNotices Notice[] @relation("AuthoredNotices")
 
   // ── Capacity Connect: SUPER_ADMIN = Admin, ADMIN = Trainer, STUDENT = Trainee ──
-  profile              Profile?
-  trainerSkills        TrainerSkill[]
-  traineeSkills        TraineeSkill[]
-  certificates         Certificate[]  @relation("TraineeCertificates")
-  feedbacks            Feedback[]     @relation("TraineeFeedback")
-  uploadedLibraryItems LibraryItem[]  @relation("UploadedLibraryItems")
-  authoredAnnouncements Announcement[] @relation("AuthoredAnnouncements")
+  profile               Profile?
+  trainerSkills         TrainerSkill[]
+  traineeSkills         TraineeSkill[]
+  certificates          Certificate[]     @relation("TraineeCertificates")
+  feedbacks             Feedback[]        @relation("TraineeFeedback")
+  uploadedLibraryItems  LibraryItem[]     @relation("UploadedLibraryItems")
+  authoredAnnouncements Announcement[]    @relation("AuthoredAnnouncements")
+  addedKnowledgeSources KnowledgeSource[] @relation("AddedKnowledgeSources")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,9 +265,9 @@ model Notice {
 }
 
 model Note {
-  id      String @id @default(cuid())
+  id      String  @id @default(cuid())
   batchId String
-  batch   Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
   title   String
   subject String
   content String
@@ -285,9 +293,9 @@ model Test {
 
   // ── Capacity Connect additions ──
   durationMins Int?
-  passPercent  Int    @default(50)
+  passPercent  Int     @default(50)
   skillId      String?
-  skill        Skill? @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  skill        Skill?  @relation(fields: [skillId], references: [id], onDelete: SetNull)
 
   questions Question[]
   attempts  TestAttempt[]
@@ -377,36 +385,38 @@ model Payment {
 
 // ── Live Meeting Storage ───────────────────────────────────────────────────
 model LiveSession {
-  id            String          @id @default(cuid())
+  id            String    @id @default(cuid())
   batchId       String
-  batch         Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  roomId        String          @unique
-  status        String          @default("live") // "live", "completed", "expired"
-  startedAt     DateTime        @default(now())
+  batch         Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  roomId        String    @unique
+  status        String    @default("live") // "live", "completed", "expired"
+  startedAt     DateTime  @default(now())
   endedAt       DateTime?
-  teacherJoined Boolean         @default(false)
-  hasNotes      Boolean         @default(false)
-  
-  doubts        Doubt[]
+  teacherJoined Boolean   @default(false)
+  hasNotes      Boolean   @default(false)
+
+  doubts         Doubt[]
   meetingMinutes MeetingMinutes?
 }
+
 model Doubt {
-  id           String       @id @default(cuid())
-  sessionId    String
-  liveSession  LiveSession  @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
-  studentId    String
-  student      User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  doubtText    String
-  answer       String
-  screenshot   String?      // base64 image data
-  timestamp    DateTime     @default(now())
+  id          String      @id @default(cuid())
+  sessionId   String
+  liveSession LiveSession @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
+  studentId   String
+  student     User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  doubtText   String
+  answer      String
+  screenshot  String? // base64 image data
+  timestamp   DateTime    @default(now())
 }
+
 model MeetingMinutes {
-  id           String       @id @default(cuid())
-  sessionId    String       @unique
-  liveSession  LiveSession  @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
-  content      String       @db.Text
-  generatedAt  DateTime     @default(now())
+  id          String      @id @default(cuid())
+  sessionId   String      @unique
+  liveSession LiveSession @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
+  content     String      @db.Text
+  generatedAt DateTime    @default(now())
 }
 
 model AiConversation {
@@ -428,7 +438,7 @@ model AiMessage {
   id             String         @id @default(cuid())
   conversationId String
   conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  role           String         // "user" or "model"
+  role           String // "user" or "model"
   content        String         @db.Text
   createdAt      DateTime       @default(now())
 
@@ -451,7 +461,7 @@ model Profile {
   postingLocation  String?
   phone            String?
   bio              String?
-  qualifications   Json?    // [{ degree, institution, year }]
+  qualifications   Json? // [{ degree, institution, year }]
   yearsExperience  Float    @default(0)
   interests        String[] @default([])
   governmentIdType String?
@@ -505,7 +515,7 @@ model TraineeSkill {
   skillId     String
   skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
   proficiency Int      @default(1)
-  source      String?  // "SELF_DECLARED" | "TEST:<testId>" | "CERTIFICATE:<batchId>"
+  source      String? // "SELF_DECLARED" | "TEST:<testId>" | "CERTIFICATE:<batchId>"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -527,22 +537,44 @@ model BatchSkillRequirement {
   @@index([skillId])
 }
 
+/// A document that was ingested to teach MeghDoot: an uploaded PDF, a scraped
+/// link, or a pasted passage. This is the unit staff actually manage — they
+/// browse and remove sources, not individual graph nodes.
+model KnowledgeSource {
+  id        String              @id @default(cuid())
+  title     String
+  kind      KnowledgeSourceKind
+  /// Original address for a LINK, so the library can offer "open".
+  url       String?
+  /// Null = national; otherwise the course that owns this knowledge.
+  batchId   String?
+  batch     Batch?              @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  addedById String?
+  addedBy   User?               @relation("AddedKnowledgeSources", fields: [addedById], references: [id], onDelete: SetNull)
+  nodes     KnowledgeNode[]
+  createdAt DateTime            @default(now())
+
+  @@index([batchId, createdAt])
+}
+
 model KnowledgeNode {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  type        String   // lib/taxonomy.ts NODE_TYPES
+  id          String  @id @default(cuid())
+  name        String  @unique
+  type        String // lib/taxonomy.ts NODE_TYPES
   category    String?
   description String?
-  metadata    Json?    // { aliases?: string[], source?: string, equation?: string }
+  metadata    Json? // { aliases?: string[], source?: string, equation?: string }
 
   batchId             String?
-  batch               Batch?       @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  skillId             String?      @unique
-  skill               Skill?       @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  batch               Batch?           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  skillId             String?          @unique
+  skill               Skill?           @relation(fields: [skillId], references: [id], onDelete: SetNull)
   sourceLibraryItemId String?
-  sourceLibraryItem   LibraryItem? @relation(fields: [sourceLibraryItemId], references: [id], onDelete: SetNull)
+  sourceLibraryItem   LibraryItem?     @relation(fields: [sourceLibraryItemId], references: [id], onDelete: SetNull)
   sourceNoteId        String?
-  sourceNote          Note?        @relation(fields: [sourceNoteId], references: [id], onDelete: SetNull)
+  sourceNote          Note?            @relation(fields: [sourceNoteId], references: [id], onDelete: SetNull)
+  sourceId            String?
+  source              KnowledgeSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 
   outgoing KnowledgeRelation[] @relation("RelationSource")
   incoming KnowledgeRelation[] @relation("RelationTarget")
@@ -552,6 +584,7 @@ model KnowledgeNode {
 
   @@index([type])
   @@index([batchId])
+  @@index([sourceId])
 }
 
 model KnowledgeRelation {
@@ -560,7 +593,7 @@ model KnowledgeRelation {
   source       KnowledgeNode @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
   targetId     String
   target       KnowledgeNode @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
-  relationType String        // lib/taxonomy.ts RELATION_TYPES
+  relationType String // lib/taxonomy.ts RELATION_TYPES
   weight       Float         @default(1.0)
   createdAt    DateTime      @default(now())
 
@@ -578,7 +611,7 @@ model Certificate {
   traineeId         String
   trainee           User              @relation("TraineeCertificates", fields: [traineeId], references: [id], onDelete: Cascade)
   issueDate         DateTime          @default(now())
-  grade             String?           // "Distinction" | "Merit" | "Pass"
+  grade             String? // "Distinction" | "Merit" | "Pass"
   scorePercent      Int?
   status            CertificateStatus @default(VALID)
   pdfUrl            String?
@@ -608,21 +641,21 @@ model Feedback {
 }
 
 model LibraryItem {
-  id            String          @id @default(cuid())
-  batchId       String
-  batch         Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  uploaderId    String
-  uploader      User            @relation("UploadedLibraryItems", fields: [uploaderId], references: [id], onDelete: Cascade)
-  title         String
-  description   String?
-  type          LibraryItemType
-  fileUrl       String          // "/api/files/<batchId>/<storedName>" or https://…
-  mimeType      String?
-  fileSizeBytes Int?
-  durationMins  Int?
-  subject       String?
-  skillId       String?
-  skill         Skill?          @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  id             String          @id @default(cuid())
+  batchId        String
+  batch          Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  uploaderId     String
+  uploader       User            @relation("UploadedLibraryItems", fields: [uploaderId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  type           LibraryItemType
+  fileUrl        String // "/api/files/<batchId>/<storedName>" or https://…
+  mimeType       String?
+  fileSizeBytes  Int?
+  durationMins   Int?
+  subject        String?
+  skillId        String?
+  skill          Skill?          @relation(fields: [skillId], references: [id], onDelete: SetNull)
   knowledgeNodes KnowledgeNode[]
 
   createdAt DateTime @default(now())
@@ -637,7 +670,7 @@ model Announcement {
   title       String
   slug        String    @unique
   summary     String?
-  content     String    // markdown
+  content     String // markdown
   category    String    @default("General") // lib/taxonomy.ts ANNOUNCEMENT_CATEGORIES
   bannerUrl   String?
   isPublished Boolean   @default(false)

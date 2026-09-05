@@ -64,6 +64,10 @@ export const looseEnvelopeSchema = z.object({
 export const saveProposalSchema = z.object({
   scope: z.enum(["course", "national"]),
   sourceLabel: z.string().trim().min(1).max(200),
+  /** How the document arrived, so the library can show the right affordance. */
+  kind: z.enum(["PDF", "LINK", "TEXT"]).default("TEXT"),
+  /** Original address for a LINK, so the library can offer "open". */
+  url: optionalText(2000),
   nodes: z.array(proposedNodeSchema).min(1).max(40),
   relations: z.array(proposedRelationSchema).max(80),
 });

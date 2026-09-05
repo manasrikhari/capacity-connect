@@ -34,6 +34,7 @@ export async function POST(request: Request) {
   let text = "";
   let sourceLabel = "";
   let method: "pdf" | "link" | "text" = "text";
+  let sourceUrl: string | null = null;
   let batchId: string | null = null;
   let domainHint: string | null = null;
 
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
         const scraped = await scrapeUrl(body.url);
         text = scraped.markdown;
         sourceLabel = scraped.title;
+        sourceUrl = body.url;
         method = "link";
       } else if (body.text?.trim()) {
         text = body.text;
@@ -141,6 +143,8 @@ export async function POST(request: Request) {
     ...outcome,
     sourceLabel,
     method,
+    kind: method === "pdf" ? "PDF" : method === "link" ? "LINK" : "TEXT",
+    url: sourceUrl,
     scope: isSuperAdmin ? "national" : "course",
   });
 }

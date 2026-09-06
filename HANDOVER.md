@@ -9,7 +9,12 @@ independently; the product stays coherent if you stop after any phase.
 npx tsc --noEmit && npm run lint && npm run test
 # full: also `npm run build` (needs a DB; see Local dev below)
 ```
-Current state: **tsc 0 errors · lint 0 errors (46 pre-existing warnings) · 102 tests pass.**
+Current state: **tsc 0 errors · lint 0 errors (50 pre-existing warnings) · 258 tests pass.**
+(Backend also typechecks: `cd backend && npx tsc --noEmit`.)
+
+> **Prisma client:** after pulling, run `cd lms && npx prisma generate` before
+> `tsc` — the checked-in schema is ahead of the generated client, which is
+> gitignored. Do the same in `backend/` if its schema moved.
 
 ---
 
@@ -69,74 +74,76 @@ Migration: `lms/prisma/migrations/20260906000001_phase1_governed_roles/`.
 
 ---
 
-## 🟡 Phase 2 — Onboarding & catalogue (IN PROGRESS)
+## ✅ Phase 2 — Onboarding & catalogue (COMPLETE)
+
+Schema/notifications/eligibility as before, plus the front-of-house that landed
+on the branch: **public course catalogue** (`/courses`, `/courses/[slug]`,
+`/calendar` — never exposes `joinCode`; `lib/catalogue.ts` pure + `catalogue-db.ts`),
+**two front doors** (self-serve request-enrolment + nomination via `/spoc` and
+`/invite/[token]`; `lib/invite.ts`, `lib/spoc.ts`), **progressive profile**
+onboarding (`components/welcome/OnboardingForm.tsx`), and the **public profile**
+`/p/[slug]` (`lib/public-profile.ts`, whitelisted fields only).
+
+## ✅ Phase 3 — SWAYAM course experience (COMPLETE)
+
+`CourseWeek`, the `DiscussionThread`/`DiscussionPost` forum, rubric-graded
+`Assignment`/`AssignmentSubmission`, per-week progress and content views
+(`lib/course-week.ts`/`-db.ts`, `lib/discussion-db.ts`, `lib/rubric.ts`;
+migrations `…0004_phase3_swayam_weeks`, `…0005_content_views`).
+
+## 🟢 Phase 4 — Live classroom (LARGELY COMPLETE)
+
+Three services: `lms/` (3000, Prisma + `/api/live/*` receivers), `backend/`
+(3001, Express + `livekit-server-sdk`, webhook handler + `notifyLms`), `live/`
+(3002, pure LiveKit frontend). backend→LMS calls ride the existing
+`LIVE_OPENGRAPES_JWT_SECRET` `live-service` JWT (`authenticateLiveService`).
 
 ### Done and committed
-- **Schema + migration** (`20260906000002_phase2_onboarding`): `Notification`,
-  `Department` (+ SPOC), `Invite`; `Batch.slug` (backfilled for seeded courses) +
-  `Batch.eligibility` (Json); `Profile.cadre/publicSlug/isPublic/openToMentoring`
-  (added in Phase 1's migration, used here).
-- **Eligibility engine** (2.4) — `lib/eligibility.ts` pure function +
-  `lib/__tests__/eligibility.test.ts` (11 tests, boundary cases). Not yet wired
-  into any page.
-- **Notification channel** (2.2) — `lib/notify.ts` (`notify`/`notifyMany`),
-  `lib/mailer.ts` (Resend adapter, degrades to logged no-op like `safeTrigger`),
-  `components/notifications/NotificationBell*.tsx` (bell in all three shells via a
-  `slot` prop threaded through `components/layout/Sidebar.tsx`),
-  `app/actions/notifications.ts` (mark read). Emitting on: trainer status change,
-  trainer-request approve/reject, enrolment approve/reject
-  (`app/admin/students/actions.ts`, `app/platform/actions.ts`).
-- **Rejected enrolment surfaced** (2.2) — `lib/batch.ts` `getStudentHubData` now
-  returns `rejected`; `app/student/page.tsx` renders a `RejectedBatchCard`
-  (previously dropped silently).
+- **Honesty fix** — `setMeetingStatus` reports `hasNotes` from whether a
+  `MeetingMinutes` row exists, not `true` unconditionally.
+- **Auto-attendance** — `POST /api/live/attendance` (LMS) + `lib/attendance.ts`
+  (pure roster/threshold logic, 15 tests); backend `PresenceService` accumulates
+  presence from `participant_joined/left` webhooks (identity→LMS-user map captured
+  at token mint) and posts the roster on `room_finished`.
+- **Transcription → minutes → knowledge** — backend `transcribeAudio` (Gemini,
+  same key rotation as OCR) feeds a per-room `TranscriptService`; `/api/summary`
+  gives a rolling summary; on end-class the transcript is posted to LMS
+  `POST /api/live/transcript`, which stores it on `LiveSession.transcript`,
+  distils minutes (`lib/minutes.ts` — Groq or extractive fallback, 6 tests) and
+  registers a `LIVE_CLASS` `KnowledgeSource`. Migrations `…0006`, `…0007`.
 
-### NOT yet done in Phase 2 — pick up here
-- [ ] **2.3 Public course catalogue** — `/courses` + `/courses/[slug]` (faceted by
-      domain/level/department/WMO tier, free-text search, pagination — reuse
-      `components/ui/Pagination.tsx` + the `LibraryFilters` URL-param pattern).
-      Never expose `Batch.joinCode`. Add a `/calendar` month view of the same query.
-      **This is the highest-value remaining item** ("a course ranked 7th is
-      unreachable today").
-- [ ] **2.1 Two front doors** — self-serve "Request enrolment" on the course page
-      (infer STUDENT role, reuse the join-code OAuth-cookie mechanism in
-      `app/join/actions.ts`); nomination via `/spoc` (SPOC pastes/uploads staff),
-      `Invite` consumed at `/invite/[token]`, `inviteTraineeAction(batchId,email[])`
-      in `app/admin/students/actions.ts`.
-- [ ] **2.5 Progressive profile** — ask org/department/cadre on the enrolment
-      request (where eligibility needs it); completion meter on the profile.
-- [ ] **2.6 Public profile** — `/p/[slug]` read-only (whitelist fields — never
-      `phone`/`governmentId*`/`resumeUrl`); verified certificates, work history,
-      competencies, "open to mentoring". Default unlisted; `publicSlug` handle.
-- [ ] Wire `evaluateEligibility` into the course/enrolment pages (advisory summary).
-- [ ] Emit notifications for nomination invite, course starting, deadline near,
-      certificate issued (models exist; hooks pending).
+### NOT yet done in Phase 4
+- [ ] **Room Composite egress → `RECORDED_LECTURE` library item.** No
+      `EgressClient` exists (`backend/src/config/livekit.ts`) and it needs a
+      LiveKit egress storage target (S3/GCS) — deferred rather than shipping an
+      uncalled LMS receiver. Plan: start egress on session-start when storage
+      env is set; handle `egress_ended` in `LivekitService.handleWebhook`; POST
+      the file URL to a new `POST /api/live/recording` that creates the
+      `LibraryItem` (uploader = batch owner, `type: RECORDED_LECTURE`).
+- [ ] Enable `participant_*` (and `egress_*`) webhooks on the LiveKit project —
+      without them attendance/egress never fire.
 
-**Notification bell caveat:** it renders `<NotificationBell/>` (a server component
-doing 2 indexed queries) once for desktop + once for mobile per page. Fine, but if
-you want a single fetch, hoist the query into each role layout and pass data down.
+## 🟢 Phase 5 — Forecast simulator + Competency Passport (CORE LANDED)
 
----
+### Done and committed
+- **`lib/forecast-verification.ts`** — deterministic POD/FAR/CSI/bias/accuracy
+  from a 2×2 contingency table built off IMD colour thresholds, + a CSI→grade
+  band for the passport. 11 boundary tests.
+- **`lib/competency.ts` `scoreTrainee`** — trainee attainment + passport band +
+  per-skill gaps (counterpart to `scoreTrainer`). 4 tests.
 
-## ⬜ Phases 3–6 — not started (see the plan)
+### NOT yet done in Phase 5
+- [ ] Schema: `Competency`/`CompetencyEvidence`, `WeatherCase`.
+- [ ] In-classroom drill on the tldraw whiteboard — per-trainee board by varying
+      the `roomName` segment in `live/`'s `useSync` uri (`${roomName}:${traineeId}`);
+      no backend change needed for the board id itself.
+- [ ] Assessed briefing + viva board; `/passport` PDF signed with the certificate HMAC.
 
-- **Phase 3 — SWAYAM course experience:** `CourseWeek`; discussion forum
-  (`DiscussionThread`/`DiscussionPost` — the missing 4th quadrant); `Assignment`
-  (non-MCQ assessment); per-week progress.
-- **Phase 4 — connect the live classroom** (highest value/hour, mostly wiring):
-  implement `POST /api/transcribe` (Groq Whisper) + `/summary/*`; POST minutes to
-  the already-written `app/api/live/minutes`; auto-attendance from LiveKit
-  webhooks (`participant_joined/left`); Room Composite egress → `RECORDED_LECTURE`
-  library item; transcript → `KnowledgeSourceKind.LIVE_CLASS`. Fix the honesty bug
-  in `app/admin/meetings/actions.ts` (`hasNotes: true` unconditional).
-- **Phase 5 — forecast operations simulator + Competency Passport** (the
-  differentiator): `Competency`/`CompetencyEvidence`, `WeatherCase`, in-classroom
-  drill on the tldraw whiteboard (per-trainee board via `roomName` suffix),
-  `lib/forecast-verification.ts` (deterministic POD/FAR/CSI from IMD colour
-  thresholds — unit-test the boundaries), assessed briefing + viva board,
-  `/passport` PDF signed with the certificate HMAC. Add `lib/competency.ts`
-  `scoreTrainee` (+ tests) — currently only trainer scoring exists.
-- **Phase 6 — hardening:** SPOC national view, training-needs analytics, offline/
-  low-bandwidth, Hindi, GIGW accessibility, anonymous three-way feedback.
+## 🟡 Phase 6 — Hardening (PARTIAL)
+
+Landed: training-needs analytics + the ministry analyst that cannot invent a
+figure (`lib/analyst.ts`, `…/platform`). Remaining: SPOC national view,
+offline/low-bandwidth, Hindi, GIGW accessibility, anonymous three-way feedback.
 
 **If time is short, the plan says ship 1, 2, 4 and a narrow 5.**
 

@@ -48,6 +48,23 @@ function extractionModel(): string {
   return process.env.GROQ_EXTRACTION_MODEL || "groq/compound-mini";
 }
 
+/**
+ * Model for reasoning tasks — reading national figures and recommending what to
+ * commission.
+ *
+ * Deliberately separate from the extraction model. Extraction pulls concepts
+ * out of a document and runs against a tight tokens-per-minute budget, so a
+ * small fast model is right; analysis has to weigh several series against each
+ * other and justify a recommendation, which a small model does poorly.
+ *
+ * Note for callers: reasoning models spend part of the completion budget on
+ * their own reasoning before emitting content, so `maxTokens` must be generous
+ * or the reply comes back empty.
+ */
+export function analystModel(): string {
+  return process.env.GROQ_ANALYST_MODEL || "openai/gpt-oss-120b";
+}
+
 /** Rough but adequate: ~4 characters per token. */
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);

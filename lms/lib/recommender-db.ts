@@ -66,7 +66,11 @@ export async function getRecommendationsForTrainee(
         traineeSkills: skills,
         failedAttempts,
         profile: profile
-          ? { postingLocation: profile.postingLocation, department: profile.department }
+          ? {
+              postingLocation: profile.postingLocation,
+              department: profile.department,
+              interests: profile.interests,
+            }
           : null,
         enrollmentStatus,
       } satisfies ScoreCourseInput;

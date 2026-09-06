@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { credentialsSignInAction } from "@/app/actions/auth-actions";
 import { initialActionState } from "@/lib/action-state";
@@ -47,6 +48,13 @@ export function CredentialsSignInForm() {
       <Button type="submit" loading={pending} className="w-full">
         Sign in
       </Button>
+
+      <p className="text-center text-sm text-ink-500">
+        New here?{" "}
+        <Link href="/register" className="text-plum-600 hover:underline">
+          Create an account
+        </Link>
+      </p>
     </form>
   );
 }

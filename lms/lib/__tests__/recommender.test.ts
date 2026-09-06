@@ -167,3 +167,51 @@ describe("rankCourses", () => {
     expect(rankCourses(inputs)).toHaveLength(4);
   });
 });
+
+describe("interests as a day-one signal", () => {
+  const batch = {
+    id: "b1",
+    name: "Doppler Weather Radar",
+    subject: "Radar & Telemetry",
+    department: "IMD",
+    wmoTier: "BIP-M",
+    level: "Intermediate",
+  };
+  const base = {
+    batch,
+    requirements: [],
+    traineeSkills: [],
+    failedAttempts: [],
+    enrollmentStatus: null,
+  };
+
+  it("scores flat for a brand-new trainee with nothing declared", () => {
+    const r = scoreCourse({ ...base, profile: null });
+    expect(r.score).toBe(1);
+  });
+
+  it("lifts a course whose domain the trainee says they work in", () => {
+    const r = scoreCourse({
+      ...base,
+      profile: { postingLocation: null, department: null, interests: ["Radar & Telemetry"] },
+    });
+    expect(r.sDept).toBe(1.3);
+    expect(r.score).toBeGreaterThan(1);
+  });
+
+  it("does not lift an unrelated domain", () => {
+    const r = scoreCourse({
+      ...base,
+      profile: { postingLocation: null, department: null, interests: ["Agro-Meteorology"] },
+    });
+    expect(r.sDept).toBe(1);
+  });
+
+  it("still works when interests are absent entirely", () => {
+    const r = scoreCourse({
+      ...base,
+      profile: { postingLocation: null, department: null },
+    });
+    expect(r.sDept).toBe(1);
+  });
+});

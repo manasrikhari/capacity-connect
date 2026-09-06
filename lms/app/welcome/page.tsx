@@ -25,9 +25,12 @@ export default async function WelcomePage() {
         <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-plum-100 text-plum-600">
           <Grape className="size-7" />
         </div>
-        <h1 className="text-xl font-medium text-ink-900">Welcome to Capacity Connect</h1>
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-300">
+          Step 1 of 2
+        </p>
+        <h1 className="mt-2 text-xl font-medium text-ink-900">How will you use Capacity Connect?</h1>
         <p className="mt-2 text-sm text-ink-500">
-          Choose how you&apos;d like to get started — it only takes a second.
+          This decides what you see. You can request trainer access later from your profile.
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -41,7 +44,7 @@ export default async function WelcomePage() {
                 <BookOpen className="size-6" />
               </span>
               <span className="text-sm font-semibold text-ink-900">I&apos;m a trainee</span>
-              <span className="text-xs text-ink-500">Join with a course code from your trainer</span>
+              <span className="text-xs text-ink-500">Take courses, earn certificates</span>
             </button>
           </form>
         </div>

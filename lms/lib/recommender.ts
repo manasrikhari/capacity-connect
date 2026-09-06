@@ -32,6 +32,15 @@ export type FailedAttempt = {
 export type RecProfile = {
   postingLocation: string | null;
   department: string | null;
+  /**
+   * Operational domains the trainee says they work in, collected at onboarding.
+   *
+   * Without this a brand-new trainee has no skills, no quiz history and often no
+   * posting match, so every course scored 1.0 and the ranking was arbitrary.
+   * Stating the domains you work in is the one signal a new joiner can give on
+   * day one.
+   */
+  interests?: string[];
 } | null;
 
 export type ScoreCourseInput = {
@@ -122,7 +131,9 @@ export function scoreCourse(input: ScoreCourseInput): CourseRecommendation {
     !!profile &&
     !!batch.department &&
     profile.department === batch.department;
-  const sDept = postingMatched || deptMatched ? 1.3 : 1.0;
+  const interestMatched =
+    !!profile && !!batch.subject && (profile.interests ?? []).includes(batch.subject);
+  const sDept = postingMatched || deptMatched || interestMatched ? 1.3 : 1.0;
 
   const score = round2(sGap * sQuiz * sDept);
 

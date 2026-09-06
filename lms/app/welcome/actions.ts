@@ -76,10 +76,9 @@ export async function joinBatchIntentAction() {
   const session = await auth();
   if (!session) redirect("/");
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { onboarded: true },
-  });
-
-  redirect("/student");
+  // Deliberately does NOT set `onboarded` yet: the next step collects the
+  // posting and domains the recommender scores on. Marking onboarding complete
+  // here is what used to drop a new trainee on an empty dashboard with nothing
+  // known about them and nothing worth recommending.
+  redirect("/welcome/profile");
 }

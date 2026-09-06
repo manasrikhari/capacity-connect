@@ -3,10 +3,55 @@ import {
   MANDATORY_GAP_CAP,
   QUALIFIED_THRESHOLD,
   scoreTrainer,
+  scoreTrainee,
   summariseByCategory,
   type Req,
   type TS,
 } from "@/lib/competency";
+
+const TRAINEE_REQS: Req[] = [
+  { skillId: "a", skillName: "Radar Ops", minProficiency: 4, weight: 2, isMandatory: true },
+  { skillId: "b", skillName: "NWP", minProficiency: 3, weight: 1, isMandatory: false },
+];
+
+describe("scoreTrainee", () => {
+  it("is empty and Beginner when the course declares no requirements", () => {
+    const r = scoreTrainee([], [{ skillId: "a", proficiency: 5, isVerified: true }]);
+    expect(r).toEqual({ attainment: 0, band: "Beginner", metCount: 0, totalCount: 0, gaps: [] });
+  });
+
+  it("full attainment → Expert with every skill MET", () => {
+    const r = scoreTrainee(TRAINEE_REQS, [
+      { skillId: "a", proficiency: 4, isVerified: false },
+      { skillId: "b", proficiency: 5, isVerified: false },
+    ]);
+    expect(r.attainment).toBe(100);
+    expect(r.band).toBe("Expert");
+    expect(r.metCount).toBe(2);
+    expect(r.totalCount).toBe(2);
+    expect(r.gaps.every((g) => g.status === "MET")).toBe(true);
+  });
+
+  it("weights the gap: a partial on the heavy mandatory skill dominates", () => {
+    // a: have 2/4 (ratio .5, weight 2), b: have 3/3 (ratio 1, weight 1)
+    // attainment = (2*.5 + 1*1) / 3 * 100 = 66.7
+    const r = scoreTrainee(TRAINEE_REQS, [
+      { skillId: "a", proficiency: 2, isVerified: false },
+      { skillId: "b", proficiency: 3, isVerified: false },
+    ]);
+    expect(r.attainment).toBe(66.7);
+    expect(r.band).toBe("Proficient");
+    expect(r.metCount).toBe(1);
+    expect(r.gaps.find((g) => g.skillName === "Radar Ops")?.status).toBe("PARTIAL");
+  });
+
+  it("marks an untouched skill MISSING and lands a low band", () => {
+    const r = scoreTrainee(TRAINEE_REQS, []);
+    expect(r.attainment).toBe(0);
+    expect(r.band).toBe("Beginner");
+    expect(r.gaps.every((g) => g.status === "MISSING")).toBe(true);
+  });
+});
 
 describe("scoreTrainer", () => {
   it("perfect match: all MET, verified, senior → 100 and all MET", () => {

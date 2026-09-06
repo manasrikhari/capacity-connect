@@ -102,6 +102,74 @@ export function scoreTrainer(
   return { matchScore, isQualified, missingMandatoryCount, skillBreakdown };
 }
 
+// ── Trainee competency attainment (Phase 5) ────────────────────────────────
+// The trainee-facing counterpart to scoreTrainer: given a course's skill
+// requirements and the trainee's demonstrated skills, how far along the
+// competency are they? Frames the same gap analysis as *attainment* (for the
+// Competency Passport) rather than *qualification to teach*.
+
+export type TraineeCompetency = {
+  /** Weighted attainment 0–100 across the course's required skills. */
+  attainment: number;
+  /** Passport band, off the attainment score. */
+  band: "Expert" | "Proficient" | "Developing" | "Beginner";
+  metCount: number;
+  totalCount: number;
+  gaps: {
+    skillName: string;
+    requiredLevel: number;
+    traineeLevel: number;
+    status: "MET" | "PARTIAL" | "MISSING";
+  }[];
+};
+
+function competencyBand(attainment: number): TraineeCompetency["band"] {
+  if (attainment >= 85) return "Expert";
+  if (attainment >= 65) return "Proficient";
+  if (attainment >= 35) return "Developing";
+  return "Beginner";
+}
+
+export function scoreTrainee(requirements: Req[], traineeSkills: TS[]): TraineeCompetency {
+  if (requirements.length === 0) {
+    return { attainment: 0, band: "Beginner", metCount: 0, totalCount: 0, gaps: [] };
+  }
+
+  const byId = new Map<string, TS>();
+  for (const ts of traineeSkills) byId.set(ts.skillId, ts);
+
+  let weightedSum = 0;
+  let weightTotal = 0;
+  let metCount = 0;
+  const gaps: TraineeCompetency["gaps"] = [];
+
+  for (const req of requirements) {
+    const have = byId.get(req.skillId)?.proficiency ?? 0;
+    const required = req.minProficiency;
+
+    let status: "MET" | "PARTIAL" | "MISSING";
+    if (have >= required) status = "MET";
+    else if (have > 0) status = "PARTIAL";
+    else status = "MISSING";
+    if (status === "MET") metCount++;
+
+    const ratio = required > 0 ? Math.min(1, have / required) : 1;
+    weightedSum += req.weight * ratio;
+    weightTotal += req.weight;
+
+    gaps.push({ skillName: req.skillName, requiredLevel: required, traineeLevel: have, status });
+  }
+
+  const attainment = round1(weightTotal > 0 ? (weightedSum / weightTotal) * 100 : 0);
+  return {
+    attainment,
+    band: competencyBand(attainment),
+    metCount,
+    totalCount: requirements.length,
+    gaps,
+  };
+}
+
 export type CategoryProfile = {
   category: string;
   average: number;

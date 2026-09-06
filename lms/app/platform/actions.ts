@@ -1,15 +1,40 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { ApprovalStatus } from "@/app/generated/prisma/enums";
+import type { ApprovalStatus, Role } from "@/app/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/session";
+
+/** Append an immutable audit row. Best-effort: never blocks the primary write. */
+async function audit(input: {
+  actorId?: string;
+  targetId?: string;
+  action: string;
+  fromValue?: string | null;
+  toValue?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorId: input.actorId ?? null,
+        targetId: input.targetId ?? null,
+        action: input.action,
+        fromValue: input.fromValue ?? null,
+        toValue: input.toValue ?? null,
+        metadata: input.metadata ? (input.metadata as object) : undefined,
+      },
+    });
+  } catch (err) {
+    console.warn("[audit] failed to record", input.action, err);
+  }
+}
 
 export async function updateTeacherStatus(input: {
   teacherId: string;
   status: Extract<ApprovalStatus, "APPROVED" | "REJECTED" | "SUSPENDED">;
 }) {
-  await requireSuperAdmin();
+  const session = await requireSuperAdmin();
 
   const teacher = await prisma.user.findUnique({
     where: { id: input.teacherId },
@@ -24,8 +49,144 @@ export async function updateTeacherStatus(input: {
     data: { status: input.status },
   });
 
+  await audit({
+    actorId: session.user.id,
+    targetId: input.teacherId,
+    action: "status.change",
+    fromValue: teacher.status,
+    toValue: input.status,
+  });
+
   revalidatePath("/platform");
+  revalidatePath("/platform/people");
   return { success: true as const };
+}
+
+/**
+ * Change a user's global role, guarded by requireSuperAdmin. Refuses to demote
+ * the last SUPER_ADMIN, and refuses to demote a trainer who still owns an ACTIVE
+ * course (reassign it with assignTrainerToBatch first). Every change is audited.
+ * Promotion carries APPROVED so the promoted staff member isn't left in limbo.
+ */
+export async function updateUserRoleAction(
+  userId: string,
+  role: Role,
+): Promise<{ error?: string; success?: true }> {
+  const session = await requireSuperAdmin();
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true, status: true },
+  });
+  if (!target) return { error: "User not found" };
+  if (target.role === role) return { success: true };
+
+  // Guard: never remove the last platform admin.
+  if (target.role === "SUPER_ADMIN" && role !== "SUPER_ADMIN") {
+    const superAdmins = await prisma.user.count({ where: { role: "SUPER_ADMIN" } });
+    if (superAdmins <= 1) {
+      return { error: "Cannot demote the last platform admin." };
+    }
+  }
+
+  // Guard: a trainer being demoted must not still own an active course.
+  if (target.role === "ADMIN" && role !== "ADMIN") {
+    const activeOwned = await prisma.batch.count({
+      where: { teacherId: userId, status: "ACTIVE" },
+    });
+    if (activeOwned > 0) {
+      return {
+        error: `Reassign this trainer's ${activeOwned} active course${activeOwned === 1 ? "" : "s"} before demoting them.`,
+      };
+    }
+  }
+
+  // Promotions land APPROVED; a demotion to trainee is also an approved state.
+  const nextStatus: ApprovalStatus = "APPROVED";
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role, status: nextStatus },
+  });
+
+  await audit({
+    actorId: session.user.id,
+    targetId: userId,
+    action: "role.change",
+    fromValue: target.role,
+    toValue: role,
+    metadata: { statusFrom: target.status, statusTo: nextStatus },
+  });
+
+  revalidatePath("/platform");
+  revalidatePath("/platform/people");
+  return { success: true };
+}
+
+/**
+ * Approve a trainee's TrainerRequest: promote them to ADMIN/APPROVED and mark the
+ * request approved. This is the governed replacement for the self-promotion hole.
+ */
+export async function approveTrainerRequestAction(
+  requestId: string,
+): Promise<{ error?: string; success?: true }> {
+  const session = await requireSuperAdmin();
+
+  const request = await prisma.trainerRequest.findUnique({
+    where: { id: requestId },
+    select: { id: true, userId: true, status: true, user: { select: { role: true, status: true } } },
+  });
+  if (!request) return { error: "Request not found" };
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: request.userId },
+      data: { role: "ADMIN", status: "APPROVED" },
+    }),
+    prisma.trainerRequest.update({
+      where: { id: requestId },
+      data: { status: "APPROVED", reviewedById: session.user.id, reviewedAt: new Date() },
+    }),
+  ]);
+
+  await audit({
+    actorId: session.user.id,
+    targetId: request.userId,
+    action: "trainer_request.approve",
+    fromValue: request.user.role,
+    toValue: "ADMIN",
+  });
+
+  revalidatePath("/platform");
+  revalidatePath("/platform/people");
+  return { success: true };
+}
+
+export async function rejectTrainerRequestAction(
+  requestId: string,
+): Promise<{ error?: string; success?: true }> {
+  const session = await requireSuperAdmin();
+
+  const request = await prisma.trainerRequest.findUnique({
+    where: { id: requestId },
+    select: { id: true, userId: true },
+  });
+  if (!request) return { error: "Request not found" };
+
+  await prisma.trainerRequest.update({
+    where: { id: requestId },
+    data: { status: "REJECTED", reviewedById: session.user.id, reviewedAt: new Date() },
+  });
+
+  await audit({
+    actorId: session.user.id,
+    targetId: request.userId,
+    action: "trainer_request.reject",
+  });
+
+  revalidatePath("/platform");
+  revalidatePath("/platform/people");
+  return { success: true };
 }
 
 /**

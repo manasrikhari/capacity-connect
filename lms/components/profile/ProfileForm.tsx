@@ -3,12 +3,13 @@
 import { useActionState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { updateProfileAction } from "@/app/student/profile/actions";
+import { ExperienceField } from "@/components/profile/ExperienceField";
 import { QualificationsField } from "@/components/profile/QualificationsField";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FormField, Input, Textarea } from "@/components/ui/Field";
 import { initialActionState } from "@/lib/action-state";
-import type { Qualification } from "@/lib/validations/profile";
+import type { Experience, Qualification } from "@/lib/validations/profile";
 
 export type ProfileFormValues = {
   name: string;
@@ -24,6 +25,7 @@ export type ProfileFormValues = {
   governmentIdNum: string;
   resumeUrl: string;
   qualifications: Qualification[];
+  experience: Experience[];
 };
 
 export function ProfileForm({ profile }: { profile: ProfileFormValues }) {
@@ -94,6 +96,8 @@ export function ProfileForm({ profile }: { profile: ProfileFormValues }) {
         </FormField>
 
         <QualificationsField qualifications={profile.qualifications} error={err("qualifications")} />
+
+        <ExperienceField experience={profile.experience} error={err("experience")} />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Years of experience" htmlFor="yearsExperience" error={err("yearsExperience")}>

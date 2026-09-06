@@ -23,11 +23,6 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const session = await getSession();
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   const { path: segments } = await params;
   if (!Array.isArray(segments) || segments.length !== 2) {
     return new NextResponse("Not found", { status: 404 });
@@ -39,10 +34,23 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
-  // Authorization: trainer who owns the batch, or an APPROVED student.
-  const authorized = await hasBatchAccess(session.user.id, session.user.role, batchId);
-  if (!authorized) {
-    return new NextResponse("Forbidden", { status: 403 });
+  // A resource published to the homepage is servable to anyone, signed in or
+  // not. Otherwise fall back to session-gated batch access.
+  const isPublic = await prisma.libraryItem.findFirst({
+    where: { batchId, isPublic: true, fileUrl: `/api/files/${batchId}/${storedName}` },
+    select: { id: true },
+  });
+
+  if (!isPublic) {
+    const session = await getSession();
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    // Authorization: trainer who owns the batch, or an APPROVED student.
+    const authorized = await hasBatchAccess(session.user.id, session.user.role, batchId);
+    if (!authorized) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
   }
 
   const info = await statStoredFile(abs);

@@ -1,9 +1,9 @@
 "use client";
 
-import { Library, Pencil, Plus, Trash2 } from "lucide-react";
+import { Globe, Library, Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
-import { deleteLibraryItemAction } from "@/app/admin/library/actions";
+import { deleteLibraryItemAction, toggleLibraryPublicAction } from "@/app/admin/library/actions";
 import {
   LibraryItemCard,
   TYPE_META,
@@ -40,6 +40,16 @@ export function LibraryList({
   function openEdit(item: LibraryItemView) {
     setEditing(item);
     setModalOpen(true);
+  }
+
+  function handleTogglePublic(id: string) {
+    setPendingId(id);
+    startTransition(async () => {
+      const result = await toggleLibraryPublicAction(id);
+      if (result?.error) toast.error(result.error);
+      else toast.success(result?.isPublic ? "Published to homepage" : "Unpublished");
+      setPendingId(null);
+    });
   }
 
   function handleDelete(id: string) {
@@ -105,6 +115,16 @@ export function LibraryList({
                       <>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>
                           <Pencil className="size-3.5" /> Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={item.isPublic ? "outline" : "ghost"}
+                          loading={pending && pendingId === item.id}
+                          onClick={() => handleTogglePublic(item.id)}
+                          title={item.isPublic ? "Published on the public homepage" : "Publish to the public homepage"}
+                        >
+                          {item.isPublic ? <Globe className="size-3.5" /> : <Lock className="size-3.5" />}
+                          {item.isPublic ? "Public" : "Publish"}
                         </Button>
                         <Button
                           size="sm"

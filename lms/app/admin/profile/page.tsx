@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
-import type { Qualification } from "@/lib/validations/profile";
+import { coerceExperience, type Qualification } from "@/lib/validations/profile";
 
 const PROFICIENCY_LABEL = ["", "Novice", "Beginner", "Competent", "Proficient", "Expert"];
 
@@ -49,6 +49,7 @@ export default async function AdminProfilePage() {
     governmentIdNum: profile?.governmentIdNum ?? "",
     resumeUrl: profile?.resumeUrl ?? "",
     qualifications: toQualifications(profile?.qualifications),
+    experience: coerceExperience(profile?.experience),
   };
 
   return (

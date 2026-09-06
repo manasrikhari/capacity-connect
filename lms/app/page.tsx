@@ -8,6 +8,7 @@ import { LandingHero } from "@/components/landing/sections/LandingHero";
 import { LandingFeatures } from "@/components/landing/sections/LandingFeatures";
 import { LandingAnnouncements } from "@/components/landing/sections/LandingAnnouncements";
 import { LandingCourses } from "@/components/landing/sections/LandingCourses";
+import { LandingResources } from "@/components/landing/sections/LandingResources";
 import { LandingHowItWorks } from "@/components/landing/sections/LandingHowItWorks";
 import { LandingPlatform } from "@/components/landing/sections/LandingPlatform";
 import { LandingVerify } from "@/components/landing/sections/LandingVerify";
@@ -20,7 +21,7 @@ import { prisma } from "@/lib/prisma";
 
 async function loadLandingData() {
   const now = new Date();
-  const [announcements, courses, metrics, activeCourseCount, traineeCount] = await Promise.all([
+  const [announcements, courses, metrics, activeCourseCount, traineeCount, resources] = await Promise.all([
     prisma.announcement.findMany({
       where: { isPublished: true },
       orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
@@ -53,6 +54,18 @@ async function loadLandingData() {
     getCapacityMetrics(),
     prisma.batch.count({ where: { status: "ACTIVE" } }),
     prisma.user.count({ where: { role: "STUDENT" } }),
+    prisma.libraryItem.findMany({
+      where: { isPublic: true },
+      orderBy: { updatedAt: "desc" },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        fileUrl: true,
+        batch: { select: { name: true } },
+      },
+    }),
   ]);
 
   return {
@@ -79,6 +92,13 @@ async function loadLandingData() {
       courses: activeCourseCount,
       trainees: traineeCount,
     },
+    resources: resources.map((r) => ({
+      id: r.id,
+      title: r.title,
+      type: r.type,
+      course: r.batch?.name ?? null,
+      href: r.fileUrl,
+    })),
   };
 }
 
@@ -86,7 +106,7 @@ export default async function Home() {
   const session = await auth();
 
   if (!session) {
-    const { announcements, courses, stats } = await loadLandingData();
+    const { announcements, courses, stats, resources } = await loadLandingData();
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: allLandingStyles }} />
@@ -98,6 +118,7 @@ export default async function Home() {
         <LandingFeatures />
         <LandingAnnouncements announcements={announcements} />
         <LandingCourses courses={courses} stats={stats} />
+        <LandingResources resources={resources} />
         <LandingHowItWorks />
         <LandingPlatform />
         <LandingVerify />

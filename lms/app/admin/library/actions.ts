@@ -149,6 +149,31 @@ export async function updateLibraryItemAction(
   return { success: true };
 }
 
+/**
+ * Publish a resource to the public homepage (and make its bytes servable without
+ * enrolment). Mirrors the announcement togglePublishAction precedent, including
+ * revalidating the landing page where "Recently published resources" renders.
+ */
+export async function toggleLibraryPublicAction(id: string) {
+  const session = await requireAdmin();
+  const batch = await getActiveBatch(session);
+  if (!batch) return { error: "No active course" };
+
+  const item = await prisma.libraryItem.findUnique({ where: { id } });
+  if (!item || item.batchId !== batch.id) {
+    return { error: "Item not found" };
+  }
+
+  await prisma.libraryItem.update({
+    where: { id },
+    data: { isPublic: !item.isPublic },
+  });
+
+  revalidatePath("/admin/library");
+  revalidatePath("/");
+  return { success: true as const, isPublic: !item.isPublic };
+}
+
 export async function deleteLibraryItemAction(id: string) {
   const session = await requireAdmin();
   const batch = await getActiveBatch(session);

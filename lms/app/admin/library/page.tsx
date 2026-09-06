@@ -33,6 +33,7 @@ export default async function AdminLibraryPage() {
     mimeType: i.mimeType,
     fileSizeBytes: i.fileSizeBytes,
     durationMins: i.durationMins,
+    isPublic: i.isPublic,
   }));
 
   return <LibraryList items={views} batchId={batch.id} skills={skills} />;

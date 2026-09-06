@@ -51,6 +51,9 @@ export default auth((req) => {
   if (pathname.startsWith("/student/fees")) {
     return NextResponse.redirect(new URL("/student/dashboard", req.url));
   }
+  // /blocked must be reachable so a suspended trainee can read why, rather than
+  // bouncing /blocked → /student → /blocked forever (the redirect-loop bug).
+  if (pathname === "/blocked") return NextResponse.next();
   if (pathname === "/" || pathname.startsWith("/student") || pathname.startsWith("/join")) return NextResponse.next();
   return NextResponse.redirect(new URL("/student", req.url));
 });

@@ -21,6 +21,8 @@ export type LibraryItemView = {
   mimeType: string | null;
   fileSizeBytes: number | null;
   durationMins: number | null;
+  /** Published to the public homepage. Only set on the admin (trainer) view. */
+  isPublic?: boolean;
 };
 
 export const TYPE_META: Record<

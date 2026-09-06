@@ -28,6 +28,7 @@ export async function updateProfileAction(
     phone: formData.get("phone"),
     bio: formData.get("bio"),
     qualifications: formData.get("qualifications"),
+    experience: formData.get("experience"),
     yearsExperience: formData.get("yearsExperience"),
     interests: formData.get("interests"),
     governmentIdType: formData.get("governmentIdType"),
@@ -47,6 +48,11 @@ export async function updateProfileAction(
       ? (d.qualifications as unknown as Prisma.InputJsonValue)
       : Prisma.DbNull;
 
+  const experience: Prisma.InputJsonValue | typeof Prisma.DbNull =
+    d.experience.length > 0
+      ? (d.experience as unknown as Prisma.InputJsonValue)
+      : Prisma.DbNull;
+
   const data = {
     designation: d.designation || null,
     department: d.department || null,
@@ -60,6 +66,7 @@ export async function updateProfileAction(
     governmentIdNum: d.governmentIdNum || null,
     resumeUrl: d.resumeUrl || null,
     qualifications,
+    experience,
   };
 
   await prisma.profile.upsert({

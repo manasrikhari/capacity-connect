@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { formatDate } from "@/lib/utils";
-import type { Qualification } from "@/lib/validations/profile";
+import { coerceExperience, type Qualification } from "@/lib/validations/profile";
 
 /** Coerce a stored Json value into a typed qualification list. */
 function toQualifications(value: unknown): Qualification[] {
@@ -60,6 +60,7 @@ export default async function StudentProfilePage() {
     governmentIdNum: profile?.governmentIdNum ?? "",
     resumeUrl: profile?.resumeUrl ?? "",
     qualifications,
+    experience: coerceExperience(profile?.experience),
   };
 
   // Group skills by category for a read-only competency snapshot.

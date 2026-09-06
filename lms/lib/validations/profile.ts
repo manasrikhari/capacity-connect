@@ -16,6 +16,55 @@ export function parseQualifications(raw: string): Qualification[] {
     .filter((q) => q.degree.length > 0);
 }
 
+export type Experience = {
+  role: string;
+  organisation: string;
+  startYear: number | null;
+  endYear: number | null;
+  current: boolean;
+};
+
+/**
+ * Parse a textarea "role | organisation | startYear | endYear" (one per line) →
+ * objects. A blank or "present"/"current" endYear marks an ongoing role.
+ */
+export function parseExperience(raw: string): Experience[] {
+  return raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [role = "", organisation = "", start = "", end = ""] = line.split("|").map((s) => s.trim());
+      const startYear = Number.parseInt(start, 10);
+      const endLower = end.toLowerCase();
+      const current = endLower === "" || endLower === "present" || endLower === "current";
+      const endYear = Number.parseInt(end, 10);
+      return {
+        role,
+        organisation,
+        startYear: Number.isFinite(startYear) ? startYear : null,
+        endYear: current || !Number.isFinite(endYear) ? null : endYear,
+        current,
+      };
+    })
+    .filter((e) => e.role.length > 0);
+}
+
+/** Coerce a stored Json value into a typed work-history list (for prefill). */
+export function coerceExperience(value: unknown): Experience[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((e): e is Record<string, unknown> => typeof e === "object" && e !== null)
+    .map((e) => ({
+      role: String(e.role ?? ""),
+      organisation: String(e.organisation ?? ""),
+      startYear: typeof e.startYear === "number" ? e.startYear : null,
+      endYear: typeof e.endYear === "number" ? e.endYear : null,
+      current: Boolean(e.current),
+    }))
+    .filter((e) => e.role.length > 0);
+}
+
 const urlOrEmpty = z.url("Enter a valid URL").optional().or(z.literal(""));
 
 export const profileSchema = z.object({
@@ -30,6 +79,10 @@ export const profileSchema = z.object({
     .string()
     .optional()
     .transform((v) => parseQualifications(v ?? "")),
+  experience: z
+    .string()
+    .optional()
+    .transform((v) => parseExperience(v ?? "")),
   yearsExperience: z.coerce.number().min(0).max(50).default(0),
   interests: z
     .string()

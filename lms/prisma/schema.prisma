@@ -68,6 +68,23 @@ enum LibraryItemType {
   MANUAL
 }
 
+// A trainee's request to be promoted to trainer, reviewed in the /platform queue.
+enum TrainerRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Per-course staff roles — IMD's SOP requires disjoint academic, examination and
+// result cells, so the same official cannot teach, set the paper and evaluate it.
+enum BatchStaffRole {
+  AUTHOR
+  EXAMINER
+  EVALUATOR
+  MENTOR
+  OBSERVER
+}
+
 // ── Tenant isolation unit ──────────────────────────────────────────────────
 model Batch {
   id        String      @id @default(cuid())
@@ -105,12 +122,15 @@ model Batch {
   libraryItems      LibraryItem[]
   knowledgeNodes    KnowledgeNode[]
   knowledgeSources  KnowledgeSource[]
+  staff             BatchStaff[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([teacherId])
   @@index([department])
+  @@index([status])
+  @@index([startDate])
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
@@ -153,6 +173,13 @@ model User {
   uploadedLibraryItems  LibraryItem[]     @relation("UploadedLibraryItems")
   authoredAnnouncements Announcement[]    @relation("AuthoredAnnouncements")
   addedKnowledgeSources KnowledgeSource[] @relation("AddedKnowledgeSources")
+
+  // ── Phase 1: governed roles ──
+  trainerRequest           TrainerRequest?  @relation("TrainerRequestUser")
+  reviewedTrainerRequests  TrainerRequest[] @relation("TrainerRequestReviewer")
+  batchStaffRoles          BatchStaff[]     @relation("BatchStaffUser")
+  auditActed               AuditLog[]       @relation("AuditActor")
+  auditTargeted            AuditLog[]       @relation("AuditTarget")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -462,6 +489,11 @@ model Profile {
   phone            String?
   bio              String?
   qualifications   Json? // [{ degree, institution, year }]
+  experience       Json? // [{ role, organisation, startYear, endYear, current }] — work history
+  cadre            String? // IMD cadre: "Met-A" | "Met-B" | "Scientist" | …
+  publicSlug       String?  @unique // stable handle for the public profile at /p/<slug>
+  isPublic         Boolean  @default(false)
+  openToMentoring  Boolean  @default(false)
   yearsExperience  Float    @default(0)
   interests        String[] @default([])
   governmentIdType String?
@@ -654,6 +686,7 @@ model LibraryItem {
   fileSizeBytes  Int?
   durationMins   Int?
   subject        String?
+  isPublic       Boolean         @default(false) // published to the public homepage & servable without enrolment
   skillId        String?
   skill          Skill?          @relation(fields: [skillId], references: [id], onDelete: SetNull)
   knowledgeNodes KnowledgeNode[]
@@ -663,6 +696,7 @@ model LibraryItem {
 
   @@index([batchId, type])
   @@index([skillId])
+  @@index([isPublic])
 }
 
 model Announcement {
@@ -684,4 +718,64 @@ model Announcement {
 
   @@index([isPublished, publishedAt])
   @@index([category])
+}
+
+// ── Phase 1: governed roles & separation of duties ─────────────────────────
+
+/// A trainee's request to be promoted to trainer. Created from /welcome; it
+/// surfaces in the MoES approval queue on /platform. Approval is the governed
+/// path that writes User.role — replacing the self-promotion hole it closed.
+model TrainerRequest {
+  id           String               @id @default(cuid())
+  userId       String               @unique
+  user         User                 @relation("TrainerRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  organisation String?
+  designation  String?
+  department   String?
+  intent       String? // a sentence on what they intend to teach
+  status       TrainerRequestStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?                @relation("TrainerRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([status])
+}
+
+/// A per-course staff assignment. Distinct from Batch.teacherId (the owner):
+/// a course can have an AUTHOR who cannot see the question bank and an
+/// EVALUATOR who is not the teacher, enforcing IMD's disjoint cells.
+model BatchStaff {
+  id      String         @id @default(cuid())
+  batchId String
+  batch   Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User           @relation("BatchStaffUser", fields: [userId], references: [id], onDelete: Cascade)
+  role    BatchStaffRole
+
+  createdAt DateTime @default(now())
+
+  @@unique([batchId, userId, role])
+  @@index([batchId])
+  @@index([userId])
+}
+
+/// An immutable record of a privileged change (role, status, staff assignment).
+/// A ministry deployment is expected to be able to answer "who changed what".
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetId  String?
+  target    User?    @relation("AuditTarget", fields: [targetId], references: [id], onDelete: SetNull)
+  action    String // "role.change" | "status.change" | "trainer_request.approve" | …
+  fromValue String?
+  toValue   String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([targetId])
+  @@index([actorId])
+  @@index([createdAt])
 }

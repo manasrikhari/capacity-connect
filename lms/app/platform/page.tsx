@@ -13,6 +13,8 @@ import { redirect } from "next/navigation";
 import { DepartmentBars } from "@/components/platform/DepartmentBars";
 import { DomainBars } from "@/components/platform/DomainBars";
 import { TeacherStatusButton } from "@/components/platform/TeacherStatusButton";
+import { TrainerRequestButtons } from "@/components/platform/TrainerRequestButtons";
+import { UserRoleSelect } from "@/components/platform/UserRoleSelect";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -48,6 +50,7 @@ export default async function PlatformPage() {
     totalEnrollments,
     recentStudents7d,
     batches,
+    trainerRequests,
   ] = await Promise.all([
     getCapacityMetrics(),
     prisma.user.findMany({
@@ -73,6 +76,11 @@ export default async function PlatformPage() {
         _count: { select: { enrollments: true } },
       },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.trainerRequest.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { name: true, email: true } } },
     }),
   ]);
 
@@ -147,6 +155,38 @@ export default async function PlatformPage() {
           </ul>
         )}
       </Card>
+
+      {/* ── Trainer access requests (governed self-serve upgrades) ─────── */}
+      {trainerRequests.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <span className="flex items-center gap-2">
+                <GraduationCap className="size-5 text-status-partial" />
+                Trainer requests ({trainerRequests.length})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <ul className="divide-y divide-hair">
+            {trainerRequests.map((r) => (
+              <li key={r.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink-900">{r.user.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-ink-500">
+                    {r.user.email}
+                    {r.organisation ? ` · ${r.organisation}` : ""}
+                    {r.designation ? ` · ${r.designation}` : ""}
+                  </p>
+                  {r.intent ? (
+                    <p className="mt-1 max-w-prose text-xs italic text-ink-500">&ldquo;{r.intent}&rdquo;</p>
+                  ) : null}
+                </div>
+                <TrainerRequestButtons requestId={r.id} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {/* ── Outcomes: how the system is performing ────────────────────── */}
       <section>
@@ -228,7 +268,12 @@ export default async function PlatformPage() {
       {/* ── Trainers table ─────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>All trainers ({teachers.length})</CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle>All trainers ({teachers.length})</CardTitle>
+            <a href="/platform/people" className="text-sm text-plum-600 hover:underline">
+              All people →
+            </a>
+          </div>
         </CardHeader>
         {teachers.length === 0 ? (
           <EmptyState icon={Users} title="No trainers yet" />
@@ -239,6 +284,7 @@ export default async function PlatformPage() {
                 <tr className={`border-b border-hair-strong ${TABLE_HEAD}`}>
                   <th className="py-2 pr-4 font-normal">Trainer</th>
                   <th className="py-2 pr-4 font-normal">Status</th>
+                  <th className="py-2 pr-4 font-normal">Role</th>
                   <th className="py-2 pr-4 font-normal">Plan</th>
                   <th className="py-2 pr-4 text-right font-normal">Courses</th>
                   <th className="py-2 pr-4 text-right font-normal">Trainees</th>
@@ -261,6 +307,9 @@ export default async function PlatformPage() {
                       </td>
                       <td className="py-3 pr-4">
                         <Badge color={statusColor[t.status]}>{t.status.toLowerCase()}</Badge>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <UserRoleSelect userId={t.id} role={t.role} />
                       </td>
                       <td className="py-3 pr-4 text-ink-700">{t.plan}</td>
                       <td className="py-3 pr-4 text-right font-mono tabular-nums text-ink-900">{t._count.ownedBatches}</td>

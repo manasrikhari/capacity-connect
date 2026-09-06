@@ -1,4 +1,5 @@
 import { ArrowLeft, Clock, HardDrive } from "lucide-react";
+import { TrackView } from "@/components/course/TrackView";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -40,6 +41,7 @@ export default async function StudentLibraryDetailPage({
 
   return (
     <div className="space-y-6">
+      <TrackView itemType="LIBRARY" itemId={id} />
       <Link
         href="/student/library"
         className="inline-flex items-center gap-1.5 text-sm text-ink-500 transition-colors hover:text-ink-900"

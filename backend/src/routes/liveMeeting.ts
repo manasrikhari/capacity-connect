@@ -1,9 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import multer from 'multer';
 import { AccessToken, TrackSource } from 'livekit-server-sdk';
 import { ENV } from '../config/env';
 import { db } from '../config/db';
 import { roomServiceClient } from '../config/livekit';
-import { requestAI, isAIConfigured } from '../services/ai-provider';
+import { requestAI, isAIConfigured, transcribeAudio } from '../services/ai-provider';
+import { TranscriptService } from '../services/transcript.service';
 import {
   LiveClassroomService,
   ClassroomClaims,
@@ -13,6 +15,10 @@ import { PresenceService } from '../services/presence.service';
 import { AppError } from '../utils/appError';
 
 const router = Router();
+
+// Audio chunks arrive as multipart; keep them in memory (they're short VAD
+// utterances) and cap the size so a bad client can't blow up the process.
+const uploadAudio = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
 interface ClassroomRequest extends Request {
   classroom?: ClassroomTokenPayload;
@@ -467,34 +473,82 @@ router.get(
 
 /**
  * GET /api/summary/:sessionId
- * Rolling summaries are not available on this server; return an empty payload
- * so the client's polling stays quiet without faking data.
+ * Return the latest cached rolling summary for the room (null until one is
+ * triggered), so the classroom's summary tab can poll cheaply.
  */
-router.get('/summary/:sessionId', requireClassroomToken, (_req: ClassroomRequest, res: Response): void => {
-  res.json({ rollingSummary: null, topicNotes: null });
+router.get('/summary/:sessionId', requireClassroomToken, (req: ClassroomRequest, res: Response): void => {
+  const roomId = req.params.sessionId as string;
+  res.json({ rollingSummary: TranscriptService.getSummary(roomId), topicNotes: null });
 });
 
 /**
  * POST /api/summary/trigger
+ * Distil the transcript so far into a short rolling summary via the AI provider,
+ * cache it, and return it. Degrades to a quiet failure when AI is unconfigured
+ * or the transcript is still empty.
  */
-router.post('/summary/trigger', requireClassroomToken, (_req: ClassroomRequest, res: Response): void => {
-  res.json({ success: false, message: 'summaries not available' });
+router.post('/summary/trigger', requireClassroomToken, async (req: ClassroomRequest, res: Response): Promise<void> => {
+  const claims = req.classroom!;
+  const transcript = TranscriptService.get(claims.roomId);
+  if (!transcript || !isAIConfigured()) {
+    res.json({ success: false, rollingSummary: TranscriptService.getSummary(claims.roomId) });
+    return;
+  }
+  try {
+    const summary = await requestAI(
+      transcript.slice(-8000),
+      undefined,
+      'You are summarising a live meteorology training class from its running transcript. ' +
+        'Write 3-5 concise bullet points of what has been covered so far. Do not invent anything not in the transcript.',
+    );
+    if (summary) TranscriptService.setSummary(claims.roomId, summary.trim());
+    res.json({ success: true, rollingSummary: TranscriptService.getSummary(claims.roomId) });
+  } catch (err: any) {
+    console.warn(`[Summary] Failed to generate rolling summary: ${err?.message || err}`);
+    res.json({ success: false, rollingSummary: TranscriptService.getSummary(claims.roomId) });
+  }
 });
 
 /**
  * POST /api/transcript/:roomName/topic
- * Accept and ignore topic updates (no transcript pipeline on this server).
+ * Record a client-authored topic line into the running transcript.
  */
-router.post('/transcript/:roomName/topic', requireClassroomToken, (_req: ClassroomRequest, res: Response): void => {
+router.post('/transcript/:roomName/topic', requireClassroomToken, (req: ClassroomRequest, res: Response): void => {
+  const claims = req.classroom!;
+  const topic = typeof req.body?.topic === 'string' ? req.body.topic : req.body?.text;
+  if (typeof topic === 'string' && topic.trim()) {
+    TranscriptService.append(claims.roomId, undefined, `[Topic] ${topic.trim()}`, claims.batchId);
+  }
   res.json({ success: true });
 });
 
 /**
  * POST /api/transcribe
+ * Transcribe one live-class audio chunk (multipart `audio`) and append it to
+ * the running transcript. Returns the recognised text. Requires a classroom
+ * token so the utterance is attributed to the right room and speaker.
  */
-router.post('/transcribe', (_req: Request, res: Response): void => {
-  res.status(501).json({ error: 'transcription not supported' });
-});
+router.post(
+  '/transcribe',
+  uploadAudio.single('audio'),
+  requireClassroomToken,
+  async (req: ClassroomRequest, res: Response): Promise<void> => {
+    const claims = req.classroom!;
+    const file = (req as ClassroomRequest & { file?: { buffer: Buffer; mimetype?: string } }).file;
+    if (!file?.buffer?.length) {
+      res.json({ text: '' });
+      return;
+    }
+    try {
+      const text = await transcribeAudio(file.buffer.toString('base64'), file.mimetype || 'audio/wav');
+      if (text) TranscriptService.append(claims.roomId, claims.name, text, claims.batchId);
+      res.json({ text });
+    } catch (err: any) {
+      console.warn(`[Transcribe] Failed to transcribe chunk: ${err?.message || err}`);
+      res.json({ text: '' });
+    }
+  },
+);
 
 /**
  * POST /api/end-class
@@ -561,8 +615,10 @@ router.post('/end-class', async (req: Request, res: Response, next: NextFunction
       },
     });
 
-    // Fire-and-forget: tell the LMS the class ended.
+    // Fire-and-forget: tell the LMS the class ended, then hand over the
+    // transcript (which triggers minutes + a knowledge source on the LMS).
     LiveClassroomService.notifyLms('/api/live/end-class', roomId, batchId, { hasNotes });
+    TranscriptService.flushAndNotify(roomId, batchId);
 
     res.json({ success: true });
   } catch (error) {

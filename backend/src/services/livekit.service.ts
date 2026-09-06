@@ -4,6 +4,7 @@ import { roomServiceClient, webhookReceiver } from '../config/livekit';
 import { db } from '../config/db';
 import { Role } from '@prisma/client';
 import { PresenceService } from './presence.service';
+import { TranscriptService } from './transcript.service';
 
 export class LivekitService {
   /**
@@ -116,7 +117,10 @@ export class LivekitService {
         break;
       case 'room_finished':
         if (roomName) {
+          // Belt-and-suspenders: also flush here in case the teacher's
+          // end-class call never landed. Both flushes are no-ops once cleared.
           PresenceService.flushAndNotify(roomName);
+          TranscriptService.flushAndNotify(roomName, null);
           await db.liveSession.updateMany({
             where: { roomId: roomName },
             data: { status: 'COMPLETED', actualEnd: new Date() },

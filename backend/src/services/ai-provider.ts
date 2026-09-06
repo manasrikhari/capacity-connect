@@ -143,6 +143,63 @@ export async function transcribeImage(attachedImage: any): Promise<string> {
   return '';
 }
 
+/**
+ * Speech-to-text for a live-class audio chunk, via Gemini audio understanding
+ * (Phase 4). Mirrors transcribeImage's key rotation. Returns '' on any failure
+ * or when no keys are configured, so the transcript pipeline degrades quietly
+ * rather than throwing on a single dropped chunk.
+ */
+export async function transcribeAudio(base64Audio: string, mimeType = 'audio/wav'): Promise<string> {
+  if (!base64Audio || !isAIConfigured()) return '';
+
+  const promptText =
+    'Transcribe this short audio clip from a live meteorology training class verbatim. ' +
+    'Return only the spoken words as plain text, with no timestamps, speaker labels or commentary. ' +
+    'If there is no intelligible speech, return an empty string.';
+  const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'] as const;
+
+  for (const model of models) {
+    let key = rotationManager.getNextKey(model);
+    while (key !== null) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+      try {
+        const geminiBody = {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: promptText }, { inline_data: { mime_type: mimeType, data: base64Audio } }],
+            },
+          ],
+        };
+        const res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiBody),
+        });
+        if (!res.ok) {
+          const errData = await res.text();
+          console.warn(`[AI Provider STT] Gemini key error on ${model}: ${res.status} - ${errData}`);
+          if (res.status === 429 || res.status === 403 || errData.includes('RESOURCE_EXHAUSTED')) {
+            rotationManager.exhaust(key, model);
+            key = rotationManager.getNextKey(model);
+            continue;
+          }
+          break;
+        }
+        const data: any = await res.json();
+        rotationManager.increment(key, model);
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text.trim();
+        return '';
+      } catch (err: any) {
+        console.error(`[AI Provider STT] Fetch exception:`, err.message);
+        break;
+      }
+    }
+  }
+  return '';
+}
+
 export async function requestAI(prompt: string, contextPrompt?: string, systemPrompt?: string): Promise<string> {
   const finalSystemPrompt =
     systemPrompt ||

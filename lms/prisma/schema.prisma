@@ -102,6 +102,8 @@ model Batch {
   wmoTier     String? // "BIP-M" | "BIP-MT" | "Specialised" | "Refresher"
   startDate   DateTime?
   endDate     DateTime?
+  slug        String?   @unique // stable public handle for /courses/<slug>
+  eligibility Json? // lib/eligibility.ts rule set: { minQualification?, requiredCadre?, minYearsExperience?, prerequisiteCourseIds? }
 
   enrollments     Enrollment[]
   meetings        Meeting[]
@@ -123,6 +125,7 @@ model Batch {
   knowledgeNodes    KnowledgeNode[]
   knowledgeSources  KnowledgeSource[]
   staff             BatchStaff[]
+  invites           Invite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -180,6 +183,11 @@ model User {
   batchStaffRoles          BatchStaff[]     @relation("BatchStaffUser")
   auditActed               AuditLog[]       @relation("AuditActor")
   auditTargeted            AuditLog[]       @relation("AuditTarget")
+
+  // ── Phase 2: onboarding & notifications ──
+  notifications     Notification[] @relation("UserNotifications")
+  sentInvites       Invite[]       @relation("SentInvites")
+  spocDepartments   Department[]   @relation("SpocDepartments")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -759,6 +767,68 @@ model BatchStaff {
   @@unique([batchId, userId, role])
   @@index([batchId])
   @@index([userId])
+}
+
+// ── Phase 2: onboarding, nomination & notifications ────────────────────────
+
+/// An in-app notification. Works with no external service (the bell reads these
+/// directly); email is a separate best-effort adapter in lib/mailer.ts.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  kind      String // "trainer_request.approved" | "enrollment.approved" | "invite" | …
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+/// A regional office / institute / foreign NMHS whose SPOC nominates staff.
+/// Maps IMD's nomination model (NPTEL Local Chapter) onto a record.
+model Department {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  code      String? // "RMC-CHENNAI" | "DWR-MACHILIPATNAM" | …
+  kind      String? // "RMC" | "DWR" | "INSTITUTE" | "NMHS"
+  spocId    String?
+  spoc      User?   @relation("SpocDepartments", fields: [spocId], references: [id], onDelete: SetNull)
+
+  invites Invite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spocId])
+}
+
+/// A nomination invite consumed at /invite/[token]. Accepting creates (or links)
+/// the account pre-filled with org/department/cadre and, for a course invite, an
+/// already-approved enrolment because the nominating office vouched for them.
+model Invite {
+  id           String      @id @default(cuid())
+  token        String      @unique
+  email        String
+  name         String?
+  role         Role        @default(STUDENT)
+  cadre        String?
+  designation  String?
+  batchId      String?
+  batch        Batch?      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  invitedById  String?
+  invitedBy    User?       @relation("SentInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  createdAt    DateTime    @default(now())
+
+  @@index([email])
+  @@index([batchId])
 }
 
 /// An immutable record of a privileged change (role, status, staff assignment).

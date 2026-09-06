@@ -1,5 +1,6 @@
 import { Clock, UserCheck, UserX } from "lucide-react";
 import { redirect } from "next/navigation";
+import { InviteTraineesCard } from "@/components/admin/InviteTraineesCard";
 import { StudentDeleteButton } from "@/components/admin/StudentDeleteButton";
 import { StudentStatusButton } from "@/components/admin/StudentStatusButton";
 import { Badge } from "@/components/ui/Badge";
@@ -38,6 +39,8 @@ export default async function AdminStudentsPage() {
         <h1 className="text-2xl text-ink-900">Trainees</h1>
         <p className="mt-1 text-sm text-ink-500">Approve, reject, or manage trainee access to {batch.name}.</p>
       </div>
+
+      <InviteTraineesCard />
 
       <Card>
         <CardHeader>

@@ -108,7 +108,7 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
     ? Math.max(0, Math.floor(Math.min(...blockHours)) - 1)
     : 8;
   const dayEndRaw = hasGrid ? Math.min(24, Math.ceil(Math.max(...blockHours)) + 1) : 20;
-  const rows = Math.min(Math.max(dayEndRaw - dayStart, 6), 14);
+  const rows = Math.min(Math.max(dayEndRaw - dayStart, 4), 14);
   const at = (t: number) => (t - dayStart) * HOUR_PX;
   const hours = Array.from({ length: rows }, (_, i) => hhmm(dayStart + i));
   const nowOnGrid =
@@ -282,14 +282,13 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
               ))}
             </div>
 
+            {!hasGrid ? (
+              <p className="lf2-day-none">No classes scheduled today.</p>
+            ) : (
             <div className="lf2-day">
                 {hours.map((h) => (
                   <div className="lf2-hour" key={h} data-h={h} />
                 ))}
-
-                {!hasGrid ? (
-                  <div className="lf2-day-empty">No classes on today&apos;s clock</div>
-                ) : null}
 
                 {data.todayBlocks.flatMap((b) => {
                   const bs = toHours(b.startAt);
@@ -365,7 +364,7 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
                   />
                 ) : null}
               </div>
-
+            )}
 
             <div className="lf2-coming">
               <div className="lf2-h">Coming up</div>

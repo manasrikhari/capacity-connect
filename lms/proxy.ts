@@ -11,7 +11,12 @@ export default auth((req) => {
     pathname === "/" ||
     pathname.startsWith("/join") ||
     pathname.startsWith("/verify") ||
-    pathname.startsWith("/announcements");
+    pathname.startsWith("/announcements") ||
+    pathname.startsWith("/courses") ||
+    pathname.startsWith("/calendar") ||
+    pathname.startsWith("/invite") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/p/");
 
   if (!session) {
     if (isPublic) return NextResponse.next();
@@ -21,10 +26,23 @@ export default auth((req) => {
   // The post-login choice screen — reachable by any signed-in user,
   // regardless of role/status. The page itself reads the `onboarded` flag
   // from the DB and bounces away if there's nothing left to choose.
-  if (pathname === "/welcome") return NextResponse.next();
+  if (pathname === "/welcome" || pathname.startsWith("/welcome/")) return NextResponse.next();
 
-  // Public pages stay reachable for authenticated users too.
-  if (pathname.startsWith("/verify") || pathname.startsWith("/announcements")) {
+  // Public pages stay reachable for authenticated users too. The catalogue in
+  // particular must not bounce a signed-in trainer to /admin — a trainer
+  // browsing what else the ministry offers is a normal thing to do.
+  if (
+    pathname.startsWith("/verify") ||
+    pathname.startsWith("/announcements") ||
+    pathname.startsWith("/courses") ||
+    pathname.startsWith("/calendar") ||
+    pathname.startsWith("/invite") ||
+    pathname.startsWith("/p/") ||
+    // The coordinator surface is role-agnostic: being a SPOC is a delegated
+    // authority, not a role, so the page guards itself via getSpocContext().
+    // Without this an ADMIN would be bounced to /admin before ever reaching it.
+    pathname.startsWith("/spoc")
+  ) {
     return NextResponse.next();
   }
 

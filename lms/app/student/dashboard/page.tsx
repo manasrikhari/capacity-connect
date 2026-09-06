@@ -275,13 +275,10 @@ export default async function StudentDashboardPage() {
 
   const data: DashboardData = {
     studentShort: firstName,
-    batchLine: [
-      firstName,
-      [batch.subject, batch.name].filter(Boolean).join(" "),
-      teacherName,
-    ]
-      .filter(Boolean)
-      .join(" · "),
+    // The course name already carries its domain ("Advanced NWP Modeling"),
+    // so repeating batch.subject here produced "NWP Modeling Advanced NWP
+    // Modeling (…)" — one run-on string with no separator.
+    batchLine: [firstName, batch.name, teacherName].filter(Boolean).join(" · "),
     teacherName,
     enrolled,
     live:

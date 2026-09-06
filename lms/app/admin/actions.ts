@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
 import { setActiveBatchForTeacher } from "@/lib/batch";
+import { ensureBatchSlug } from "@/lib/catalogue-db";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { batchSchema } from "@/lib/validations/batch";
@@ -50,6 +51,10 @@ export async function createBatchAction(_prev: ActionState, formData: FormData):
       joinCode,
     },
   });
+
+  // Give it a public handle straight away so it is reachable at
+  // /courses/<slug> the moment it is created.
+  await ensureBatchSlug(batch.id, batch.name);
 
   await setActiveBatchForTeacher(session, batch.id);
   redirect("/admin/dashboard");

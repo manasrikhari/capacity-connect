@@ -10,7 +10,10 @@ import {
   Megaphone,
   Network,
   Menu,
+  CalendarRange,
   MessageSquare,
+  MessagesSquare,
+  PenLine,
   NotebookText,
   ShieldCheck,
   Sparkles,
@@ -42,6 +45,12 @@ interface NavItem {
 
 export type SidebarVariant = "admin" | "student" | "platform";
 
+interface HubNavGroup {
+  /** Empty string renders the group without a heading. */
+  label: string;
+  items: NavItem[];
+}
+
 /** Top-level ("hub") route for each variant. */
 const HUB_PATH: Record<SidebarVariant, string> = {
   admin: "/admin",
@@ -49,39 +58,80 @@ const HUB_PATH: Record<SidebarVariant, string> = {
   platform: "/platform",
 };
 
-const BATCH_NAV_ITEMS: Record<SidebarVariant, NavItem[]> = {
+/**
+ * Course-workspace navigation.
+ *
+ * The trainer list is grouped rather than flat: fifteen undifferentiated
+ * destinations is a wall to scan every time. The groups follow the trainer's
+ * actual jobs — run the course, author material, look after the trainees, and
+ * feed the assistant.
+ *
+ * The trainee list stays a single unlabelled group; six items need no
+ * signposting, and adding headings to them would be decoration.
+ */
+const BATCH_NAV_ITEMS: Record<SidebarVariant, HubNavGroup[]> = {
   admin: [
-    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/students", label: "Trainees", icon: Users },
-    { href: "/admin/meetings", label: "Meetings", icon: Video },
-    { href: "/admin/notes", label: "Notes", icon: NotebookText },
-    { href: "/admin/notices", label: "Notices", icon: Megaphone },
-    { href: "/admin/tests", label: "Tests", icon: ClipboardList },
-    { href: "/admin/library", label: "Library", icon: FolderOpen },
-    { href: "/admin/knowledge", label: "Knowledge", icon: Network },
-    { href: "/admin/competency", label: "Competency", icon: Target },
-    { href: "/admin/certificates", label: "Certificates", icon: Award },
-    { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
-    { href: "/admin/ai", label: "MeghDoot AI", icon: Sparkles },
+    {
+      label: "Course",
+      items: [
+        { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/admin/weeks", label: "Weeks", icon: CalendarRange },
+        { href: "/admin/meetings", label: "Meetings", icon: Video },
+        { href: "/admin/notices", label: "Notices", icon: Megaphone },
+        { href: "/admin/competency", label: "Competency", icon: Target },
+      ],
+    },
+    {
+      label: "Material",
+      items: [
+        { href: "/admin/notes", label: "Notes", icon: NotebookText },
+        { href: "/admin/library", label: "Library", icon: FolderOpen },
+        { href: "/admin/tests", label: "Tests", icon: ClipboardList },
+        { href: "/admin/assignments", label: "Assignments", icon: PenLine },
+      ],
+    },
+    {
+      label: "Trainees",
+      items: [
+        { href: "/admin/students", label: "Roster", icon: Users },
+        { href: "/admin/discussion", label: "Discussion", icon: MessagesSquare },
+        { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
+        { href: "/admin/certificates", label: "Certificates", icon: Award },
+      ],
+    },
+    {
+      label: "MeghDoot",
+      items: [
+        { href: "/admin/knowledge", label: "Knowledge", icon: Network },
+        { href: "/admin/ai", label: "Ask MeghDoot", icon: Sparkles },
+      ],
+    },
   ],
+  // Readings, recordings, quizzes and assignments are not listed here: they all
+  // live inside the course rail at /student/course, grouped by week and marked
+  // with what the trainee has finished. Repeating them as four flat indexes
+  // gave the trainee two navigations for one set of content.
+  //
+  // Discussion stays top-level because the rail only links into threads that
+  // already exist — asking a new question needs the index. SWAYAM keeps Q&A
+  // top-level for the same reason.
   student: [
-    { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/student/meetings", label: "Meetings", icon: Video },
-    { href: "/student/notes", label: "Notes", icon: NotebookText },
-    { href: "/student/tests", label: "Tests", icon: ClipboardList },
-    { href: "/student/library", label: "Library", icon: FolderOpen },
-    { href: "/student/feedback", label: "Feedback", icon: MessageSquare },
-    { href: "/student/ai", label: "MeghDoot AI", icon: Sparkles },
+    {
+      label: "",
+      items: [
+        { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/student/course", label: "Course content", icon: CalendarRange },
+        { href: "/student/discussion", label: "Discussion", icon: MessagesSquare },
+        { href: "/student/meetings", label: "Meetings", icon: Video },
+        { href: "/student/feedback", label: "Feedback", icon: MessageSquare },
+        { href: "/student/ai", label: "MeghDoot", icon: Sparkles },
+      ],
+    },
   ],
   // The ministry admin owns no single course, so it never enters a batch
   // workspace — an empty list keeps it on the hub view permanently.
   platform: [],
 };
-
-interface HubNavGroup {
-  label: string;
-  items: NavItem[];
-}
 
 const HUB_NAV: Record<SidebarVariant, HubNavGroup[]> = {
   admin: [
@@ -114,6 +164,7 @@ const HUB_NAV: Record<SidebarVariant, HubNavGroup[]> = {
       label: "Ministry",
       items: [
         { href: "/platform", label: "Dashboard", icon: LayoutDashboard, exact: true },
+        { href: "/platform/analyst", label: "Analyst", icon: Sparkles },
         { href: "/platform/competency", label: "Competency", icon: Target },
         { href: "/platform/skills", label: "Skills", icon: Layers },
       ],
@@ -190,9 +241,9 @@ export function Sidebar({
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
   const hubPath = HUB_PATH[variant];
-  const isInBatch = BATCH_NAV_ITEMS[variant].some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
-  );
+  const isInBatch = BATCH_NAV_ITEMS[variant]
+    .flatMap((g) => g.items)
+    .some((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
   const isHub = !isInBatch;
 
   return (
@@ -375,7 +426,7 @@ function BatchSidebarContent({
   slot?: ReactNode;
   onProfileClick?: () => void;
 }) {
-  const items = BATCH_NAV_ITEMS[variant];
+  const groups = BATCH_NAV_ITEMS[variant];
 
   return (
     <>
@@ -405,20 +456,29 @@ function BatchSidebarContent({
           </p>
         </div>
       )}
-      <nav className="flex-1 space-y-1 px-3">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={navItemClass(isActive(pathname, item))}
-            >
-              <Icon className="size-4.5" />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3">
+        {groups.map((group) => (
+          <div key={group.label || "main"} className="space-y-1">
+            {group.label && (
+              <p className="mb-2 mt-4 px-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300 first:mt-0">
+                {group.label}
+              </p>
+            )}
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={navItemClass(isActive(pathname, item))}
+                >
+                  <Icon className="size-4.5" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {joinCode && (
@@ -470,9 +530,9 @@ export function MobileSidebar({
   const skipFocusMove = useRef(true);
 
   const hubPath = HUB_PATH[variant];
-  const isInBatch = BATCH_NAV_ITEMS[variant].some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
-  );
+  const isInBatch = BATCH_NAV_ITEMS[variant]
+    .flatMap((g) => g.items)
+    .some((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
   const isHub = !isInBatch;
 
   // Close the drawer whenever the route changes (e.g. a nav link was tapped).

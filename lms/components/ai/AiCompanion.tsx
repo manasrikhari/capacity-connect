@@ -5,7 +5,6 @@ import MarkdownRenderer from "./MarkdownRenderer";
 import { CitationChips } from "./CitationChips";
 import { splitCitations } from "@/lib/graphrag";
 import {
-  Sparkles,
   MessageSquare,
   Send,
   Trash2,
@@ -90,7 +89,27 @@ export function AiCompanion({
   mode = "classroom",
 }: AiCompanionProps) {
   const isMeghDoot = mode === "meghdoot";
-  const assistantLabel = isMeghDoot ? "MeghDoot Copilot" : "Capacity Connect AI";
+  const assistantLabel = "MeghDoot";
+  const sourceLabel = isMeghDoot ? "the national knowledge base" : "this course's own material";
+
+  /**
+   * Openers drawn from the trainee's real material rather than generic
+   * placeholders — a suggestion naming their actual note is worth more than
+   * "Summarise notes", and proves the assistant is reading this course.
+   */
+  const starterPrompts = isMeghDoot
+    ? [
+        `Which concepts does ${batchName} build on?`,
+        "Explain this topic and cite where each part comes from.",
+        "What should I understand before the next assessment?",
+      ]
+    : [
+        notes[0] ? `Explain "${notes[0].title}" in simpler terms.` : "Summarise the course notes so far.",
+        summaries.length > 0
+          ? "What did I miss in the last class?"
+          : "What are the key ideas in this course?",
+        "Give me three questions to test myself on.",
+      ];
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -146,18 +165,14 @@ export function AiCompanion({
   // Switch to mobile layout overlay style if container width is below 780px
   const isCompactLayout = containerWidth > 0 && containerWidth < 780;
 
-  // Set default panel visibility based on container width
+  // Default panel visibility: wide enough to afford them, and with something
+  // worth showing.
   useEffect(() => {
-    if (containerWidth > 0) {
-      if (containerWidth < 780) {
-        setIsLeftOpen(false);
-        setIsRightOpen(false);
-      } else {
-        setIsLeftOpen(true);
-        setIsRightOpen(true);
-      }
-    }
-  }, [containerWidth]);
+    if (containerWidth <= 0) return;
+    const wide = containerWidth >= 780;
+    setIsLeftOpen(wide && conversations.length > 0);
+    setIsRightOpen(wide);
+  }, [containerWidth, conversations.length]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -774,35 +789,59 @@ export function AiCompanion({
         {/* Message Feed */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center max-w-md mx-auto space-y-4">
-              <div className="p-3 bg-plum-50 rounded-2xl border border-plum-100 text-plum-600">
-                <Sparkles className="size-8" />
-              </div>
-              <div>
-                <h3 className="font-medium text-ink-900 text-lg">Chat with {assistantLabel}</h3>
-                <p className="text-ink-500 text-sm mt-1">
-                  Ask doubts, summarise concepts, or request explanations based on your batch notes
-                  and classroom meetings.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full pt-4">
-                <button
-                  onClick={() => handleContextQuery("Explain the main concepts in the latest notes.")}
-                  className="p-3 text-left border border-hair rounded-[10px] text-xs hover:border-plum-300 hover:bg-plum-50 text-ink-700 transition-all cursor-pointer"
-                >
-                  Summarise notes
-                </button>
-                <button
-                  onClick={() =>
-                    handleContextQuery(
-                      "What are the key formulas or topics taught in recent live sessions?"
-                    )
-                  }
-                  className="p-3 text-left border border-hair rounded-[10px] text-xs hover:border-plum-300 hover:bg-plum-50 text-ink-700 transition-all cursor-pointer"
-                >
-                  Review live classes
-                </button>
-              </div>
+            <div className="mx-auto flex h-full max-w-lg flex-col justify-center">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                {assistantLabel}
+              </p>
+              <h3 className="mt-2 font-display text-2xl font-normal leading-snug text-ink-900">
+                Ask anything about {batchName}
+              </h3>
+              <p className="mt-2 text-sm text-ink-500">
+                Answers come from {sourceLabel}
+                {isMeghDoot ? ", with a citation on every claim." : "."}
+              </p>
+
+              <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-y border-hair py-3">
+                {notes.length > 0 && (
+                  <div>
+                    <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                      Notes
+                    </dt>
+                    <dd className="font-mono text-sm tabular-nums text-ink-900">{notes.length}</dd>
+                  </div>
+                )}
+                {summaries.length > 0 && (
+                  <div>
+                    <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                      Class summaries
+                    </dt>
+                    <dd className="font-mono text-sm tabular-nums text-ink-900">
+                      {summaries.length}
+                    </dd>
+                  </div>
+                )}
+                {doubts.length > 0 && (
+                  <div>
+                    <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                      Your past doubts
+                    </dt>
+                    <dd className="font-mono text-sm tabular-nums text-ink-900">{doubts.length}</dd>
+                  </div>
+                )}
+              </dl>
+
+              <ul className="mt-4 space-y-1.5">
+                {starterPrompts.map((q) => (
+                  <li key={q}>
+                    <button
+                      onClick={() => handleContextQuery(q)}
+                      className="w-full cursor-pointer rounded-[10px] px-3 py-2.5 text-left text-sm text-ink-700 transition-colors hover:bg-plum-50 hover:text-plum-700"
+                    >
+                      {q}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : (
             <div className="space-y-6">

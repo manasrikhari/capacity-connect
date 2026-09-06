@@ -16,8 +16,6 @@ import { getActiveBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
 import {
   formatDateTime,
-  formatPaise,
-  formatPaiseCompact,
   getEffectiveMeetingStatus,
 } from "@/lib/utils";
 import { LiveRefresh } from "@/components/realtime/LiveRefresh";
@@ -29,7 +27,7 @@ export default async function AdminDashboardPage() {
   const batch = await getActiveBatch(session);
   if (!batch) redirect("/admin");
 
-  const [enrollments, meetings, notes, tests, fees, payments, liveSession] =
+  const [enrollments, meetings, notes, tests, ungraded, liveSession] =
     await Promise.all([
       prisma.enrollment.findMany({
         where: { batchId: batch.id },
@@ -50,11 +48,15 @@ export default async function AdminDashboardPage() {
       prisma.test.findMany({
         where: { batchId: batch.id },
       }),
-      prisma.fee.findMany({
-        where: { batchId: batch.id },
-      }),
-      prisma.payment.findMany({
-        where: { batchId: batch.id },
+      prisma.assignmentSubmission.findMany({
+        where: { assignment: { batchId: batch.id }, gradedAt: null },
+        orderBy: { submittedAt: "asc" },
+        take: 5,
+        select: {
+          id: true,
+          trainee: { select: { name: true, email: true } },
+          assignment: { select: { id: true, title: true } },
+        },
       }),
       prisma.liveSession.findFirst({
         where: { batchId: batch.id, status: "live" },
@@ -79,9 +81,6 @@ export default async function AdminDashboardPage() {
 
   const activeTests = tests.filter((t) => t.isActive).length;
 
-  const totalFees = fees.reduce((sum, f) => sum + f.totalAmount, 0);
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const outstanding = Math.max(totalFees - totalPaid, 0);
 
   const meetingStatusColor = {
     UPCOMING: "blue" as const,
@@ -268,47 +267,47 @@ export default async function AdminDashboardPage() {
           )}
         </Card>
 
-        {/* Fees summary */}
+        {/* Work waiting on the trainer. Replaces a Fees card that showed
+            ₹0.00 and linked to /admin/fees, which proxy.ts redirects away —
+            fees are not part of the MoES portal. */}
         <Card>
           <CardHeader>
             <CardTitle>
-              Fees
-              <Badge
-                color={outstanding > 0 ? "amber" : "green"}
-                className="ml-2 align-middle"
-              >
-                {outstanding > 0 ? `${formatPaiseCompact(outstanding)} due` : "Fully paid"}
-              </Badge>
+              Awaiting grade
+              {ungraded.length > 0 && (
+                <Badge color="amber" className="ml-2 align-middle">
+                  {ungraded.length}
+                </Badge>
+              )}
             </CardTitle>
             <Link
-              href="/admin/fees"
+              href="/admin/assignments"
               className="flex shrink-0 items-center gap-1 text-xs font-medium text-plum-700 hover:underline"
             >
               View all <ArrowRight className="size-3" />
             </Link>
           </CardHeader>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-500">Total due</span>
-              <span className="font-mono tabular-nums text-ink-900">
-                {formatPaise(totalFees)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-500">Collected</span>
-              <span className="font-mono tabular-nums text-sage-700">
-                {formatPaise(totalPaid)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-500">Outstanding</span>
-              <span
-                className={`font-mono tabular-nums ${outstanding > 0 ? "text-status-unpaid" : "text-ink-900"}`}
-              >
-                {formatPaise(outstanding)}
-              </span>
-            </div>
-          </div>
+          {ungraded.length === 0 ? (
+            <p className="text-sm text-ink-500">Nothing waiting to be marked.</p>
+          ) : (
+            <ul className="space-y-2">
+              {ungraded.map((sub) => (
+                <li key={sub.id}>
+                  <Link
+                    href={`/admin/assignments/${sub.assignment.id}`}
+                    className="flex items-center justify-between gap-3 rounded-lg py-1 text-sm transition-colors hover:bg-sunken"
+                  >
+                    <span className="min-w-0 truncate text-ink-900">
+                      {sub.trainee.name ?? sub.trainee.email}
+                    </span>
+                    <span className="shrink-0 truncate text-xs text-ink-500">
+                      {sub.assignment.title}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </div>
     </div>

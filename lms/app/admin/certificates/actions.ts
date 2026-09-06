@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { issueCertificate, revokeCertificate } from "@/lib/certificate-db";
+import { notify } from "@/lib/notify";
 import { evaluateEligibility, type Eligibility } from "@/lib/certificate";
 import { getActiveBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
@@ -112,6 +113,18 @@ export async function issueCertificateAction(traineeId: string) {
 
   const result = await issueCertificate(batch.id, traineeId);
   if (!result.ok) return { error: result.reason };
+
+  // Earning a credential and not being told about it is the kind of silence
+  // this platform had everywhere before notifications existed.
+  if (result.created) {
+    await notify({
+      userId: traineeId,
+      kind: "certificate.issued",
+      title: `Your certificate for ${batch.name} has been issued`,
+      body: `Certificate ${result.certificate.certificateNumber}. Anyone can verify it at /verify.`,
+      href: "/student/certificates",
+    });
+  }
 
   revalidatePath("/admin/certificates");
   revalidatePath("/student/certificates");

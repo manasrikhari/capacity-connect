@@ -65,7 +65,7 @@ export default async function StudentAiPage({
               : "text-ink-500 hover:text-ink-900"
           }`}
         >
-          Course assistant
+          Course materials
         </Link>
         <Link
           href="/student/ai?mode=meghdoot"
@@ -75,7 +75,7 @@ export default async function StudentAiPage({
               : "text-ink-500 hover:text-ink-900"
           }`}
         >
-          MeghDoot Copilot
+          Knowledge base
         </Link>
       </div>
 

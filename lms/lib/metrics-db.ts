@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { computeCapacityMetrics, type CapacityMetrics } from "@/lib/metrics";
 
 export async function getCapacityMetrics(): Promise<CapacityMetrics> {
-  const [attendanceRows, approvedEnrollments, certRows, attempts, traineeProfiles, batches] =
+  const [attendanceRows, approvedEnrollments, certRows, attempts, traineeProfiles, batches, traineeSkills] =
     await Promise.all([
       prisma.attendance.groupBy({ by: ["status"], _count: true }),
       prisma.enrollment.count({ where: { status: "APPROVED" } }),
@@ -22,9 +22,35 @@ export async function getCapacityMetrics(): Promise<CapacityMetrics> {
           id: true,
           subject: true,
           enrollments: { where: { status: "APPROVED" }, select: { studentId: true } },
+          // What this course demands of the people on it — the two halves of a
+          // competency gap.
+          skillRequirements: {
+            select: {
+              minProficiency: true,
+              skill: { select: { id: true, name: true, category: true } },
+            },
+          },
         },
       }),
+      prisma.traineeSkill.findMany({ select: { traineeId: true, skillId: true, proficiency: true } }),
     ]);
+
+  // (skill, trainee) pairs the active courses actually demand, paired with the
+  // level that trainee currently holds. Built here rather than in the pure
+  // function so the arithmetic stays testable without a database.
+  const heldBy = new Map<string, number>();
+  for (const ts of traineeSkills) heldBy.set(`${ts.traineeId}:${ts.skillId}`, ts.proficiency);
+
+  const competency = batches.flatMap((b) =>
+    b.skillRequirements.flatMap((req) =>
+      b.enrollments.map((e) => ({
+        skill: req.skill.name,
+        category: req.skill.category,
+        required: req.minProficiency,
+        held: heldBy.get(`${e.studentId}:${req.skill.id}`) ?? null,
+      })),
+    ),
+  );
 
   const certifiedTrainees = new Set(certRows.map((c) => c.traineeId)).size;
 
@@ -70,5 +96,6 @@ export async function getCapacityMetrics(): Promise<CapacityMetrics> {
     attempts,
     departments,
     domains,
+    competency,
   });
 }

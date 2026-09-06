@@ -9,6 +9,7 @@ function baseRows(overrides: Partial<MetricsRows> = {}): MetricsRows {
     attempts: [],
     departments: [],
     domains: [],
+  competency: [],
     ...overrides,
   };
 }

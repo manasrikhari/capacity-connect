@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import { CapabilityPanel } from "@/components/platform/CapabilityPanel";
 import { DepartmentBars } from "@/components/platform/DepartmentBars";
 import { DomainBars } from "@/components/platform/DomainBars";
 import { TeacherStatusButton } from "@/components/platform/TeacherStatusButton";
@@ -260,7 +261,12 @@ export default async function PlatformPage() {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <CapabilityPanel
+        capability={metrics.capabilityByCategory}
+        gaps={metrics.competencyGaps}
+      />
+
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <DepartmentBars byDepartment={metrics.byDepartment} />
         <DomainBars byDomain={metrics.byDomain} />
       </div>

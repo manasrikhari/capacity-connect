@@ -126,6 +126,9 @@ model Batch {
   knowledgeSources  KnowledgeSource[]
   staff             BatchStaff[]
   invites           Invite[]
+  weeks             CourseWeek[]
+  threads           DiscussionThread[]
+  assignments       Assignment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,6 +179,11 @@ model User {
   uploadedLibraryItems  LibraryItem[]     @relation("UploadedLibraryItems")
   authoredAnnouncements Announcement[]    @relation("AuthoredAnnouncements")
   addedKnowledgeSources KnowledgeSource[] @relation("AddedKnowledgeSources")
+  discussionThreads     DiscussionThread[]     @relation("AuthoredThreads")
+  discussionPosts       DiscussionPost[]       @relation("AuthoredPosts")
+  assignmentSubmissions AssignmentSubmission[] @relation("TraineeSubmissions")
+  contentViews          ContentView[]
+  gradedSubmissions     AssignmentSubmission[] @relation("GradedSubmissions")
 
   // ── Phase 1: governed roles ──
   trainerRequest           TrainerRequest?  @relation("TrainerRequestUser")
@@ -311,10 +319,15 @@ model Note {
   // ── Capacity Connect: notes can back GraphRAG nodes ──
   knowledgeNodes KnowledgeNode[]
 
+  // Phase 3: optional, so content predating weeks falls into "Unsorted".
+  weekId String?
+  week   CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
+  @@index([weekId])
 }
 
 model Test {
@@ -335,11 +348,15 @@ model Test {
   questions Question[]
   attempts  TestAttempt[]
 
+  weekId String?
+  week   CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
   @@index([skillId])
+  @@index([weekId])
 }
 
 model Question {
@@ -527,6 +544,7 @@ model Skill {
   questions         Question[]
   tests             Test[]
   libraryItems      LibraryItem[]
+  assignments       Assignment[]
   knowledgeNode     KnowledgeNode?
 
   @@index([category])
@@ -699,6 +717,9 @@ model LibraryItem {
   skill          Skill?          @relation(fields: [skillId], references: [id], onDelete: SetNull)
   knowledgeNodes KnowledgeNode[]
 
+  weekId String?
+  week   CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -848,4 +869,169 @@ model AuditLog {
   @@index([targetId])
   @@index([actorId])
   @@index([createdAt])
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 3 — the SWAYAM four-quadrant course experience.
+//
+// SWAYAM builds every course on four quadrants: video lecture, reading
+// material, self-assessment, and a discussion forum. The platform already had
+// three of the four; DiscussionThread/DiscussionPost supply the fourth, and
+// CourseWeek gives them all a week to belong to.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CourseWeek {
+  id      String @id @default(cuid())
+  batchId String
+  batch   Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  /// 1-based position within the course.
+  index   Int
+  title   String
+  summary String?
+
+  /// Shown as a label, never enforced — weeks are not gated, so a reviewer can
+  /// look ahead during a demo.
+  opensAt DateTime?
+
+  libraryItems LibraryItem[]
+  notes        Note[]
+  tests        Test[]
+  assignments  Assignment[]
+  threads      DiscussionThread[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([batchId, index])
+  @@index([batchId])
+}
+
+model DiscussionThread {
+  id      String      @id @default(cuid())
+  batchId String
+  batch   Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  weekId  String?
+  week    CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
+  authorId String
+  author   User   @relation("AuthoredThreads", fields: [authorId], references: [id], onDelete: Cascade)
+
+  title String
+  body  String
+
+  /// Trainer-pinned threads sort first — announcements and FAQs.
+  isPinned   Boolean @default(false)
+  isResolved Boolean @default(false)
+
+  posts DiscussionPost[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId, createdAt])
+  @@index([weekId])
+}
+
+model DiscussionPost {
+  id       String           @id @default(cuid())
+  threadId String
+  thread   DiscussionThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User             @relation("AuthoredPosts", fields: [authorId], references: [id], onDelete: Cascade)
+
+  body String
+
+  /// A trainer marks one reply as the answer, the way SWAYAM's forum resolves a
+  /// doubt rather than leaving the thread to trail off.
+  isAnswer Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([threadId, createdAt])
+}
+
+/// Non-MCQ assessment. IMD's SOP counts "solving problems/puzzles, making
+/// presentations, completing practical assignments" as internal assessment;
+/// until now the only gradeable thing in the platform was a four-option MCQ.
+model Assignment {
+  id      String      @id @default(cuid())
+  batchId String
+  batch   Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  weekId  String?
+  week    CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
+  title       String
+  brief       String
+  /// Rubric criteria: [{ label, maxPoints, guidance? }]
+  rubric      Json?
+  maxPoints   Int       @default(100)
+  dueAt       DateTime?
+  isPublished Boolean   @default(false)
+
+  /// Optional competency this assignment evidences.
+  skillId String?
+  skill   Skill?  @relation(fields: [skillId], references: [id], onDelete: SetNull)
+
+  submissions AssignmentSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+  @@index([weekId])
+  @@index([skillId])
+}
+
+model AssignmentSubmission {
+  id           String     @id @default(cuid())
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  traineeId    String
+  trainee      User       @relation("TraineeSubmissions", fields: [traineeId], references: [id], onDelete: Cascade)
+
+  body    String
+  fileUrl String?
+
+  /// Per-criterion scores: [{ label, points }] — mirrors the rubric.
+  scores     Json?
+  totalScore Int?
+  feedback   String?
+
+  gradedById String?
+  gradedBy   User?     @relation("GradedSubmissions", fields: [gradedById], references: [id], onDelete: SetNull)
+  gradedAt   DateTime?
+
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([assignmentId, traineeId])
+  @@index([traineeId])
+}
+
+
+/// A trainee opening a piece of course content.
+///
+/// Progress across SWAYAM's four quadrants is meaningless without this: the
+/// platform tracks test attempts and submissions, but nothing recorded that a
+/// reading or a recording had actually been opened, so any "60% complete"
+/// would have been invented. One row per trainee per item, written on open.
+model ContentView {
+  id        String @id @default(cuid())
+  traineeId String
+  trainee   User   @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  /// "LIBRARY" | "NOTE" — the kind of item `itemId` points at. Deliberately a
+  /// string rather than a relation: the two content models have no common
+  /// parent, and a view is a fact about behaviour, not a foreign key worth
+  /// cascading.
+  itemType String
+  itemId   String
+
+  viewedAt DateTime @default(now())
+
+  @@unique([traineeId, itemType, itemId])
+  @@index([traineeId])
 }

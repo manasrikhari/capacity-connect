@@ -70,6 +70,8 @@ const urlOrEmpty = z.url("Enter a valid URL").optional().or(z.literal(""));
 export const profileSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
   designation: z.string().max(120).optional().or(z.literal("")),
+  // IMD cadre — the eligibility engine checks course prerequisites against it.
+  cadre: z.string().max(60).optional().or(z.literal("")),
   department: z.string().max(120).optional().or(z.literal("")),
   organisation: z.string().max(120).optional().or(z.literal("")),
   postingLocation: z.string().max(160).optional().or(z.literal("")),

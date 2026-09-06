@@ -2,6 +2,7 @@ import { Award, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ProfileForm, type ProfileFormValues } from "@/components/profile/ProfileForm";
+import { PublicProfileCard } from "@/components/profile/PublicProfileCard";
 import { ProfileSummary } from "@/components/profile/ProfileSummary";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -49,6 +50,7 @@ export default async function StudentProfilePage() {
   const formValues: ProfileFormValues = {
     name: session.user.name ?? "",
     designation: profile?.designation ?? "",
+    cadre: profile?.cadre ?? "",
     department: profile?.department ?? "",
     organisation: profile?.organisation ?? "",
     postingLocation: profile?.postingLocation ?? "",
@@ -161,6 +163,12 @@ export default async function StudentProfilePage() {
           </ul>
         )}
       </Card>
+
+      <PublicProfileCard
+        initialIsPublic={profile?.isPublic ?? false}
+        initialSlug={profile?.publicSlug ?? null}
+        initialOpenToMentoring={profile?.openToMentoring ?? false}
+      />
 
       <ProfileForm profile={formValues} />
     </div>

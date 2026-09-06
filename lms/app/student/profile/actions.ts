@@ -22,6 +22,7 @@ export async function updateProfileAction(
   const parsed = profileSchema.safeParse({
     name: formData.get("name"),
     designation: formData.get("designation"),
+    cadre: formData.get("cadre"),
     department: formData.get("department"),
     organisation: formData.get("organisation"),
     postingLocation: formData.get("postingLocation"),
@@ -55,6 +56,7 @@ export async function updateProfileAction(
 
   const data = {
     designation: d.designation || null,
+    cadre: d.cadre || null,
     department: d.department || null,
     organisation: d.organisation || null,
     postingLocation: d.postingLocation || null,

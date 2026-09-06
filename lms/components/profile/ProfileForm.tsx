@@ -14,6 +14,7 @@ import type { Experience, Qualification } from "@/lib/validations/profile";
 export type ProfileFormValues = {
   name: string;
   designation: string;
+  cadre: string;
   department: string;
   organisation: string;
   postingLocation: string;
@@ -56,6 +57,13 @@ export function ProfileForm({ profile }: { profile: ProfileFormValues }) {
               defaultValue={profile.designation}
               placeholder="e.g. Scientist-B"
             />
+          </FormField>
+
+          <FormField label="Cadre" htmlFor="cadre" error={err("cadre")}>
+            <Input id="cadre" name="cadre" defaultValue={profile.cadre} placeholder="Met-A" />
+            <p className="mt-1 text-xs text-ink-300">
+              Used to check whether you meet a course&apos;s entry requirements.
+            </p>
           </FormField>
           <FormField label="Department" htmlFor="department" error={err("department")}>
             <Input

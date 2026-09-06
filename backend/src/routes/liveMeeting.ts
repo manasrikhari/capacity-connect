@@ -9,6 +9,7 @@ import {
   ClassroomClaims,
   ClassroomTokenPayload,
 } from '../services/liveClassroom.service';
+import { PresenceService } from '../services/presence.service';
 import { AppError } from '../utils/appError';
 
 const router = Router();
@@ -206,6 +207,18 @@ router.post('/token', async (req: Request, res: Response, next: NextFunction): P
 
     // The live client relies on participant.metadata === 'teacher' for host UI.
     at.metadata = decoded.role;
+
+    // Record the identity→LMS-user mapping now, while we hold both ids, so the
+    // participant_joined/left webhooks can attribute presence for attendance.
+    if (!isOverlay) {
+      PresenceService.registerParticipant(
+        roomName,
+        decoded.batchId,
+        participantIdentity,
+        decoded.lmsUserId,
+        decoded.name,
+      );
+    }
 
     at.addGrant({
       roomJoin: true,

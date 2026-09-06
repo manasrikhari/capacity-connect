@@ -3,6 +3,7 @@ import { ENV } from '../config/env';
 import { roomServiceClient, webhookReceiver } from '../config/livekit';
 import { db } from '../config/db';
 import { Role } from '@prisma/client';
+import { PresenceService } from './presence.service';
 
 export class LivekitService {
   /**
@@ -100,16 +101,30 @@ export class LivekitService {
   static async handleWebhook(body: string | Buffer, authHeader: string) {
     const rawString = typeof body === 'string' ? body : body.toString('utf-8');
     const event = await webhookReceiver.receive(rawString, authHeader);
-    console.log(`[LiveKit Webhook Received] Event: ${event.event}, Room: ${event.room?.name}`);
+    const roomName = event.room?.name;
+    const identity = event.participant?.identity;
+    console.log(`[LiveKit Webhook Received] Event: ${event.event}, Room: ${roomName}`);
 
-    if (event.event === 'room_finished' && event.room?.name) {
-      await db.liveSession.updateMany({
-        where: { roomId: event.room.name },
-        data: {
-          status: 'COMPLETED',
-          actualEnd: new Date(),
-        },
-      });
+    switch (event.event) {
+      // Auto-attendance (Phase 4): accumulate each trainee's presence, then hand
+      // the roster to the LMS when the room finishes.
+      case 'participant_joined':
+        if (roomName) PresenceService.onParticipantJoined(roomName, identity);
+        break;
+      case 'participant_left':
+        if (roomName) PresenceService.onParticipantLeft(roomName, identity);
+        break;
+      case 'room_finished':
+        if (roomName) {
+          PresenceService.flushAndNotify(roomName);
+          await db.liveSession.updateMany({
+            where: { roomId: roomName },
+            data: { status: 'COMPLETED', actualEnd: new Date() },
+          });
+        }
+        break;
+      default:
+        break;
     }
 
     return event;

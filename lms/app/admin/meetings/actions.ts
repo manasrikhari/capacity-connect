@@ -120,6 +120,13 @@ export async function setMeetingStatus(id: string, status: "LIVE" | "ENDED" | "U
     const meetingPlatformApiUrl = process.env.MEETING_PLATFORM_API_URL;
     if (meetingPlatformApiUrl) {
       try {
+        // Report honestly whether minutes actually exist for this room, rather
+        // than claiming `hasNotes: true` unconditionally — the trainee's UI
+        // shows a "notes available" badge off this flag.
+        const minutes = await prisma.meetingMinutes.findUnique({
+          where: { sessionId: id },
+          select: { sessionId: true },
+        });
         const token = await generateLiveToken(session.user, "teacher", id, batch.id);
         const res = await fetch(`${meetingPlatformApiUrl}/api/end-class`, {
           method: "POST",
@@ -127,7 +134,7 @@ export async function setMeetingStatus(id: string, status: "LIVE" | "ENDED" | "U
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ batchId: batch.id, hasNotes: true }),
+          body: JSON.stringify({ batchId: batch.id, hasNotes: Boolean(minutes) }),
         });
         if (!res.ok) {
           console.error(`[LMS End Class Sync] Backend returned error: ${res.status} ${await res.text()}`);

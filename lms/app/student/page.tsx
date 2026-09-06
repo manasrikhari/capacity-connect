@@ -9,7 +9,7 @@ import Link from "next/link";
 import { setActiveBatchAction, cancelEnrollmentAction } from "@/app/student/actions";
 import { getSession } from "@/lib/session";
 import { getStudentHubData } from "@/lib/batch";
-import type { StudentHubBatch, StudentHubPending } from "@/lib/batch";
+import type { StudentHubBatch, StudentHubPending, StudentHubRejected } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
 import { getRecommendationsForTrainee } from "@/lib/recommender-db";
 import {
@@ -33,12 +33,12 @@ export default async function StudentHubPage({
   const session = await getSession();
   if (!session || session.user.role !== "STUDENT") redirect("/");
 
-  const [{ approved, pending, stats }, { joined }] = await Promise.all([
+  const [{ approved, pending, rejected, stats }, { joined }] = await Promise.all([
     getStudentHubData(session),
     searchParams,
   ]);
 
-  const hasAny = approved.length > 0 || pending.length > 0;
+  const hasAny = approved.length > 0 || pending.length > 0 || rejected.length > 0;
 
   // Top course recommendations for the hub strip.
   const recs = await getRecommendationsForTrainee(session.user.id, 3);
@@ -124,6 +124,9 @@ export default async function StudentHubPage({
             ))}
             {pending.map((p) => (
               <PendingBatchCard key={p.enrollmentId} batch={p} />
+            ))}
+            {rejected.map((r) => (
+              <RejectedBatchCard key={r.enrollmentId} batch={r} />
             ))}
             <JoinBatchTrigger variant="card" />
           </div>
@@ -237,6 +240,33 @@ function PendingBatchCard({ batch }: { batch: StudentHubPending }) {
       <span className="mt-3 inline-flex w-fit items-center gap-2 rounded-[8px] border border-dashed border-hair bg-paper px-2.5 py-1.5 text-xs text-ink-500">
         Request sent — waiting for approval
       </span>
+    </div>
+  );
+}
+
+function RejectedBatchCard({ batch }: { batch: StudentHubRejected }) {
+  return (
+    <div className="flex min-h-40 flex-col rounded-2xl border border-status-unpaid/25 bg-status-unpaid/[0.03] p-[18px]">
+      <div className="flex items-start gap-2.5">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-[12px] bg-status-unpaid/10 text-status-unpaid">
+          <X className="size-6" />
+        </div>
+        <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-status-unpaid/10 px-2.5 py-1 text-[11px] font-semibold text-status-unpaid">
+          Not approved
+        </span>
+      </div>
+
+      <h3 className="mt-3 text-lg font-normal text-ink-900">{batch.name}</h3>
+      <p className="mt-0.5 text-xs text-ink-500">
+        {[batch.grade, batch.teacherName].filter(Boolean).join(" · ")}
+      </p>
+
+      <p className="mt-3 text-xs text-ink-500">
+        Your enrolment request was declined. You can request again with the course code from your trainer.
+      </p>
+      <div className="mt-3">
+        <JoinBatchTrigger variant="sidebar" />
+      </div>
     </div>
   );
 }

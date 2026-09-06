@@ -59,6 +59,7 @@ enum KnowledgeSourceKind {
   PDF
   LINK
   TEXT
+  LIVE_CLASS
 }
 
 enum LibraryItemType {
@@ -446,6 +447,7 @@ model LiveSession {
   endedAt       DateTime?
   teacherJoined Boolean   @default(false)
   hasNotes      Boolean   @default(false)
+  transcript    String?   @db.Text // raw class transcript, captured for minutes & knowledge
 
   doubts         Doubt[]
   meetingMinutes MeetingMinutes?

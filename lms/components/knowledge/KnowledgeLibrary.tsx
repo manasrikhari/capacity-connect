@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, ExternalLink, FileText, Library, Link2, Trash2, Type } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, FileText, Library, Link2, Radio, Trash2, Type } from "lucide-react";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
 import { removeKnowledgeSourceAction } from "@/app/actions/knowledge-extractor";
@@ -13,7 +13,7 @@ export type KnowledgeSourceRow = {
   /** "built-in" for the concepts that ship with the platform. */
   id: string;
   title: string;
-  kind: "PDF" | "LINK" | "TEXT" | "BUILT_IN";
+  kind: "PDF" | "LINK" | "TEXT" | "LIVE_CLASS" | "BUILT_IN";
   url: string | null;
   createdAt: string | null;
   conceptCount: number;
@@ -27,6 +27,7 @@ const KIND = {
   PDF: { icon: FileText, label: "PDF" },
   LINK: { icon: Link2, label: "Link" },
   TEXT: { icon: Type, label: "Text" },
+  LIVE_CLASS: { icon: Radio, label: "Live class" },
   BUILT_IN: { icon: Library, label: "Built in" },
 } as const;
 

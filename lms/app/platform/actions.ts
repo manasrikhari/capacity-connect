@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { ApprovalStatus, Role } from "@/app/generated/prisma/enums";
+import { notify } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/session";
 
@@ -56,6 +57,22 @@ export async function updateTeacherStatus(input: {
     fromValue: teacher.status,
     toValue: input.status,
   });
+
+  const STATUS_MSG: Record<string, { title: string; body: string }> = {
+    APPROVED: { title: "Your trainer account is approved", body: "You can now build courses and assessments." },
+    REJECTED: { title: "Your trainer account was not approved", body: "Contact a Ministry of Earth Sciences administrator for details." },
+    SUSPENDED: { title: "Your trainer account was suspended", body: "Contact a platform administrator to restore access." },
+  };
+  const msg = STATUS_MSG[input.status];
+  if (msg) {
+    await notify({
+      userId: input.teacherId,
+      kind: `trainer_status.${input.status.toLowerCase()}`,
+      title: msg.title,
+      body: msg.body,
+      href: input.status === "APPROVED" ? "/admin" : "/blocked",
+    });
+  }
 
   revalidatePath("/platform");
   revalidatePath("/platform/people");
@@ -157,6 +174,14 @@ export async function approveTrainerRequestAction(
     toValue: "ADMIN",
   });
 
+  await notify({
+    userId: request.userId,
+    kind: "trainer_request.approved",
+    title: "Your trainer request was approved",
+    body: "You now have trainer access — build your first course from the dashboard.",
+    href: "/admin",
+  });
+
   revalidatePath("/platform");
   revalidatePath("/platform/people");
   return { success: true };
@@ -182,6 +207,14 @@ export async function rejectTrainerRequestAction(
     actorId: session.user.id,
     targetId: request.userId,
     action: "trainer_request.reject",
+  });
+
+  await notify({
+    userId: request.userId,
+    kind: "trainer_request.rejected",
+    title: "Your trainer request was not approved",
+    body: "You can still use Capacity Connect as a trainee. Contact an administrator for details.",
+    href: "/student",
   });
 
   revalidatePath("/platform");

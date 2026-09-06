@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { JoinBatchTrigger } from "@/components/join/JoinBatchTrigger";
@@ -176,6 +176,7 @@ export function Sidebar({
   joinCode,
   userName,
   userEmail,
+  slot,
 }: {
   variant: SidebarVariant;
   subtitle?: string;
@@ -183,6 +184,8 @@ export function Sidebar({
   joinCode?: string;
   userName?: string | null;
   userEmail?: string | null;
+  /** A shell control rendered in the sidebar header (e.g. the notification bell). */
+  slot?: ReactNode;
 }) {
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -202,6 +205,7 @@ export function Sidebar({
             pathname={pathname}
             userName={userName}
             userEmail={userEmail}
+            slot={slot}
             onProfileClick={variant === "platform" ? undefined : () => setProfileOpen(true)}
           />
         ) : (
@@ -213,6 +217,7 @@ export function Sidebar({
             pathname={pathname}
             userName={userName}
             userEmail={userEmail}
+            slot={slot}
             onProfileClick={variant === "platform" ? undefined : () => setProfileOpen(true)}
           />
         )}
@@ -237,6 +242,7 @@ function HubSidebarContent({
   pathname,
   userName,
   userEmail,
+  slot,
   onProfileClick,
 }: {
   variant: SidebarVariant;
@@ -244,6 +250,7 @@ function HubSidebarContent({
   pathname: string;
   userName?: string | null;
   userEmail?: string | null;
+  slot?: ReactNode;
   onProfileClick?: () => void;
 }) {
   const groups = HUB_NAV[variant];
@@ -262,6 +269,7 @@ function HubSidebarContent({
             </p>
           )}
         </div>
+        {slot && <div className="ml-auto -mr-1">{slot}</div>}
       </div>
       <div className="mt-6 flex flex-1 flex-col gap-1">
         {groups.map((group) => (
@@ -354,6 +362,7 @@ function BatchSidebarContent({
   pathname,
   userName,
   userEmail,
+  slot,
   onProfileClick,
 }: {
   variant: SidebarVariant;
@@ -363,6 +372,7 @@ function BatchSidebarContent({
   pathname: string;
   userName?: string | null;
   userEmail?: string | null;
+  slot?: ReactNode;
   onProfileClick?: () => void;
 }) {
   const items = BATCH_NAV_ITEMS[variant];
@@ -379,6 +389,7 @@ function BatchSidebarContent({
             {variant === "admin" ? "Admin panel" : variant === "student" ? "Student" : "Ministry"}
           </p>
         </div>
+        {slot && <div className="ml-auto -mr-1">{slot}</div>}
       </div>
       {batchName && (
         <div className="mx-3 mb-3 rounded-[10px] border border-hair bg-sunken/40 px-2 py-2">
@@ -440,6 +451,7 @@ export function MobileSidebar({
   joinCode,
   userName,
   userEmail,
+  slot,
 }: {
   variant: SidebarVariant;
   subtitle?: string;
@@ -447,6 +459,7 @@ export function MobileSidebar({
   joinCode?: string;
   userName?: string | null;
   userEmail?: string | null;
+  slot?: ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -519,17 +532,20 @@ export function MobileSidebar({
           <p className="truncate font-display text-[15px] font-medium text-ink-900">{title}</p>
         </div>
 
-        <button
-          ref={toggleBtnRef}
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="mobile-sidebar-drawer"
-          aria-label={open ? "Close menu" : "Open menu"}
-          className="flex size-9 shrink-0 items-center justify-center rounded-[10px] text-ink-700 transition-colors hover:bg-plum-50 active:bg-plum-100"
-        >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {slot}
+          <button
+            ref={toggleBtnRef}
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-sidebar-drawer"
+            aria-label={open ? "Close menu" : "Open menu"}
+            className="flex size-9 shrink-0 items-center justify-center rounded-[10px] text-ink-700 transition-colors hover:bg-plum-50 active:bg-plum-100"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </header>
 
       {mounted &&

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getActiveBatch } from "@/lib/batch";
+import { notify } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { triggerEnrollmentUpdated } from "@/lib/pusher-server";
@@ -35,6 +36,20 @@ export async function updateEnrollmentStatus(input: {
     batchId: enrollment.batchId,
     batchName: enrollment.batch.name,
     status: input.status,
+  });
+
+  await notify({
+    userId: enrollment.studentId,
+    kind: `enrollment.${input.status.toLowerCase()}`,
+    title:
+      input.status === "APPROVED"
+        ? `Enrolment approved: ${enrollment.batch.name}`
+        : `Enrolment not approved: ${enrollment.batch.name}`,
+    body:
+      input.status === "APPROVED"
+        ? "You now have access to the course materials and assessments."
+        : "Your enrolment request was declined. You can request again or contact the trainer.",
+    href: "/student",
   });
 
   revalidatePath("/admin/students");

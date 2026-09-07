@@ -9,7 +9,7 @@ import {
   type PassportSummary,
 } from "@/lib/passport";
 import { scoreTrainee } from "@/lib/weather-case-db";
-import type { ForecastScores } from "@/lib/forecast-verification";
+import type { ForecastVerification } from "@/lib/forecast-verification";
 
 /** Everything the /student/passport page renders — signed and verifiable. */
 export type PassportData = {
@@ -22,7 +22,7 @@ export type PassportData = {
     grade: string | null;
     issueDate: Date;
   }[];
-  forecast: { scores: ForecastScores; attemptedCount: number } | null;
+  forecast: { scores: ForecastVerification; attemptedCount: number } | null;
   passportNumber: string;
   signature: string;
   issuedAt: Date;

@@ -5,7 +5,7 @@ import {
   gradeForecastPerformance,
   IMD_COLOURS,
   type ForecastCase,
-  type ForecastScores,
+  type ForecastVerification,
   type ForecastGrade,
 } from "@/lib/forecast-verification";
 
@@ -48,7 +48,7 @@ async function approvedBatchIds(traineeId: string): Promise<string[]> {
 /** Cases visible to a trainee: national (no batch) + those in their approved courses. */
 export async function getDrillForTrainee(traineeId: string): Promise<{
   cases: DrillCase[];
-  scores: ForecastScores;
+  scores: ForecastVerification;
   grade: ForecastGrade;
   attemptedCount: number;
 }> {
@@ -81,7 +81,7 @@ export async function getDrillForTrainee(traineeId: string): Promise<{
 
 /** Recompute a trainee's forecast scores across every case they've attempted. */
 export async function scoreTrainee(traineeId: string): Promise<{
-  scores: ForecastScores;
+  scores: ForecastVerification;
   grade: ForecastGrade;
   attemptedCount: number;
 }> {
@@ -121,7 +121,7 @@ export async function submitForecast(
   colour: string,
 ): Promise<
   | { ok: false; error: string }
-  | { ok: true; correct: boolean; scores: ForecastScores; grade: ForecastGrade; attemptedCount: number }
+  | { ok: true; correct: boolean; scores: ForecastVerification; grade: ForecastGrade; attemptedCount: number }
 > {
   if (!(IMD_COLOURS as readonly string[]).includes(colour)) {
     return { ok: false, error: "Pick a valid warning colour." };
@@ -148,7 +148,7 @@ export async function submitForecast(
   const { scores, grade, attemptedCount } = await scoreTrainee(traineeId);
 
   if (attemptedCount >= DRILL_EVIDENCE_MINIMUM) {
-    await refreshForecastEvidence(traineeId, weatherCase.batchId, scores.csi, grade);
+    await refreshForecastEvidence(traineeId, weatherCase.batchId, scores, grade);
   }
 
   return { ok: true, correct: colour === weatherCase.correctColour, scores, grade, attemptedCount };
@@ -158,7 +158,7 @@ export async function submitForecast(
 async function refreshForecastEvidence(
   traineeId: string,
   batchId: string | null,
-  csi: number,
+  scores: ForecastVerification,
   grade: ForecastGrade,
 ): Promise<void> {
   const competency =
@@ -172,10 +172,13 @@ async function refreshForecastEvidence(
     where: { traineeId, competencyId: competency.id, source: "FORECAST_DRILL" },
     select: { id: true },
   });
+  // Record the colour accuracy, not the CSI: CSI cannot see an under-warning,
+  // so scoring evidence off it alone would credit a wrong colour as perfect.
+  const under = scores.underWarned > 0 ? `, ${scores.underWarned} under-warned` : "";
   const data = {
     level: gradeToLevel[grade],
-    score: Math.round(csi * 100),
-    note: `Forecast drill — CSI ${csi.toFixed(2)} (${grade})`,
+    score: Math.round(scores.colourAccuracy * 100),
+    note: `Forecast drill — ${scores.exact}/${scores.sampleSize} exact colour, CSI ${scores.csi.toFixed(2)}${under} (${grade})`,
     batchId,
   };
   if (existing) {

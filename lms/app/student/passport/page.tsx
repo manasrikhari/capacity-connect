@@ -112,11 +112,12 @@ export default async function PassportPage() {
                 Over {forecast.attemptedCount} drill {forecast.attemptedCount === 1 ? "case" : "cases"}, verified
                 against IMD colour-coded warnings.
               </p>
-              <dl className="grid grid-cols-3 gap-3 text-center">
+              <dl className="grid grid-cols-4 gap-3 text-center">
                 {[
                   { k: "POD", v: forecast.scores.pod, hint: "detection" },
                   { k: "FAR", v: forecast.scores.far, hint: "false alarms" },
-                  { k: "CSI", v: forecast.scores.csi, hint: "overall skill" },
+                  { k: "CSI", v: forecast.scores.csi, hint: "warn / no-warn" },
+                  { k: "Colour", v: forecast.scores.colourAccuracy, hint: "exact colour" },
                 ].map((m) => (
                   <div key={m.k} className="rounded-xl border border-hair bg-paper p-3">
                     <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">{m.k}</dt>
@@ -125,6 +126,31 @@ export default async function PassportPage() {
                   </div>
                 ))}
               </dl>
+
+              {/*
+                POD/FAR/CSI only ask whether a warning was issued at all, so an
+                ORANGE call on a RED event still counts as a hit. Spell out the
+                colour-level result so a perfect CSI can never read as a perfect
+                run.
+              */}
+              <p className="mt-3 text-xs text-ink-500">
+                {forecast.scores.exact} of {forecast.attemptedCount} issued at the exact colour
+                {forecast.scores.underWarned > 0 && (
+                  <>
+                    {" · "}
+                    <span className="text-status-unpaid">
+                      {forecast.scores.underWarned} under-warned
+                    </span>
+                  </>
+                )}
+                {forecast.scores.overWarned > 0 && (
+                  <>
+                    {" · "}
+                    <span className="text-status-partial">{forecast.scores.overWarned} over-warned</span>
+                  </>
+                )}
+                .
+              </p>
             </Card>
           )}
 

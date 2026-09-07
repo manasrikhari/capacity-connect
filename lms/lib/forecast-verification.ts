@@ -69,6 +69,61 @@ export function scoreContingency(t: ContingencyTable): ForecastScores {
 export type ForecastCase = { forecast: ImdColour; observed: ImdColour };
 
 /**
+ * Colour-level accuracy, which the 2×2 table above deliberately cannot see.
+ *
+ * POD/FAR/CSI answer "did you warn at all", so issuing ORANGE for a RED event
+ * scores as a clean hit — both are at or above the warning threshold. That is
+ * correct categorical verification and wrong as a competency record: a trainee
+ * who under-warned a red event would read 1.00 across the board. These measures
+ * sit alongside it and score the colour actually issued.
+ */
+export type ColourScores = {
+  /** Cases where the exact colour matched. */
+  exact: number;
+  /** Cases issued below the observed severity — the dangerous failure. */
+  underWarned: number;
+  /** Cases issued above the observed severity — the costly failure. */
+  overWarned: number;
+  /** exact / scored cases. */
+  colourAccuracy: number;
+  /**
+   * Mean signed error in colour steps: negative means under-warning on average,
+   * positive means over-warning. Zero is unbiased, not necessarily accurate.
+   */
+  meanWarningError: number;
+};
+
+export type ForecastVerification = ForecastScores & ColourScores;
+
+/** Score the colour actually issued against the colour that was warranted. */
+export function scoreColours(cases: ForecastCase[]): ColourScores {
+  let exact = 0;
+  let underWarned = 0;
+  let overWarned = 0;
+  let signedTotal = 0;
+  let scored = 0;
+
+  for (const c of cases) {
+    const f = colourRank(c.forecast);
+    const o = colourRank(c.observed);
+    if (f < 0 || o < 0) continue;
+    scored += 1;
+    signedTotal += f - o;
+    if (f === o) exact += 1;
+    else if (f < o) underWarned += 1;
+    else overWarned += 1;
+  }
+
+  return {
+    exact,
+    underWarned,
+    overWarned,
+    colourAccuracy: safeDiv(exact, scored),
+    meanWarningError: safeDiv(signedTotal, scored),
+  };
+}
+
+/**
  * Build a contingency table from paired colour-coded forecasts and
  * observations. An "event" occurs when the observed severity meets or exceeds
  * `warningThreshold` (default YELLOW, i.e. any warning-level weather); a
@@ -97,21 +152,42 @@ export function buildContingencyTable(
 }
 
 /** One-shot: score a set of colour-coded cases at a warning threshold. */
-export function verifyForecasts(cases: ForecastCase[], warningThreshold: ImdColour = "YELLOW"): ForecastScores {
-  return scoreContingency(buildContingencyTable(cases, warningThreshold));
+export function verifyForecasts(
+  cases: ForecastCase[],
+  warningThreshold: ImdColour = "YELLOW",
+): ForecastVerification {
+  return {
+    ...scoreContingency(buildContingencyTable(cases, warningThreshold)),
+    ...scoreColours(cases),
+  };
 }
 
 export type ForecastGrade = "Distinction" | "Merit" | "Pass" | "Needs practice";
 
 /**
- * Grade a forecasting performance for the Competency Passport, off the CSI —
- * the measure that penalises both misses and false alarms. Requires a minimum
- * sample so a single lucky call can't earn a distinction.
+ * Grade a forecasting performance for the Competency Passport.
+ *
+ * CSI alone is not enough: it only asks whether a warning was issued at all, so
+ * a trainee who answered ORANGE to every RED event would score a perfect 1.00.
+ * The grade therefore averages CSI with colour accuracy, and no run containing
+ * an under-warning can earn a Distinction — under-warning a hazard is the
+ * failure a national met service cares most about.
+ *
+ * `colourAccuracy` is optional so a caller holding only a contingency table can
+ * still grade; when it is absent the CSI-only behaviour applies.
  */
-export function gradeForecastPerformance(scores: ForecastScores): ForecastGrade {
+export function gradeForecastPerformance(
+  scores: ForecastScores & Partial<ColourScores>,
+): ForecastGrade {
   if (scores.sampleSize < 5) return "Needs practice";
-  if (scores.csi >= 0.8) return "Distinction";
-  if (scores.csi >= 0.6) return "Merit";
-  if (scores.csi >= 0.4) return "Pass";
+
+  const skill =
+    scores.colourAccuracy === undefined
+      ? scores.csi
+      : (scores.csi + scores.colourAccuracy) / 2;
+
+  if (skill >= 0.8 && !scores.underWarned) return "Distinction";
+  if (skill >= 0.6) return "Merit";
+  if (skill >= 0.4) return "Pass";
   return "Needs practice";
 }

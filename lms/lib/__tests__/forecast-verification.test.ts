@@ -3,6 +3,7 @@ import {
   buildContingencyTable,
   colourRank,
   gradeForecastPerformance,
+  scoreColours,
   scoreContingency,
   verifyForecasts,
   type ForecastCase,
@@ -114,5 +115,76 @@ describe("verifyForecasts", () => {
     expect(s.pod).toBe(0.75);
     expect(s.csi).toBe(0.6);
     expect(gradeForecastPerformance(s)).toBe("Merit"); // 6 cases, CSI 0.6 → Merit
+  });
+});
+
+describe("scoreColours — the failure the 2x2 table cannot see", () => {
+  it("counts an ORANGE call on a RED event as under-warned, not a hit", () => {
+    const cases: ForecastCase[] = [{ forecast: "ORANGE", observed: "RED" }];
+    // The contingency table is blind to this: both are at or above YELLOW.
+    expect(verifyForecasts(cases).csi).toBe(1);
+    // The colour scores are not.
+    const c = scoreColours(cases);
+    expect(c.exact).toBe(0);
+    expect(c.underWarned).toBe(1);
+    expect(c.overWarned).toBe(0);
+    expect(c.colourAccuracy).toBe(0);
+    expect(c.meanWarningError).toBe(-1);
+  });
+
+  it("separates over-warning from under-warning by sign", () => {
+    expect(scoreColours([{ forecast: "RED", observed: "YELLOW" }]).meanWarningError).toBe(2);
+    expect(scoreColours([{ forecast: "GREEN", observed: "ORANGE" }]).meanWarningError).toBe(-2);
+  });
+
+  it("reports an unbiased but inaccurate run as zero mean error", () => {
+    const c = scoreColours([
+      { forecast: "RED", observed: "ORANGE" },
+      { forecast: "GREEN", observed: "YELLOW" },
+    ]);
+    expect(c.meanWarningError).toBe(0);
+    expect(c.colourAccuracy).toBe(0);
+    expect(c.underWarned).toBe(1);
+    expect(c.overWarned).toBe(1);
+  });
+
+  it("skips pairs carrying an unrecognised colour", () => {
+    const c = scoreColours([
+      { forecast: "RED", observed: "RED" },
+      { forecast: "PURPLE" as never, observed: "RED" },
+    ]);
+    expect(c.exact).toBe(1);
+    expect(c.colourAccuracy).toBe(1);
+  });
+});
+
+describe("gradeForecastPerformance — colour accuracy gates the top grade", () => {
+  const run = (csi: number, colourAccuracy: number, underWarned: number) => ({
+    pod: 0,
+    far: 0,
+    csi,
+    bias: 0,
+    accuracy: 0,
+    sampleSize: 20,
+    exact: 0,
+    overWarned: 0,
+    underWarned,
+    colourAccuracy,
+    meanWarningError: 0,
+  });
+
+  it("refuses a Distinction to a run containing an under-warning", () => {
+    expect(gradeForecastPerformance(run(1, 1, 1))).toBe("Merit");
+    expect(gradeForecastPerformance(run(1, 1, 0))).toBe("Distinction");
+  });
+
+  it("averages CSI with colour accuracy, so a perfect CSI alone is not enough", () => {
+    // The old behaviour would have graded this a Distinction on CSI alone.
+    expect(gradeForecastPerformance(run(1, 0.2, 0))).toBe("Merit");
+  });
+
+  it("keeps CSI-only grading when colour accuracy is not supplied", () => {
+    const { colourAccuracy: _a, underWarned: _b, ...contingencyOnly } = run(0.9, 0, 0);
+    expect(gradeForecastPerformance(contingencyOnly)).toBe("Distinction");
   });
 });

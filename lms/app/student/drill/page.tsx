@@ -35,6 +35,7 @@ export default async function DrillPage() {
                 { k: "POD", v: scores.pod },
                 { k: "FAR", v: scores.far },
                 { k: "CSI", v: scores.csi },
+                { k: "Colour", v: scores.colourAccuracy },
               ].map((m) => (
                 <div key={m.k}>
                   <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">{m.k}</p>

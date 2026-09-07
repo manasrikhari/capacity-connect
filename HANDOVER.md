@@ -9,8 +9,10 @@ independently; the product stays coherent if you stop after any phase.
 npx tsc --noEmit && npm run lint && npm run test
 # full: also `npm run build` (needs a DB; see Local dev below)
 ```
-Current state: **tsc 0 errors · lint 0 errors (50 pre-existing warnings) · 258 tests pass.**
-(Backend also typechecks: `cd backend && npx tsc --noEmit`.)
+Current state: **tsc 0 errors · lint 0 errors (50 pre-existing warnings) · 259 tests pass.**
+(Backend also typechecks: `cd backend && npx tsc --noEmit`.) The Phase 5 pages
+and the forecast-drill → passport chain were browser-verified end-to-end against
+a real Postgres (all 8 migrations apply cleanly, `migrate deploy` + seed).
 
 > **Prisma client:** after pulling, run `cd lms && npx prisma generate` before
 > `tsc` — the checked-in schema is ahead of the generated client, which is
@@ -91,7 +93,7 @@ onboarding (`components/welcome/OnboardingForm.tsx`), and the **public profile**
 (`lib/course-week.ts`/`-db.ts`, `lib/discussion-db.ts`, `lib/rubric.ts`;
 migrations `…0004_phase3_swayam_weeks`, `…0005_content_views`).
 
-## 🟢 Phase 4 — Live classroom (LARGELY COMPLETE)
+## ✅ Phase 4 — Live classroom (COMPLETE)
 
 Three services: `lms/` (3000, Prisma + `/api/live/*` receivers), `backend/`
 (3001, Express + `livekit-server-sdk`, webhook handler + `notifyLms`), `live/`
@@ -112,32 +114,39 @@ Three services: `lms/` (3000, Prisma + `/api/live/*` receivers), `backend/`
   distils minutes (`lib/minutes.ts` — Groq or extractive fallback, 6 tests) and
   registers a `LIVE_CLASS` `KnowledgeSource`. Migrations `…0006`, `…0007`.
 
-### NOT yet done in Phase 4
-- [ ] **Room Composite egress → `RECORDED_LECTURE` library item.** No
-      `EgressClient` exists (`backend/src/config/livekit.ts`) and it needs a
-      LiveKit egress storage target (S3/GCS) — deferred rather than shipping an
-      uncalled LMS receiver. Plan: start egress on session-start when storage
-      env is set; handle `egress_ended` in `LivekitService.handleWebhook`; POST
-      the file URL to a new `POST /api/live/recording` that creates the
-      `LibraryItem` (uploader = batch owner, `type: RECORDED_LECTURE`).
-- [ ] Enable `participant_*` (and `egress_*`) webhooks on the LiveKit project —
-      without them attendance/egress never fire.
+- **Recording egress → `RECORDED_LECTURE`** — backend `RecordingService` starts
+  a room-composite egress on session-start when `EGRESS_S3_*` is configured, and
+  on `egress_ended` posts the output URL to LMS `POST /api/live/recording`, which
+  files it in the course library. A clean no-op with no S3 config.
 
-## 🟢 Phase 5 — Forecast simulator + Competency Passport (CORE LANDED)
+### Operational note
+- Enable `participant_*` and `egress_*` webhooks on the LiveKit project, and set
+  `EGRESS_S3_*` (+ `EGRESS_PUBLIC_BASE_URL`) in `backend/.env`, or attendance and
+  recording never fire. Everything degrades gracefully when unset.
+
+## 🟢 Phase 5 — Forecast simulator + Competency Passport (BUILT & VERIFIED)
 
 ### Done and committed
+- **Schema** — `Competency`, `CompetencyEvidence`, `WeatherCase`,
+  `WeatherCaseAttempt` (migration `…0008`, verified against `migrate diff` and
+  applied to a real DB).
 - **`lib/forecast-verification.ts`** — deterministic POD/FAR/CSI/bias/accuracy
-  from a 2×2 contingency table built off IMD colour thresholds, + a CSI→grade
-  band for the passport. 11 boundary tests.
-- **`lib/competency.ts` `scoreTrainee`** — trainee attainment + passport band +
-  per-skill gaps (counterpart to `scoreTrainer`). 4 tests.
+  from a 2×2 contingency table off IMD colour thresholds + CSI→grade band. 11 tests.
+- **`lib/competency.ts` `scoreTrainee`** (4 tests) and **`lib/passport.ts`**
+  (evidence roll-up + HMAC signing, 9 tests).
+- **Forecast drill** — trainers author cases (`/admin/drill`), trainees issue
+  colour-coded warnings (`/student/drill`) scored live; ≥5 attempts self-provision
+  a "Forecast operations" competency (`lib/weather-case-db.ts`).
+- **Competency Passport** — `/student/passport` aggregates evidence, credentials
+  and forecast skill into one HMAC-signed, printable record (`lib/passport-db.ts`).
+  Browser-verified: drill → CSI 1.00 → Expert-level evidence → passport render.
 
 ### NOT yet done in Phase 5
-- [ ] Schema: `Competency`/`CompetencyEvidence`, `WeatherCase`.
 - [ ] In-classroom drill on the tldraw whiteboard — per-trainee board by varying
       the `roomName` segment in `live/`'s `useSync` uri (`${roomName}:${traineeId}`);
       no backend change needed for the board id itself.
-- [ ] Assessed briefing + viva board; `/passport` PDF signed with the certificate HMAC.
+- [ ] Assessed briefing + viva board; a server-rendered signed PDF passport (the
+      page prints via the browser today).
 
 ## 🟡 Phase 6 — Hardening (PARTIAL)
 

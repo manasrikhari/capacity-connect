@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           userEmail={session.user.email}
           slot={<NotificationBell />}
         />
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
       </div>
     </div>
   );

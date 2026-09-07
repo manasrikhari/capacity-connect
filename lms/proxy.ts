@@ -16,7 +16,9 @@ export default auth((req) => {
     pathname.startsWith("/calendar") ||
     pathname.startsWith("/invite") ||
     pathname.startsWith("/register") ||
-    pathname.startsWith("/p/");
+    pathname.startsWith("/p/") ||
+    pathname === "/offline" ||
+    pathname === "/accessibility";
 
   if (!session) {
     if (isPublic) return NextResponse.next();
@@ -41,7 +43,9 @@ export default auth((req) => {
     // The coordinator surface is role-agnostic: being a SPOC is a delegated
     // authority, not a role, so the page guards itself via getSpocContext().
     // Without this an ADMIN would be bounced to /admin before ever reaching it.
-    pathname.startsWith("/spoc")
+    pathname.startsWith("/spoc") ||
+    pathname === "/offline" ||
+    pathname === "/accessibility"
   ) {
     return NextResponse.next();
   }

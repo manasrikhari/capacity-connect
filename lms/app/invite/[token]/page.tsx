@@ -57,7 +57,7 @@ export default async function InvitePage({
   return (
     <>
       <PublicHeader />
-      <main className="flex-1 bg-page">
+      <main id="main-content" tabIndex={-1} className="flex-1 bg-page">
         <div className="mx-auto max-w-lg px-4 py-16 md:px-6">
           <Card className="space-y-4">
             {problem ? (

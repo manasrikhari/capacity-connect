@@ -53,7 +53,7 @@ export default async function PublicProfilePage({
         }
       />
 
-      <main className="flex-1 bg-page">
+      <main id="main-content" tabIndex={-1} className="flex-1 bg-page">
         <div className="mx-auto max-w-4xl px-4 py-10 md:px-6">
           {/* Identity */}
           <header>

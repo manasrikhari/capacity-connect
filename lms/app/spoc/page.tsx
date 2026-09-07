@@ -31,7 +31,7 @@ export default async function SpocPage() {
         }
       />
 
-      <main className="flex-1 bg-page">
+      <main id="main-content" tabIndex={-1} className="flex-1 bg-page">
         <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 md:px-6">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-300">

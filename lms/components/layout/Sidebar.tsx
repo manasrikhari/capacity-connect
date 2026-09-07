@@ -2,6 +2,8 @@
 
 import {
   Award,
+  BadgeCheck,
+  CloudLightning,
   ClipboardList,
   FolderOpen,
   Grid2x2,
@@ -88,6 +90,7 @@ const BATCH_NAV_ITEMS: Record<SidebarVariant, HubNavGroup[]> = {
         { href: "/admin/library", label: "Library", icon: FolderOpen },
         { href: "/admin/tests", label: "Tests", icon: ClipboardList },
         { href: "/admin/assignments", label: "Assignments", icon: PenLine },
+        { href: "/admin/drill", label: "Forecast drill", icon: CloudLightning },
       ],
     },
     {
@@ -151,6 +154,8 @@ const HUB_NAV: Record<SidebarVariant, HubNavGroup[]> = {
         { href: "/student", label: "My courses", icon: Grid2x2, exact: true },
         { href: "/student/recommendations", label: "Recommended for you", icon: Sparkles },
         { href: "/student/competency", label: "My competencies", icon: Target },
+        { href: "/student/drill", label: "Forecast drill", icon: CloudLightning },
+        { href: "/student/passport", label: "Competency passport", icon: BadgeCheck },
         { href: "/student/certificates", label: "My certificates", icon: Award },
       ],
     },

@@ -445,7 +445,8 @@ function BatchSidebarContent({
             Ministry of Earth Sciences
           </h1>
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
-            {variant === "admin" ? "Admin panel" : variant === "student" ? "Student" : "Ministry"}
+            {/* Must match the hub sidebar subtitles set in each route layout. */}
+            {variant === "admin" ? "Trainer panel" : variant === "student" ? "Trainee" : "Ministry admin"}
           </p>
         </div>
         {slot && <div className="ml-auto -mr-1">{slot}</div>}

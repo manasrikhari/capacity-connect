@@ -36,6 +36,13 @@ import { getPagesSorted } from './classroom/whiteboard-helpers';
 
 interface WhiteboardProps {
   roomName: string;
+  /**
+   * Optional per-board suffix (Phase 5 forecast drill). When set, the trainee
+   * gets their own isolated board keyed by `${roomName}:${boardSuffix}` — e.g. a
+   * per-trainee drill/viva board the examiner can open individually — instead of
+   * the one board shared by the whole room. Absent → the shared room board.
+   */
+  boardSuffix?: string;
   userName?: string;
   isTeacher: boolean;
   isWritable: boolean;
@@ -146,9 +153,10 @@ const whiteboardOverrides = {
   },
 };
 
-export default function Whiteboard({ 
-  roomName, 
-  userName, 
+export default function Whiteboard({
+  roomName,
+  boardSuffix,
+  userName,
   isTeacher, 
   isWritable, 
   onEditorMount,
@@ -174,8 +182,11 @@ export default function Whiteboard({
     }
   }
 
+  // Per-trainee drill/viva boards live at a distinct sync path so they don't
+  // collide with the shared room board; the worker keys a Durable Object per path.
+  const boardId = boardSuffix ? `${roomName}:${boardSuffix}` : roomName;
   const store = useSync({
-    uri: `${wsUri}/api/connect/${roomName}?clientSessionId=${clientId}&token=${token}`,
+    uri: `${wsUri}/api/connect/${encodeURIComponent(boardId)}?clientSessionId=${clientId}&token=${token}`,
     assets: multiplayerAssetStore,
   });
 

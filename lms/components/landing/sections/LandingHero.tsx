@@ -1,24 +1,31 @@
-export function LandingHero() {
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+
+export function LandingHero({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
+  const t = (k: string) => translate(locale, k);
   return (
     <section className="hero">
       <div className="wrap hero-grid">
         <div className="hero-copy">
-          <div className="eyebrow reveal">Ministry of Earth Sciences · India Meteorological Department</div>
-          <h1 className="reveal d1" id="heroTitle">
-            Capacity building that
-            <br />
-            <em>remembers</em>
-            <br />
-            every session.
-          </h1>
+          <div className="eyebrow reveal">{t("landing.ministry")}</div>
+          {locale === "hi" ? (
+            <h1 className="reveal d1" id="heroTitle">
+              {t("landing.hero.title")}
+            </h1>
+          ) : (
+            <h1 className="reveal d1" id="heroTitle">
+              Capacity building that
+              <br />
+              <em>remembers</em>
+              <br />
+              every session.
+            </h1>
+          )}
           <p className="lede reveal d2" id="heroLede">
-            Capacity Connect is IMD&apos;s training platform — live classrooms, assessments,
-            competency mapping, and MeghDoot, an AI that recalls everything taught. Digital
-            capacity building for India&apos;s weather and climate services.
+            {t("landing.hero.lede")}
           </p>
           <div className="hero-cta reveal d3">
             <a href="#signin" className="btn btn-primary btn-lg">
-              Sign in to begin
+              {t("landing.hero.cta")}
             </a>
           </div>
           <div className="hero-note reveal d3">

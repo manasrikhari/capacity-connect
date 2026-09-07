@@ -46,6 +46,20 @@ const en: Dict = {
     "Every scheduled course in India's national capacity-building programme for weather, climate and ocean services.",
   "catalogue.requestEnrolment": "Request enrolment",
   "landing.ministry": "Ministry of Earth Sciences · India Meteorological Department",
+  "landing.nav.platform": "Platform",
+  "landing.nav.announcements": "Announcements",
+  "landing.nav.courses": "Courses",
+  "landing.nav.verify": "Verify",
+  "landing.hero.title": "Capacity building that remembers every session.",
+  "landing.hero.lede":
+    "Capacity Connect is IMD's training platform — live classrooms, assessments, competency mapping, and MeghDoot, an AI that recalls everything taught. Digital capacity building for India's weather and climate services.",
+  "landing.hero.cta": "Sign in to begin",
+  "landing.cta.eyebrow": "Run your whole batch from one place",
+  "landing.cta.title": "Live classes that remember everything.",
+  "landing.cta.body":
+    "Teach it, learn it, and never lose it — live classes that explain themselves, for everyone in the room.",
+  "landing.cta.primary": "Start teaching free",
+  "landing.cta.secondary": "Book a walkthrough",
 };
 
 // Hindi. Not exhaustive by design — anything absent falls back to English.
@@ -70,6 +84,20 @@ const hi: Dict = {
     "मौसम, जलवायु और महासागर सेवाओं के लिए भारत के राष्ट्रीय क्षमता-निर्माण कार्यक्रम का प्रत्येक निर्धारित पाठ्यक्रम।",
   "catalogue.requestEnrolment": "नामांकन का अनुरोध करें",
   "landing.ministry": "पृथ्वी विज्ञान मंत्रालय · भारत मौसम विज्ञान विभाग",
+  "landing.nav.platform": "मंच",
+  "landing.nav.announcements": "घोषणाएँ",
+  "landing.nav.courses": "पाठ्यक्रम",
+  "landing.nav.verify": "सत्यापित करें",
+  "landing.hero.title": "हर सत्र को याद रखने वाला क्षमता निर्माण।",
+  "landing.hero.lede":
+    "कैपेसिटी कनेक्ट आईएमडी का प्रशिक्षण मंच है — लाइव कक्षाएँ, मूल्यांकन, दक्षता मानचित्रण, और मेघदूत, एक एआई जो सिखाई गई हर बात को याद रखता है। भारत की मौसम और जलवायु सेवाओं के लिए डिजिटल क्षमता निर्माण।",
+  "landing.hero.cta": "आरंभ करने के लिए साइन इन करें",
+  "landing.cta.eyebrow": "अपना पूरा बैच एक ही जगह से चलाएँ",
+  "landing.cta.title": "लाइव कक्षाएँ जो सब कुछ याद रखती हैं।",
+  "landing.cta.body":
+    "पढ़ाएँ, सीखें, और कभी न खोएँ — लाइव कक्षाएँ जो स्वयं की व्याख्या करती हैं, कक्षा में सभी के लिए।",
+  "landing.cta.primary": "निःशुल्क पढ़ाना शुरू करें",
+  "landing.cta.secondary": "वॉकथ्रू बुक करें",
 };
 
 const DICTIONARIES: Record<Locale, Dict> = { en, hi };

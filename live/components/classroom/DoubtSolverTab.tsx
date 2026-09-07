@@ -557,7 +557,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 				{/* AI Context Pill & Thinking Mode Toggle */}
 				<div className="flex items-center justify-between">
 					<span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-hi border border-border rounded-full text-[10px] font-bold text-text-muted font-sans select-none">
-						📚 Context: last {Math.max(1, Math.floor((Date.now() - (() => {
+						Context: last {Math.max(1, Math.floor((Date.now() - (() => {
 							if (typeof window !== 'undefined') {
 								const val = sessionStorage.getItem('classroom_session_started_at');
 								if (val) return parseInt(val, 10);

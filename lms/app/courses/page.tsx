@@ -15,6 +15,7 @@ import {
   SORT_LABEL,
 } from "@/lib/catalogue";
 import { searchCatalogue } from "@/lib/catalogue-db";
+import { getTranslator } from "@/lib/i18n-server";
 
 export const metadata: Metadata = {
   title: "Courses — Capacity Connect",
@@ -28,7 +29,10 @@ export default async function CoursesPage({
   searchParams: Promise<CatalogueParams>;
 }) {
   const filters = parseCatalogueParams(await searchParams);
-  const { courses, total, pageCount, facets } = await searchCatalogue(filters);
+  const [{ courses, total, pageCount, facets }, t] = await Promise.all([
+    searchCatalogue(filters),
+    getTranslator(),
+  ]);
 
   return (
     <>
@@ -45,13 +49,13 @@ export default async function CoursesPage({
         }
       />
 
-      <main className="flex-1 bg-page">
+      <main id="main-content" tabIndex={-1} className="flex-1 bg-page">
         <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">
           <div className="mb-8">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-300">
-              Ministry of Earth Sciences · Capacity building
+              {t("landing.ministry")}
             </p>
-            <h1 className="mt-2 font-display text-4xl font-normal text-ink-900">Courses</h1>
+            <h1 className="mt-2 font-display text-4xl font-normal text-ink-900">{t("catalogue.title")}</h1>
             <p className="mt-2 max-w-2xl text-ink-500">
               Every training programme currently offered across IMD, NCMRWF, INCOIS and IITM. Browse by
               domain or WMO tier, then request a place — your organisation&apos;s training coordinator can

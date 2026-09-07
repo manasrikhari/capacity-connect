@@ -110,7 +110,7 @@ export default async function CourseDetailPage({
         }
       />
 
-      <main className="flex-1 bg-page">
+      <main id="main-content" tabIndex={-1} className="flex-1 bg-page">
         <div className="mx-auto max-w-5xl px-4 py-10 md:px-6">
           <Link href="/courses" className="text-sm text-ink-500 hover:text-ink-900">
             ← Back to courses

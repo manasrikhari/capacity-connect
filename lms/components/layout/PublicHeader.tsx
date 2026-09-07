@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { GovBanner } from "@/components/layout/GovBanner";
 import { plumSphere } from "@/components/ui/avatar";
 import { getSession } from "@/lib/session";
+import { getLocale } from "@/lib/i18n-server";
+import { LanguageToggle } from "@/components/i18n/LanguageToggle";
 
 /** Where each role's shell lives, so a signed-in visitor lands back inside it. */
 const HUB_BY_ROLE: Record<string, string> = {
@@ -21,6 +23,7 @@ const HUB_BY_ROLE: Record<string, string> = {
  */
 export async function PublicHeader({ right }: { right?: ReactNode }) {
   const session = await getSession();
+  const locale = await getLocale();
   const hub = session ? HUB_BY_ROLE[session.user.role] : undefined;
 
   return (
@@ -48,7 +51,10 @@ export async function PublicHeader({ right }: { right?: ReactNode }) {
           </span>
         </Link>
 
-        {right ? <div className="flex shrink-0 items-center gap-4">{right}</div> : null}
+        <div className="flex shrink-0 items-center gap-3">
+          {right}
+          <LanguageToggle current={locale} />
+        </div>
       </div>
     </header>
     </>

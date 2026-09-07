@@ -9,7 +9,7 @@ independently; the product stays coherent if you stop after any phase.
 npx tsc --noEmit && npm run lint && npm run test
 # full: also `npm run build` (needs a DB; see Local dev below)
 ```
-Current state: **tsc 0 errors · lint 0 errors (50 pre-existing warnings) · 259 tests pass.**
+Current state: **tsc 0 errors · lint 0 errors (51 pre-existing warnings) · 266 tests pass.**
 (Backend also typechecks: `cd backend && npx tsc --noEmit`.) The Phase 5 pages
 and the forecast-drill → passport chain were browser-verified end-to-end against
 a real Postgres (all 8 migrations apply cleanly, `migrate deploy` + seed).
@@ -148,13 +148,33 @@ Three services: `lms/` (3000, Prisma + `/api/live/*` receivers), `backend/`
 - [ ] Assessed briefing + viva board; a server-rendered signed PDF passport (the
       page prints via the browser today).
 
-## 🟡 Phase 6 — Hardening (PARTIAL)
+## 🟢 Phase 6 — Hardening (SUBSTANTIALLY DONE)
 
-Landed: training-needs analytics + the ministry analyst that cannot invent a
-figure (`lib/analyst.ts`, `…/platform`). Remaining: SPOC national view,
-offline/low-bandwidth, Hindi, GIGW accessibility, anonymous three-way feedback.
+### Done and committed
+- **Training-needs analytics + ministry analyst** (`lib/analyst.ts`, `…/platform`).
+- **SPOC national view** — `/platform/departments`: the nomination programme by
+  office (`lib/national-db.ts` `getDepartmentOverview`).
+- **Anonymous three-way feedback** — trainee → trainer feedback is already
+  de-identified in the trainer's view; the ministry's national aggregate closes
+  the loop at `/platform/feedback` (`getNationalFeedback`).
+- **Offline / low-bandwidth** — installable PWA: `app/manifest.ts`, a
+  conservative `public/sw.js` (network-first pages, cache-first assets, never
+  `/api`/auth), `/offline` fallback, registered in production only.
+- **Hindi (हिन्दी)** — cookie-selected locale (`lib/i18n.ts` + `-server.ts`),
+  `LanguageToggle` in the public header, `<html lang>` reactive; English
+  fallback so untranslated keys never show raw. The dictionary is seeded with
+  chrome/common strings + the catalogue — **extend it string-by-string** for
+  full coverage.
+- **GIGW accessibility** — skip-to-content link + `#main-content` landmarks on
+  every page, `/accessibility` statement (WCAG 2.1 AA), print-clean chrome.
 
-**If time is short, the plan says ship 1, 2, 4 and a narrow 5.**
+### Remaining (deliberate follow-ups)
+- [ ] Extend the Hindi dictionary to the full trainee/admin surfaces (mechanism
+      is in place; it's incremental translation work).
+- [ ] A full examiner-driven **viva workflow** on the per-trainee whiteboard
+      board (the `boardSuffix` mechanism exists in `live/`; the assessment UI +
+      score → `CompetencyEvidence` write is the remaining piece).
+- [ ] A formal WCAG audit pass with assistive tech (structural a11y is in place).
 
 ---
 

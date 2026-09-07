@@ -475,8 +475,12 @@ export const baseStyles = css`
 /* OpenGrapes â Typography tokens
    Display: Spectral (serif, editorial, mature). Body/UI: Hanken Grotesk. Mono: Spline Sans Mono. */
 :root {
-  --font-display: "Spectral", Georgia, "Times New Roman", serif;
-  --font-body: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Body/UI shifted to Noto Sans — the government interface voice, kept
+     consistent with the app shell. The next/font faces (--font-noto-*) are
+     inherited from the html element; Devanagari companions carry Hindi.
+     Spectral stays the display voice, with Noto Serif Devanagari in Hindi. */
+  --font-display: "Spectral", var(--font-noto-serif-deva), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-noto-sans), var(--font-noto-sans-deva), "Hanken Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Type scale (1.25 major-third-ish, tuned) */

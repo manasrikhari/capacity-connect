@@ -61,7 +61,7 @@ export function GovBanner({
           <TextSizeControl />
           <span aria-hidden="true" className="h-5 w-px bg-hair" />
           <a
-            href="#main"
+            href="#main-content"
             className="rounded-[6px] px-2 py-1 text-[12px] text-ink-500 transition-colors hover:bg-sunken hover:text-ink-900"
           >
             Skip to content

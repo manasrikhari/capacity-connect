@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PublicHeader } from "@/components/layout/PublicHeader";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Accessibility — Capacity Connect",
@@ -36,7 +37,7 @@ export default function AccessibilityPage() {
                 <li>Semantic HTML landmarks and a &ldquo;Skip to main content&rdquo; link on every page.</li>
                 <li>Full keyboard operability with visible focus indicators.</li>
                 <li>Text alternatives for meaningful images and icons.</li>
-                <li>Colour contrast that meets AA, plus a light/dark theme and a reduce-transparency mode.</li>
+                <li>Colour contrast that meets AA, plus adjustable text size and a reduce-transparency mode.</li>
                 <li>Content available in English and हिन्दी (Hindi), selectable from any page.</li>
                 <li>Responsive layouts that reflow to small screens and support 200% zoom.</li>
                 <li>Respects the operating-system &ldquo;reduce motion&rdquo; preference.</li>
@@ -62,6 +63,7 @@ export default function AccessibilityPage() {
           </div>
         </div>
       </main>
+      <SiteFooter />
     </>
   );
 }

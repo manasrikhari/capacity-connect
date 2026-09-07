@@ -131,6 +131,10 @@ model Batch {
   threads           DiscussionThread[]
   assignments       Assignment[]
 
+  // ── Phase 5 ──
+  competencyEvidence CompetencyEvidence[]
+  weatherCases       WeatherCase[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -197,6 +201,12 @@ model User {
   notifications     Notification[] @relation("UserNotifications")
   sentInvites       Invite[]       @relation("SentInvites")
   spocDepartments   Department[]   @relation("SpocDepartments")
+
+  // ── Phase 5: competency passport & forecast drill ──
+  competencyEvidence  CompetencyEvidence[] @relation("TraineeEvidence")
+  verifiedEvidence    CompetencyEvidence[] @relation("EvidenceVerifier")
+  weatherCaseAttempts WeatherCaseAttempt[]
+  authoredWeatherCases WeatherCase[]       @relation("WeatherCaseAuthor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1035,5 +1045,109 @@ model ContentView {
   viewedAt DateTime @default(now())
 
   @@unique([traineeId, itemType, itemId])
+  @@index([traineeId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 5 — Competency Passport & forecast-operations simulator
+// A trainee earns evidence toward named operational competencies (from courses,
+// assessments and forecast drills); the passport is the signed, verifiable
+// summary of what they can actually do — IMD's answer to "who can run the desk".
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// A named operational competency (e.g. "Nowcasting from Doppler radar").
+/// Admin-curated vocabulary; evidence accrues against it.
+model Competency {
+  id          String   @id @default(cuid())
+  code        String?  @unique // "WMO-BIP-M-3.2" | "IMD-NOWCAST" | …
+  name        String
+  category    String // lib/taxonomy.ts SKILL_CATEGORIES
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  evidence CompetencyEvidence[]
+
+  @@index([category])
+}
+
+/// One piece of evidence that a trainee holds a competency at some level.
+/// The passport is the roll-up of these, keeping the highest verified level.
+model CompetencyEvidence {
+  id           String  @id @default(cuid())
+  traineeId    String
+  trainee      User    @relation("TraineeEvidence", fields: [traineeId], references: [id], onDelete: Cascade)
+  competencyId String
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  /// How this was earned: "COURSE" | "ASSESSMENT" | "FORECAST_DRILL" | "MANUAL".
+  source String
+  /// Demonstrated level, 1 (Novice) … 5 (Expert).
+  level  Int    @default(1)
+  /// Optional numeric score behind the level (e.g. CSI×100 from a drill).
+  score  Int?
+  note   String?
+
+  batchId       String?
+  batch         Batch?       @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  weatherCaseId String?
+  weatherCase   WeatherCase? @relation(fields: [weatherCaseId], references: [id], onDelete: SetNull)
+
+  /// Set when a trainer/examiner vouches for the evidence (unverified otherwise).
+  verifiedById String?
+  verifiedBy   User?     @relation("EvidenceVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt   DateTime?
+
+  issuedAt DateTime @default(now())
+
+  @@index([traineeId, competencyId])
+  @@index([competencyId])
+}
+
+/// A forecasting drill scenario: the trainee issues an IMD colour-coded warning,
+/// scored deterministically (lib/forecast-verification.ts) against `correctColour`.
+model WeatherCase {
+  id            String  @id @default(cuid())
+  title         String
+  description   String  @db.Text
+  hazard        String? // "Cyclone" | "Heavy rain" | "Heatwave" | "Thunderstorm" | …
+  region        String?
+  imageUrl      String?
+  /// The verifying answer — one of lib/forecast-verification.ts IMD_COLOURS.
+  correctColour String
+  /// Optional competency this drill contributes evidence toward.
+  competencyCode String?
+
+  batchId     String?
+  batch       Batch?  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?   @relation("WeatherCaseAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  attempts WeatherCaseAttempt[]
+  evidence CompetencyEvidence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+}
+
+/// A trainee's answer to a weather case. One row per (case, trainee); re-taking
+/// overwrites. POD/FAR/CSI are computed across a trainee's attempts on demand.
+model WeatherCaseAttempt {
+  id            String      @id @default(cuid())
+  weatherCaseId String
+  weatherCase   WeatherCase @relation(fields: [weatherCaseId], references: [id], onDelete: Cascade)
+  traineeId     String
+  trainee       User        @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  /// The colour the trainee issued — one of IMD_COLOURS.
+  forecastColour String
+  isCorrect      Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([weatherCaseId, traineeId])
   @@index([traineeId])
 }

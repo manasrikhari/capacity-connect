@@ -3,6 +3,7 @@
 import {
   Award,
   BadgeCheck,
+  Building2,
   CloudLightning,
   ClipboardList,
   FolderOpen,
@@ -172,6 +173,8 @@ const HUB_NAV: Record<SidebarVariant, HubNavGroup[]> = {
         { href: "/platform/analyst", label: "Analyst", icon: Sparkles },
         { href: "/platform/competency", label: "Competency", icon: Target },
         { href: "/platform/skills", label: "Skills", icon: Layers },
+        { href: "/platform/departments", label: "Offices", icon: Building2 },
+        { href: "/platform/feedback", label: "Feedback", icon: MessageSquare },
       ],
     },
     {
@@ -253,7 +256,7 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-hair bg-paper md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-hair bg-paper md:flex print:!hidden">
         {isHub ? (
           <HubSidebarContent
             variant={variant}
@@ -591,7 +594,7 @@ export function MobileSidebar({
 
   return (
     <>
-      <header className="sticky top-0 z-71 flex h-14 shrink-0 items-center justify-between border-b border-hair bg-paper/90 px-4 backdrop-blur reduce-transparency:bg-paper reduce-transparency:backdrop-blur-none md:hidden">
+      <header className="sticky top-0 z-71 flex h-14 shrink-0 items-center justify-between border-b border-hair bg-paper/90 px-4 backdrop-blur reduce-transparency:bg-paper reduce-transparency:backdrop-blur-none md:hidden print:!hidden">
         <div className="flex min-w-0 items-center gap-2.5">
           <SphereLogo />
           <p className="truncate font-display text-[15px] font-medium text-ink-900">{title}</p>

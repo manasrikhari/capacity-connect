@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "test": "vitest run",
-    "db:new-trainee": "tsx prisma/new-trainee.ts"
+    "db:new-trainee": "tsx prisma/new-trainee.ts",
+    "db:seed:phase5": "tsx prisma/run-seed-phase5.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

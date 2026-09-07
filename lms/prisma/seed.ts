@@ -10,6 +10,7 @@ import {
   Role,
 } from "../app/generated/prisma/enums";
 import { Prisma } from "../app/generated/prisma/client";
+import { seedPhase5 } from "./seed-phase5";
 import { prisma } from "../lib/prisma";
 import {
   computeVerificationHash,
@@ -1436,6 +1437,10 @@ async function main() {
     profiles: await prisma.profile.count(),
   };
   console.log("📊 Capacity Connect data:", JSON.stringify(counts, null, 2));
+
+  // Phase 5/6 fixtures live in their own module so this file stays as it was.
+  console.log("🛰️  Phase 5/6 fixtures:");
+  await seedPhase5(prisma);
 }
 
 main()

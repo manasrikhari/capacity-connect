@@ -5,6 +5,7 @@ import { db } from '../config/db';
 import { Role } from '@prisma/client';
 import { PresenceService } from './presence.service';
 import { TranscriptService } from './transcript.service';
+import { RecordingService } from './recording.service';
 
 export class LivekitService {
   /**
@@ -114,6 +115,10 @@ export class LivekitService {
         break;
       case 'participant_left':
         if (roomName) PresenceService.onParticipantLeft(roomName, identity);
+        break;
+      // Recording egress finished → file it as a RECORDED_LECTURE via the LMS.
+      case 'egress_ended':
+        RecordingService.onEgressEnded(event.egressInfo);
         break;
       case 'room_finished':
         if (roomName) {

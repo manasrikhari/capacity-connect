@@ -12,6 +12,7 @@ import {
   ClassroomTokenPayload,
 } from '../services/liveClassroom.service';
 import { PresenceService } from '../services/presence.service';
+import { RecordingService } from '../services/recording.service';
 import { AppError } from '../utils/appError';
 
 const router = Router();
@@ -134,6 +135,8 @@ router.post('/exchange-lms-token', async (req: Request, res: Response, next: Nex
         roomId: meetingId,
         batchId: lmsBatchId,
       });
+      // Begin recording the class (no-op unless S3 egress is configured).
+      void RecordingService.start(meetingId);
     }
 
     const startedAtMs = new Date(liveSession.actualStart || liveSession.scheduledStart || Date.now()).getTime();

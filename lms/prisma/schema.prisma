@@ -710,6 +710,21 @@ model Feedback {
   @@index([batchId])
 }
 
+/// Public feedback / grievance submitted from the unauthenticated /feedback page
+/// (a GIGW requirement — a citizen-facing feedback channel). Distinct from the
+/// batch/trainee `Feedback` above, which is course evaluation behind sign-in.
+model PublicFeedback {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?
+  /// general | suggestion | accessibility | grievance
+  category  String   @default("general")
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model LibraryItem {
   id             String          @id @default(cuid())
   batchId        String

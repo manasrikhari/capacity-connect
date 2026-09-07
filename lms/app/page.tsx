@@ -17,6 +17,7 @@ import { LandingCTA } from "@/components/landing/sections/LandingCTA";
 import { LandingFooter } from "@/components/landing/sections/LandingFooter";
 import { auth } from "@/lib/auth";
 import { getCapacityMetrics } from "@/lib/metrics-db";
+import { getLocale } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
 
 async function loadLandingData() {
@@ -106,24 +107,29 @@ export default async function Home() {
   const session = await auth();
 
   if (!session) {
-    const { announcements, courses, stats, resources } = await loadLandingData();
+    const [locale, { announcements, courses, stats, resources }] = await Promise.all([
+      getLocale(),
+      loadLandingData(),
+    ]);
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: allLandingStyles }} />
 
         <LandingScrollbar />
         <GovBanner container="mx-auto w-full max-w-[1180px] px-7" />
-        <LandingHeader />
-        <LandingHero />
-        <LandingFeatures />
-        <LandingAnnouncements announcements={announcements} />
-        <LandingCourses courses={courses} stats={stats} />
-        <LandingResources resources={resources} />
-        <LandingHowItWorks />
-        <LandingPlatform />
-        <LandingVerify />
-        <LandingSignIn />
-        <LandingCTA />
+        <LandingHeader locale={locale} />
+        <main id="main-content" tabIndex={-1}>
+          <LandingHero locale={locale} />
+          <LandingFeatures />
+          <LandingAnnouncements announcements={announcements} />
+          <LandingCourses courses={courses} stats={stats} />
+          <LandingResources resources={resources} />
+          <LandingHowItWorks />
+          <LandingPlatform />
+          <LandingVerify />
+          <LandingSignIn />
+          <LandingCTA locale={locale} />
+        </main>
         <LandingFooter />
 
         {/* Loads Lucide icons + runs scroll/animation scripts on the client */}

@@ -84,11 +84,23 @@
   --status-unpaid:  #B6604E;
   --status-live:    #C0524A;
 
-  /* ── Type ── */
-  --font-display-stack: var(--font-spectral), Georgia, "Times New Roman", serif;
-  --font-body-stack:    var(--font-hanken), -apple-system, BlinkMacSystemFont, sans-serif;
+  /* ── National identity (Tiranga) ──
+     Not part of the interaction palette — the sanctioned exception to
+     "tokens only / no bare white", used solely by the tricolour band and any
+     future national-identity chrome. Official flag tones. ── */
+  --tiranga-saffron: #FF9933;
+  --tiranga-white:   #FFFFFF;
+  --tiranga-green:   #138808;
+
+  /* ── Type ──
+     Shifted toward the government register: the *interface* voice is Noto Sans
+     (the NIC / GIGW workhorse) with its Devanagari companion so Hindi renders in
+     the same official face; Spectral stays the display/institution voice, with
+     Noto Serif Devanagari standing in for it in Hindi. Mono and hand unchanged. */
+  --font-display-stack: var(--font-spectral), var(--font-noto-serif-deva), Georgia, "Times New Roman", serif;
+  --font-body-stack:    var(--font-noto-sans), var(--font-noto-sans-deva), -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono-stack:    var(--font-spline-mono), ui-monospace, "SF Mono", Menlo, monospace;
-  --font-hand-stack:    var(--font-caveat), cursive;
+  --font-hand-stack:    var(--font-caveat), var(--font-noto-sans-deva), cursive;
 
   --text-xs:   0.78rem;
   --text-sm:   0.875rem;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GOV, POLICY_LINKS } from "@/lib/gigw";
 
 export function LandingFooter() {
   return (
@@ -31,21 +32,35 @@ export function LandingFooter() {
               <li><a href="#signin">Trainers</a></li>
               <li><a href="#signin">Ministry admins</a></li>
               <li><Link href="/verify">Verify a certificate</Link></li>
+              <li><Link href="/search">Search</Link></li>
             </ul>
           </div>
           <div>
-            <h6>Ministry</h6>
+            <h6>Important links</h6>
             <ul>
-              <li><a href="#">About the Ministry</a></li>
-              <li><a href="#signin">Sign in</a></li>
-              <li><a href="#announcements">Advisories</a></li>
-              <li><a href="#">Privacy</a></li>
+              {POLICY_LINKS.map((l) => (
+                <li key={l.href}><Link href={l.href}>{l.label}</Link></li>
+              ))}
+              <li>
+                <a href={GOV.nationalPortal} target="_blank" rel="noopener noreferrer">
+                  {GOV.nationalPortalLabel} ↗
+                </a>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="foot-base">
-          <span>© 2026 Ministry of Earth Sciences · India Meteorological Department.</span>
-          <span>Digital capacity building for India&apos;s weather and climate services.</span>
+
+        {/* GIGW statutory base: national identity, ownership and review date. */}
+        <div className="mt-8 flex flex-col gap-2 border-t border-hair/70 pt-5 text-[12px] leading-relaxed text-ink-500 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-1">
+            <p lang="hi" className="text-ink-700">{GOV.countryHi} · {GOV.countryEn}</p>
+            <p>© {GOV.copyrightYear} {GOV.ministry} · {GOV.department}. All rights reserved.</p>
+            <p>{GOV.managedBy}. {GOV.developedBy}.</p>
+          </div>
+          <div className="space-y-1 md:text-right">
+            <p>Last reviewed: {GOV.lastReviewed}</p>
+            <p className="max-w-xs md:ml-auto">{GOV.bestViewed}</p>
+          </div>
         </div>
         <div className="foot-credit">Capacity Connect — a national training platform</div>
       </div>

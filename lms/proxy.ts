@@ -1,6 +1,23 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
+/** Exact-match static public pages — the offline shell plus the GIGW statutory
+ *  pages (accessibility, terms, privacy, copyright, hyperlinking, help). Public
+ *  to everyone, signed in or not. */
+const STATIC_PUBLIC = new Set([
+  "/offline",
+  "/accessibility",
+  "/terms",
+  "/privacy",
+  "/copyright",
+  "/hyperlinking-policy",
+  "/contact",
+  "/feedback",
+  "/sitemap",
+  "/search",
+  "/help",
+]);
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
@@ -17,8 +34,7 @@ export default auth((req) => {
     pathname.startsWith("/invite") ||
     pathname.startsWith("/register") ||
     pathname.startsWith("/p/") ||
-    pathname === "/offline" ||
-    pathname === "/accessibility";
+    STATIC_PUBLIC.has(pathname);
 
   if (!session) {
     if (isPublic) return NextResponse.next();
@@ -44,8 +60,7 @@ export default auth((req) => {
     // authority, not a role, so the page guards itself via getSpocContext().
     // Without this an ADMIN would be bounced to /admin before ever reaching it.
     pathname.startsWith("/spoc") ||
-    pathname === "/offline" ||
-    pathname === "/accessibility"
+    STATIC_PUBLIC.has(pathname)
   ) {
     return NextResponse.next();
   }

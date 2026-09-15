@@ -1,7 +1,6 @@
-import { BookOpen, Grape } from "lucide-react";
+import { Grape } from "lucide-react";
 import { redirect } from "next/navigation";
-import { joinBatchIntentAction } from "@/app/welcome/actions";
-import { TrainerRequestCard } from "@/components/welcome/TrainerRequestCard";
+import { OnboardingChoice } from "@/components/welcome/OnboardingChoice";
 import { Card } from "@/components/ui/Card";
 import { GovBanner } from "@/components/layout/GovBanner";
 import { auth } from "@/lib/auth";
@@ -41,21 +40,7 @@ export default async function WelcomePage() {
           This decides what you see. You can request trainer access later from your profile.
         </p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <TrainerRequestCard />
-          <form action={joinBatchIntentAction} className="h-full">
-            <button
-              type="submit"
-              className="group flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl border border-hair bg-paper p-5 text-center transition-[background-color,border-color,scale] duration-[var(--dur-press)] ease-[var(--ease-out)] hover:border-plum-300 hover:bg-plum-50 active:scale-[0.98] motion-reduce:active:scale-100 cursor-pointer"
-            >
-              <span className="flex size-11 items-center justify-center rounded-[10px] bg-plum-100 text-plum-600">
-                <BookOpen className="size-6" />
-              </span>
-              <span className="text-sm font-semibold text-ink-900">I&apos;m a trainee</span>
-              <span className="text-xs text-ink-500">Take courses, earn certificates</span>
-            </button>
-          </form>
-        </div>
+        <OnboardingChoice />
       </Card>
       </main>
     </>

@@ -48,7 +48,7 @@ export function RecommendationCard({ rec }: { rec: RecommendationView }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-300">fit</p>
           <p className="font-display text-xl font-semibold tabular-nums leading-none text-ink-900">
             {rec.score.toFixed(1)}
-            <span className="text-sm text-ink-300">×</span>
+            <span className="ml-0.5 text-sm font-normal text-ink-300">×</span>
           </p>
         </div>
       </div>

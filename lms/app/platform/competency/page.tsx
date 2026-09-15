@@ -88,11 +88,13 @@ async function CompetencyRanking({ batchId, teacherId }: { batchId: string; teac
   return (
     <Card className="p-5">
       <CardHeader>
+            <div className="min-w-0">
         <CardTitle>Trainer ranking</CardTitle>
         <p className="mt-1 text-sm text-ink-500">
           {requirements.length} required competenc{requirements.length === 1 ? "y" : "ies"} · weighted match score out of 100
         </p>
-      </CardHeader>
+            </div>
+          </CardHeader>
       <div className="mt-4">
         <TrainerRankingTable batchId={batchId} ranked={view} />
       </div>

@@ -93,14 +93,16 @@
   --tiranga-green:   #138808;
 
   /* ── Type ──
-     Shifted toward the government register: the *interface* voice is Noto Sans
-     (the NIC / GIGW workhorse) with its Devanagari companion so Hindi renders in
-     the same official face; Spectral stays the display/institution voice, with
-     Noto Serif Devanagari standing in for it in Hindi. Mono and hand unchanged. */
-  --font-display-stack: var(--font-spectral), var(--font-noto-serif-deva), Georgia, "Times New Roman", serif;
-  --font-body-stack:    var(--font-noto-sans), var(--font-noto-sans-deva), -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono-stack:    var(--font-spline-mono), ui-monospace, "SF Mono", Menlo, monospace;
-  --font-hand-stack:    var(--font-caveat), var(--font-noto-sans-deva), cursive;
+     DBIM (Digital Brand Identity Manual, MeitY) typography: Noto Sans is the
+     single typeface for the Government of India's digital presence — headings,
+     body, labels and machine values alike — with Noto Sans Devanagari carrying
+     Hindi. Weights Regular/Medium/SemiBold/Bold; line-height 1.2–1.5.
+     https://dbimtoolkit.digifootprint.gov.in/dbim-chapters?slug=typography */
+  --font-noto-stack:    var(--font-noto-sans), var(--font-noto-sans-deva), "Noto Sans", "Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display-stack: var(--font-noto-stack);
+  --font-body-stack:    var(--font-noto-stack);
+  --font-mono-stack:    var(--font-noto-stack);
+  --font-hand-stack:    var(--font-noto-stack);
 
   --text-xs:   0.78rem;
   --text-sm:   0.875rem;
@@ -113,13 +115,13 @@
   --text-4xl:  4rem;
   --text-5xl:  5.25rem;
 
-  --leading-tight: 1.08;
+  --leading-tight: 1.2;   /* DBIM: 1.2–1.5× */
   --leading-snug: 1.25;
   --leading-normal: 1.55;
   --leading-relaxed: 1.7;
 
   /* Tracking is size-specific, never one value across sizes (apple-design). */
-  --tracking-tight: -0.02em;
+  --tracking-tight: -0.01em;
   --tracking-snug: -0.01em;
   --tracking-normal: 0;
   --tracking-wide: 0.08em;

@@ -25,6 +25,10 @@ export function RadarChart({
   const cx = size / 2;
   const cy = size / 2;
   const r = size * 0.32; // leave room for labels
+  // Labels sit outside the outer ring and anchor away from the centre, so the
+  // left/right ones need horizontal room beyond the square — widen the viewBox
+  // rather than letting "METEOROLOGY" run off the edge.
+  const padX = size * 0.3;
   const rings = [0.25, 0.5, 0.75, 1];
 
   if (n < 3) {
@@ -50,8 +54,8 @@ export function RadarChart({
 
   return (
     <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className={cn("h-auto w-full max-w-[320px]", className)}
+      viewBox={`${-padX} 0 ${size + padX * 2} ${size}`}
+      className={cn("h-auto w-full max-w-[420px]", className)}
       role="img"
       aria-label="Competency radar by category"
     >
@@ -98,6 +102,7 @@ export function RadarChart({
         const a = angleFor(i);
         const anchor = Math.abs(Math.cos(a)) < 0.3 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
         const words = ax.label.split(" ");
+        const twoLines = words.length > 2 || (words.length === 2 && ax.label.length > 12);
         return (
           <text
             key={ax.label}
@@ -107,7 +112,7 @@ export function RadarChart({
             dominantBaseline="middle"
             className="fill-ink-500 font-mono text-[8px] uppercase tracking-[0.1em]"
           >
-            {words.length > 2 ? (
+            {twoLines ? (
               <>
                 <tspan x={x.toFixed(1)} dy="-0.5em">
                   {words.slice(0, Math.ceil(words.length / 2)).join(" ")}

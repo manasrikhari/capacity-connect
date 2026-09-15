@@ -56,10 +56,12 @@ export default async function StudentCompetencyPage() {
 
         <Card className="p-5">
           <CardHeader>
-            <CardTitle>Declare a skill</CardTitle>
-            <p className="mt-1 text-sm text-ink-500">
-              Levels earned from assessments or certificates can&apos;t be lowered here.
-            </p>
+            <div className="min-w-0">
+              <CardTitle>Declare a skill</CardTitle>
+              <p className="mt-1 text-sm text-ink-500">
+                Levels earned from assessments or certificates can&apos;t be lowered here.
+              </p>
+            </div>
           </CardHeader>
           <div className="mt-4">
             <DeclareSkillForm skills={allSkills.map((s) => ({ id: s.id, name: s.name }))} />

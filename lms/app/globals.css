@@ -57,10 +57,13 @@
   h4,
   h5 {
     font-family: var(--font-display-stack);
+    font-weight: 600; /* DBIM: headings Semi Bold */
     color: var(--text-heading);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
   }
+  /* Tabular figures wherever the old mono face aligned numbers. */
+  .font-mono, code, kbd, pre, time { font-variant-numeric: tabular-nums; }
 }
 
 :focus-visible {

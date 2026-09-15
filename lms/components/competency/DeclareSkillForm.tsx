@@ -17,7 +17,7 @@ export function DeclareSkillForm({ skills }: { skills: { id: string; name: strin
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
-      <label className="min-w-[200px] flex-1 text-xs text-ink-500">
+      <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-xs text-ink-500">
         Skill
         <Select name="skillId" defaultValue={skills[0]?.id}>
           {skills.map((s) => (
@@ -27,7 +27,7 @@ export function DeclareSkillForm({ skills }: { skills: { id: string; name: strin
           ))}
         </Select>
       </label>
-      <label className="text-xs text-ink-500">
+      <label className="flex flex-col gap-1 text-xs text-ink-500">
         Level
         <Select name="proficiency" defaultValue="3" className="w-20">
           {[1, 2, 3, 4, 5].map((n) => (

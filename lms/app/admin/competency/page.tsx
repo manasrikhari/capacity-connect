@@ -45,11 +45,13 @@ export default async function AdminCompetencyPage() {
 
       <Card className="mb-6 p-5">
         <CardHeader>
+            <div className="min-w-0">
           <CardTitle>Required competencies</CardTitle>
           <p className="mt-1 text-sm text-ink-500">
             Trainees are matched and recommended against these.
           </p>
-        </CardHeader>
+            </div>
+          </CardHeader>
         <div className="mt-4">
           <RequirementsEditor
             skills={skills.map((s) => ({ id: s.id, name: s.name, category: s.category }))}

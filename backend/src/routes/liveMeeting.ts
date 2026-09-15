@@ -540,6 +540,14 @@ router.post(
   requireClassroomToken,
   async (req: ClassroomRequest, res: Response): Promise<void> => {
     const claims = req.classroom!;
+    // Live audio STT is opt-in: it fires many Gemini calls a minute and, on the
+    // free tier (20 req/min), exhausts the quota so the Ask-AI doubt solver 429s.
+    // Off by default keeps the whole quota for doubts + image OCR; set
+    // LIVE_AUDIO_TRANSCRIPTION=true only on a key with real throughput.
+    if (process.env.LIVE_AUDIO_TRANSCRIPTION !== 'true') {
+      res.json({ text: '' });
+      return;
+    }
     const file = (req as ClassroomRequest & { file?: { buffer: Buffer; mimetype?: string } }).file;
     if (!file?.buffer?.length) {
       res.json({ text: '' });

@@ -1732,9 +1732,11 @@ function RoomContent({ roomName, userName, onLeave, onConnected, sessionToken, s
           {/* LEFT / CENTER PANE: Active Content (Grid OR Whiteboard OR Screen Share) */}
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
 
-            {/* Content Viewport */}
-            <div 
-              className="flex-1 overflow-hidden relative bg-[#060b18]"
+            {/* Content Viewport. The right panel is an absolute w-80 overlay, so
+                reserve its width here on desktop — otherwise the tile grid centres
+                behind the panel and leaves a large empty gutter on the left. */}
+            <div
+              className={`flex-1 overflow-hidden relative bg-[#060b18] transition-[padding] duration-300 ${activeRightPanelTab && !isMobile ? 'md:pr-80' : ''}`}
               onClick={handleViewportClick}
             >
               
@@ -2768,6 +2770,12 @@ export default function VideoRoom({
     const roomOptions: RoomOptions = {
       adaptiveStream: true,
       dynacast: true,
+      // Route remote audio through a shared Web Audio graph. On mobile
+      // (iOS Safari especially) plain <audio> playback of a WebRTC track with
+      // the mic live is treated as a *voice call* and comes out the earpiece;
+      // mixing through Web Audio makes it *media* playback → loudspeaker.
+      // (Present in the livekit-client runtime; omitted from its public types.)
+      ...({ webAudioMix: true } as { webAudioMix: boolean }),
       publishDefaults: {
         videoCodec: 'vp9',
         backupCodec: true, // Allow fallback to H.264 dynamically on receiver-level or for older clients

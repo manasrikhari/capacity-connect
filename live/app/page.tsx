@@ -350,7 +350,9 @@ function HomeContent() {
 
   const redirectToLMS = () => {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const dashboardUrl = isLocalhost ? 'http://localhost:3000' : 'https://opengrapes.com';
+    const dashboardUrl = isLocalhost
+      ? 'http://localhost:3000'
+      : (process.env.NEXT_PUBLIC_LMS_URL || 'https://capacity-connect-krish-lms.vercel.app');
     window.location.href = dashboardUrl;
   };
 

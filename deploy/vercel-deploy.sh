@@ -99,6 +99,9 @@ if want live; then
   echo "▶ live env"
   setenv live \
     "NEXT_PUBLIC_BACKEND_URL=$BACKEND_URL" \
+    "NEXT_PUBLIC_SYNC_WORKER_URL=${NEXT_PUBLIC_SYNC_WORKER_URL:-https://opengrapes-whiteboard-sync.manasrikhari23.workers.dev}" \
+    "NEXT_PUBLIC_LIVEKIT_URL=${LIVEKIT_URL:-wss://livekit.opengrapes.com}" \
+    "NEXT_PUBLIC_LMS_URL=$LMS_URL" \
     "LIVE_OPENGRAPES_JWT_SECRET=$LIVE_OPENGRAPES_JWT_SECRET"
   ACTUAL_LIVE="$(deploy live)"
 fi

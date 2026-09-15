@@ -7,8 +7,8 @@ dotenv.config();
  * (kept in sync with the LMS's GEMINI_MODEL_NAME / GEMINI_FALLBACK_MODEL_NAME).
  */
 export const GEMINI_MODELS: readonly string[] = [
-  process.env.GEMINI_MODEL_NAME || 'gemini-3.7-flash',
-  process.env.GEMINI_FALLBACK_MODEL_NAME || 'gemini-3.5-flash',
+  process.env.GEMINI_MODEL_NAME || 'gemini-3.6-flash',
+  process.env.GEMINI_FALLBACK_MODEL_NAME || 'gemini-3.6-flash',
 ];
 
 // Unified usage counters for Gemini key rotation

@@ -4,8 +4,8 @@
  * users" on keys issued recently, so the default is a current model and both
  * are overridable by env without touching code.
  */
-const PRIMARY_MODEL = process.env.GEMINI_MODEL_NAME || 'gemini-3.7-flash';
-const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL_NAME || 'gemini-3.5-flash';
+const PRIMARY_MODEL = process.env.GEMINI_MODEL_NAME || 'gemini-3.6-flash';
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL_NAME || 'gemini-3.6-flash';
 type GeminiModel = string;
 
 class KeyRotationManager {

@@ -16,10 +16,10 @@ export function DeclareSkillForm({ skills }: { skills: { id: string; name: strin
   }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
-      <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-xs text-ink-500">
+    <form action={formAction} className="space-y-3">
+      <label className="flex flex-col gap-1 text-xs text-ink-500">
         Skill
-        <Select name="skillId" defaultValue={skills[0]?.id}>
+        <Select name="skillId" defaultValue={skills[0]?.id} className="w-full">
           {skills.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -27,19 +27,21 @@ export function DeclareSkillForm({ skills }: { skills: { id: string; name: strin
           ))}
         </Select>
       </label>
-      <label className="flex flex-col gap-1 text-xs text-ink-500">
-        Level
-        <Select name="proficiency" defaultValue="3" className="w-20">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </Select>
-      </label>
-      <Button type="submit" loading={pending}>
-        Declare
-      </Button>
+      <div className="flex items-end gap-2">
+        <label className="flex flex-col gap-1 text-xs text-ink-500">
+          Level
+          <Select name="proficiency" defaultValue="3" className="w-20">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <Button type="submit" loading={pending} className="ml-auto">
+          Declare
+        </Button>
+      </div>
     </form>
   );
 }

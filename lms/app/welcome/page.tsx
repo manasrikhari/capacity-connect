@@ -43,10 +43,10 @@ export default async function WelcomePage() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <TrainerRequestCard />
-          <form action={joinBatchIntentAction}>
+          <form action={joinBatchIntentAction} className="h-full">
             <button
               type="submit"
-              className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-hair bg-paper p-5 text-center transition-[background-color,border-color,scale] duration-[var(--dur-press)] ease-[var(--ease-out)] hover:border-plum-300 hover:bg-plum-50 active:scale-[0.98] motion-reduce:active:scale-100 cursor-pointer"
+              className="group flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl border border-hair bg-paper p-5 text-center transition-[background-color,border-color,scale] duration-[var(--dur-press)] ease-[var(--ease-out)] hover:border-plum-300 hover:bg-plum-50 active:scale-[0.98] motion-reduce:active:scale-100 cursor-pointer"
             >
               <span className="flex size-11 items-center justify-center rounded-[10px] bg-plum-100 text-plum-600">
                 <BookOpen className="size-6" />

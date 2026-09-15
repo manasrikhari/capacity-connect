@@ -34,10 +34,10 @@ export function RecommendationCard({ rec }: { rec: RecommendationView }) {
   }
 
   return (
-    <Card className="flex flex-col gap-3 p-5">
+    <Card className="flex h-full flex-col gap-3 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-display text-lg text-ink-900">{rec.name}</h3>
+          <h3 className="font-display text-base font-semibold leading-snug text-ink-900">{rec.name}</h3>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {rec.domain && <Badge color="violet">{rec.domain}</Badge>}
             {rec.level && <Badge color="slate">{rec.level}</Badge>}
@@ -45,10 +45,10 @@ export function RecommendationCard({ rec }: { rec: RecommendationView }) {
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <p className="font-mono text-xs uppercase tracking-[0.12em] text-ink-300">fit</p>
-          <p className="font-display text-2xl tabular-nums text-ink-900">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-300">fit</p>
+          <p className="font-display text-xl font-semibold tabular-nums leading-none text-ink-900">
             {rec.score.toFixed(1)}
-            <span className="text-base text-ink-300">×</span>
+            <span className="text-sm text-ink-300">×</span>
           </p>
         </div>
       </div>
@@ -59,7 +59,7 @@ export function RecommendationCard({ rec }: { rec: RecommendationView }) {
 
       <ExplainWhyBadges reasons={rec.reasons} />
 
-      <div className="mt-1 flex justify-end">
+      <div className="mt-auto flex justify-end pt-1">
         {requested ? (
           <Button variant="outline" disabled>
             Requested

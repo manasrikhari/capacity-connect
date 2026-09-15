@@ -1,12 +1,26 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+/**
+ * Gemini models, env-driven. The 2.5 family returns 404 "no longer available
+ * to new users" on recently issued API keys, so default to the current family
+ * (kept in sync with the LMS's GEMINI_MODEL_NAME / GEMINI_FALLBACK_MODEL_NAME).
+ */
+export const GEMINI_MODELS: readonly string[] = [
+  process.env.GEMINI_MODEL_NAME || 'gemini-3.7-flash',
+  process.env.GEMINI_FALLBACK_MODEL_NAME || 'gemini-3.5-flash',
+];
+
 // Unified usage counters for Gemini key rotation
 class KeyRotationManager {
   private keys: string[];
   private lastResetDate: string;
-  private counts: Record<string, { 'gemini-2.5-flash': number; 'gemini-2.5-flash-lite': number }>;
+  private counts: Record<string, Record<string, number>>;
   private isRotationEnabled: boolean;
+
+  private freshCounts(): Record<string, number> {
+    return Object.fromEntries(GEMINI_MODELS.map((m) => [m, 0]));
+  }
 
   constructor() {
     const rotatedKeys = [
@@ -28,7 +42,7 @@ class KeyRotationManager {
     this.lastResetDate = new Date().toISOString().split('T')[0];
     this.counts = {};
     this.keys.forEach((k) => {
-      this.counts[k] = { 'gemini-2.5-flash': 0, 'gemini-2.5-flash-lite': 0 };
+      this.counts[k] = this.freshCounts();
     });
   }
 
@@ -37,13 +51,13 @@ class KeyRotationManager {
     if (today !== this.lastResetDate) {
       this.lastResetDate = today;
       this.keys.forEach((k) => {
-        this.counts[k] = { 'gemini-2.5-flash': 0, 'gemini-2.5-flash-lite': 0 };
+        this.counts[k] = this.freshCounts();
       });
       console.log(`[KeyRotation] Usage counters reset for new UTC day: ${today}`);
     }
   }
 
-  public getNextKey(model: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite'): string | null {
+  public getNextKey(model: string): string | null {
     if (!this.isRotationEnabled) {
       return this.keys[0] || null;
     }
@@ -57,7 +71,7 @@ class KeyRotationManager {
     return null;
   }
 
-  public increment(key: string, model: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite') {
+  public increment(key: string, model: string) {
     if (!this.isRotationEnabled) return;
     if (this.counts[key]) {
       this.counts[key][model]++;
@@ -67,7 +81,7 @@ class KeyRotationManager {
     }
   }
 
-  public exhaust(key: string, model: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite') {
+  public exhaust(key: string, model: string) {
     if (!this.isRotationEnabled) return;
     if (this.counts[key]) {
       this.counts[key][model] = 20;
@@ -95,7 +109,7 @@ export async function transcribeImage(attachedImage: any): Promise<string> {
   const promptText =
     'Extract all text verbatim from this training doubt image. Write all mathematical equations, symbols, and formulas in standard LaTeX format. If there is a diagram, graph, or circuit, write a detailed textual description of its components, shapes, values, directions, and connections. Do not solve the question, only output the transcription.';
 
-  const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'] as const;
+  const models = GEMINI_MODELS;
 
   for (const model of models) {
     let key = rotationManager.getNextKey(model);
@@ -156,7 +170,7 @@ export async function transcribeAudio(base64Audio: string, mimeType = 'audio/wav
     'Transcribe this short audio clip from a live meteorology training class verbatim. ' +
     'Return only the spoken words as plain text, with no timestamps, speaker labels or commentary. ' +
     'If there is no intelligible speech, return an empty string.';
-  const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'] as const;
+  const models = GEMINI_MODELS;
 
   for (const model of models) {
     let key = rotationManager.getNextKey(model);
@@ -217,7 +231,7 @@ export async function requestAI(prompt: string, contextPrompt?: string, systemPr
     ],
   };
 
-  const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'] as const;
+  const models = GEMINI_MODELS;
 
   for (const model of models) {
     let key = rotationManager.getNextKey(model);

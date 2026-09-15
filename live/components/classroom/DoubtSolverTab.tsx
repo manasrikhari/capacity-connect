@@ -654,7 +654,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 						onPaste={handlePaste}
 						placeholder="Type doubt, paste image, or click attachments..."
 						disabled={isStreaming}
-						className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/5 focus:border-indigo-500/50 outline-none text-sm text-white placeholder-[#C2CCDE]/30 transition-all font-sans"
+						className="min-w-0 flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/5 focus:border-indigo-500/50 outline-none text-sm text-white placeholder-[#C2CCDE]/30 transition-all font-sans"
 					/>
 
 					{/* Submit Button */}

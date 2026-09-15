@@ -51,7 +51,7 @@ function LazyParticipantTile({ trackRef }: { trackRef: TrackReferenceOrPlacehold
   return (
     <div 
       ref={ref} 
-      className="aspect-video w-full relative rounded-xl overflow-hidden border border-white/5 bg-surface-light/10 shadow-md group flex items-center justify-center"
+      className="aspect-video w-full relative rounded-xl overflow-hidden border border-hairline-soft bg-surface-light/10 shadow-md group flex items-center justify-center"
     >
       {isIntersecting ? (
         <CustomVideoTile 
@@ -60,8 +60,8 @@ function LazyParticipantTile({ trackRef }: { trackRef: TrackReferenceOrPlacehold
           hideActions={true} 
         />
       ) : (
-        <div className="absolute inset-0 bg-[#0d111d] flex items-center justify-center select-none p-4 text-center">
-          <span className="text-xs font-bold text-white/90 truncate max-w-[90%] font-sans">{name}</span>
+        <div className="absolute inset-0 bg-shell flex items-center justify-center select-none p-4 text-center">
+          <span className="text-xs font-bold text-text/90 truncate max-w-[90%] font-sans">{name}</span>
         </div>
       )}
     </div>
@@ -113,7 +113,7 @@ export default function StudentSidebar({
                 {teacherTrack ? (
                   <LazyParticipantTile trackRef={teacherTrack} />
                 ) : (
-                  <div className="aspect-video w-full relative rounded-xl overflow-hidden border border-white/5 bg-surface-light/10 shadow-md group flex items-center justify-center min-h-[120px] text-foreground/30 text-xs font-semibold">
+                  <div className="aspect-video w-full relative rounded-xl overflow-hidden border border-hairline-soft bg-surface-light/10 shadow-md group flex items-center justify-center min-h-[120px] text-foreground/30 text-xs font-semibold">
                     No Teacher Camera
                   </div>
                 )}
@@ -140,7 +140,7 @@ export default function StudentSidebar({
           }}
         >
           {/* Horizontal scrollable container for student tiles + Teacher */}
-          <div className="flex flex-row overflow-x-auto gap-3 w-full p-3 scrollbar-none bg-[#060b18]/60 backdrop-blur-md border-t border-white/5">
+          <div className="flex flex-row overflow-x-auto gap-3 w-full p-3 scrollbar-none bg-shell/60 backdrop-blur-md border-t border-hairline-soft">
             {/* Teacher Tile */}
             {teacherTrack && (
               <div className="h-[120px] aspect-video shrink-0">

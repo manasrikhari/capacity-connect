@@ -171,7 +171,7 @@ export default function ParticipantsOverlay({
     <div 
       ref={containerRef}
       className={isMobile
-        ? 'fixed inset-0 z-[300] bg-[#090d1a]/98 backdrop-blur-2xl flex flex-col font-sans'
+        ? 'fixed inset-0 z-[300] bg-shell backdrop-blur-2xl flex flex-col font-sans'
         : 'absolute right-4 top-4 w-[340px] max-h-[60vh] overflow-y-auto z-50 bg-surface border border-border rounded-xl shadow-2xl p-4 flex flex-col gap-3 scrollbar-thin text-text animate-in fade-in zoom-in-95 duration-150 font-sans'
       }
     >
@@ -183,11 +183,11 @@ export default function ParticipantsOverlay({
             <button
               onClick={onClose}
               type="button"
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[#C2CCDE] hover:text-white hover:bg-white/5 cursor-pointer transition-colors"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:text-text hover:bg-elevated cursor-pointer transition-colors"
             >
               <IconX className="w-5 h-5" />
             </button>
-            <span className="text-base font-bold text-white tracking-wide">
+            <span className="text-base font-bold text-text tracking-wide">
               Participants ({participants.length})
             </span>
           </div>
@@ -206,7 +206,7 @@ export default function ParticipantsOverlay({
         <div className="flex items-center justify-between pb-2 border-b border-border/40 select-none">
           <div className="flex flex-col">
             <span className="text-xs font-bold uppercase tracking-wider text-text-muted">In Call</span>
-            <span className="text-sm font-extrabold text-white">Participants ({participants.length})</span>
+            <span className="text-sm font-extrabold text-text">Participants ({participants.length})</span>
           </div>
           <div className="flex items-center gap-2">
             {isTeacher && (
@@ -220,7 +220,7 @@ export default function ParticipantsOverlay({
             )}
             <button 
               onClick={onClose}
-              className="w-7 h-7 rounded-lg hover:bg-surface-hi flex items-center justify-center text-text-muted hover:text-white transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-lg hover:bg-surface-hi flex items-center justify-center text-text-muted hover:text-text transition-colors cursor-pointer"
             >
               <IconX className="w-4 h-4" />
             </button>
@@ -246,7 +246,7 @@ export default function ParticipantsOverlay({
                 checked={globalWhiteboardAllowed}
                 onChange={() => onToggleGlobalPermission?.('whiteboard')}
               />
-              <div className="w-8 h-4 bg-shell/80 border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent peer-checked:after:bg-white"></div>
+              <div className="w-8 h-4 bg-shell/80 border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-border after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent peer-checked:after:bg-white"></div>
             </label>
           </div>
           <div className="flex items-center justify-between">
@@ -258,7 +258,7 @@ export default function ParticipantsOverlay({
                 checked={globalScreenShareAllowed}
                 onChange={() => onToggleGlobalPermission?.('screenshare')}
               />
-              <div className="w-8 h-4 bg-shell/80 border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent peer-checked:after:bg-white"></div>
+              <div className="w-8 h-4 bg-shell/80 border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-border after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent peer-checked:after:bg-white"></div>
             </label>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function ParticipantsOverlay({
 
                   {/* Name Details */}
                   <div className="flex flex-col min-w-0 font-sans">
-                    <span className="text-xs font-semibold text-white truncate pr-1">{pName}</span>
+                    <span className="text-xs font-semibold text-text truncate pr-1">{pName}</span>
                     {isTeacherUser && (
                       <span className="text-[8px] text-accent font-bold uppercase tracking-wider mt-0.5 select-none">
                         Teacher
@@ -319,7 +319,7 @@ export default function ParticipantsOverlay({
                       onClick={() => handleMuteToggle(p, 'audio', true)}
                       className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                         p.isMicrophoneEnabled
-                          ? 'text-text hover:text-white border-transparent hover:bg-surface-hi'
+                          ? 'text-text hover:text-text border-transparent hover:bg-surface-hi'
                           : 'text-danger bg-danger/10 border-danger/25 opacity-70'
                       }`}
                       title={p.isMicrophoneEnabled ? "Mute student" : "Microphone muted"}
@@ -345,7 +345,7 @@ export default function ParticipantsOverlay({
                       onClick={() => handleMuteToggle(p, 'video', true)}
                       className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                         p.isCameraEnabled
-                          ? 'text-text hover:text-white border-transparent hover:bg-surface-hi'
+                          ? 'text-text hover:text-text border-transparent hover:bg-surface-hi'
                           : 'text-danger bg-danger/10 border-danger/25 opacity-70'
                       }`}
                       title={p.isCameraEnabled ? "Stop camera feed" : "Camera turned off"}

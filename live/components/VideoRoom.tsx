@@ -1736,7 +1736,7 @@ function RoomContent({ roomName, userName, onLeave, onConnected, sessionToken, s
                 reserve its width here on desktop — otherwise the tile grid centres
                 behind the panel and leaves a large empty gutter on the left. */}
             <div
-              className={`flex-1 overflow-hidden relative bg-[#060b18] transition-[padding] duration-300 ${activeRightPanelTab && !isMobile ? 'md:pr-80' : ''}`}
+              className={`stage-dark flex-1 overflow-hidden relative bg-[#060b18] transition-[padding] duration-300 ${activeRightPanelTab && !isMobile ? 'md:pr-80' : ''}`}
               onClick={handleViewportClick}
             >
               

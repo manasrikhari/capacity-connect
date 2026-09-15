@@ -26,12 +26,72 @@
   --color-success: #8FB07F;
   --color-warning: #D3A05A;
 
+  /* Extra semantic tokens the hardcoded colours are mapped onto so the whole
+     app themes from one place. Dark values here; light overrides below. */
+  --color-app: #060b18;          /* deepest stage / app ground */
+  --color-panel: #14101d;        /* side panels, sheets */
+  --color-elevated: rgba(255, 255, 255, 0.05);   /* raised chips/inputs */
+  --color-elevated-hi: rgba(255, 255, 255, 0.10);
+  --color-hairline: rgba(255, 255, 255, 0.10);   /* borders */
+  --color-hairline-soft: rgba(255, 255, 255, 0.05);
+  --color-on-accent: #ffffff;    /* text on accent/danger buttons (both themes) */
+  --color-text-faint: #8b8397;   /* least-emphasis text */
+  --color-scrim: rgba(0, 0, 0, 0.6); /* modal backdrops (stay dark both themes) */
+
   --animate-pulse-recording: pulse-recording 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @keyframes pulse-recording {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.4; transform: scale(0.85); }
   }
+}
+
+/* Light theme — matches the LMS (plum on paper). Because @theme inline emits
+   utilities as var(--color-*), overriding those variables here re-themes every
+   token-based class. The video stage opts out via .stage-dark below so video
+   tiles and their white labels stay correct on any theme. */
+:root[data-theme="light"] {
+  --color-background: #F4F2F7;
+  --color-foreground: #1E1A24;
+  --color-surface: #FFFFFF;
+  --color-surface-light: #F4F2F7;
+  --color-surface-hi: #EFEBF5;
+  --color-border: #E3DEEC;
+  --color-primary: #6B5489;
+  --color-primary-hover: #5A4675;
+  --color-primary-glow: rgba(107, 84, 137, 0.2);
+  --color-shell: #FFFFFF;
+  --color-accent: #6B5489;
+  --color-accent-hi: #5A4675;
+  --color-text: #1E1A24;
+  --color-text-muted: #6B6478;
+  --color-app: #ECE9F1;
+  --color-panel: #FFFFFF;
+  --color-elevated: rgba(30, 20, 45, 0.04);
+  --color-elevated-hi: rgba(30, 20, 45, 0.08);
+  --color-hairline: rgba(30, 20, 45, 0.10);
+  --color-hairline-soft: rgba(30, 20, 45, 0.06);
+  --color-text-faint: #8A8397;
+  /* on-accent and scrim stay as-is (white text on plum; dark modal backdrop). */
+}
+
+/* The video stage is always dark, regardless of app theme (like Meet/Zoom
+   light mode): dark tiles and white participant names read correctly on any
+   ground. Components inside opt in with the .stage-dark class. */
+.stage-dark {
+  --color-background: #241F2E;
+  --color-foreground: #F3F1F7;
+  --color-surface: #2E2839;
+  --color-surface-hi: #37304A;
+  --color-shell: #1B1724;
+  --color-app: #060b18;
+  --color-panel: #14101d;
+  --color-text: #F3F1F7;
+  --color-text-muted: #B9B1C8;
+  --color-elevated: rgba(255, 255, 255, 0.05);
+  --color-elevated-hi: rgba(255, 255, 255, 0.10);
+  --color-hairline: rgba(255, 255, 255, 0.10);
+  --color-hairline-soft: rgba(255, 255, 255, 0.05);
 }
 
 * {

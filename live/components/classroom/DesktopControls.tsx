@@ -191,11 +191,11 @@ export default function DesktopControls({
   }, [showDeviceSettings]);
 
   return (
-    <div className="w-full h-[72px] bg-[#090d1a]/95 border-t border-white/10 px-4 lg:px-6 py-1.5 flex items-center justify-between z-40 select-none transition-all duration-300 controls-bar relative translate-y-0 opacity-100">
+    <div className="w-full h-[72px] bg-shell border-t border-hairline px-4 lg:px-6 py-1.5 flex items-center justify-between z-40 select-none transition-all duration-300 controls-bar relative translate-y-0 opacity-100">
       {/* Left side: Class details & time */}
       <div className="hidden md:flex flex-col min-w-[120px] lg:min-w-[200px]">
-        <span className="font-bold text-sm text-white tracking-wider">OpenGrapes Live</span>
-        <span className="text-xs text-[#C2CCDE]/50 font-semibold mt-0.5">
+        <span className="font-bold text-sm text-text tracking-wider">OpenGrapes Live</span>
+        <span className="text-xs text-text-faint font-semibold mt-0.5">
           {formatDuration(elapsedSeconds)}
         </span>
       </div>
@@ -205,13 +205,13 @@ export default function DesktopControls({
         {/* Microphone Toggle */}
         <div className="relative" ref={micMenuRef}>
           <div className={`relative w-[84px] h-[60px] rounded-xl border text-[#C2CCDE] transition-all duration-200 flex items-center p-0.5 ${
-            isMicrophoneEnabled ? 'border-white/10 bg-white/5' : 'border-transparent bg-transparent'
+            isMicrophoneEnabled ? 'border-hairline bg-elevated' : 'border-transparent bg-transparent'
           }`}>
             {/* Mute/Unmute main toggle button */}
             <Tooltip content={isMicrophoneEnabled ? "Mute Microphone" : "Unmute Microphone"} className="flex-1 h-full">
               <button
                 onClick={toggleMicrophone}
-                className="w-full h-full flex flex-col items-center justify-center rounded-lg hover:bg-white/5 transition-colors cursor-pointer gap-0.5"
+                className="w-full h-full flex flex-col items-center justify-center rounded-lg hover:bg-elevated transition-colors cursor-pointer gap-0.5"
               >
                 {isMicrophoneEnabled ? (
                   <svg
@@ -257,7 +257,7 @@ export default function DesktopControls({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
                   </svg>
                 )}
-                <span className="text-[11px] font-medium leading-none select-none text-[#C2CCDE]">Audio</span>
+                <span className="text-[11px] font-medium leading-none select-none text-text-muted">Audio</span>
               </button>
             </Tooltip>
 
@@ -267,7 +267,7 @@ export default function DesktopControls({
                 e.stopPropagation();
                 setShowMicMenu(prev => !prev);
               }}
-              className="w-5.5 h-full flex items-center justify-center rounded-lg hover:bg-white/10 text-[#C2CCDE]/50 hover:text-white transition-colors cursor-pointer"
+              className="w-5.5 h-full flex items-center justify-center rounded-lg hover:bg-elevated-hi text-text-faint hover:text-text transition-colors cursor-pointer"
             >
               <IconChevronUp className="w-3.5 h-3.5" />
             </button>
@@ -275,9 +275,9 @@ export default function DesktopControls({
 
           {/* Audio selector menu */}
           {showMicMenu && (
-            <div className="absolute bottom-[68px] left-0 w-64 bg-[#0b0f19]/95 border border-white/10 rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5 text-[#C2CCDE] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
-              <div className="px-3 py-1.5 border-b border-white/5 select-none text-left">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#C2CCDE]/40">Select Microphone</span>
+            <div className="absolute bottom-[68px] left-0 w-64 bg-shell/95 border border-hairline rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5 text-text-muted z-[200] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
+              <div className="px-3 py-1.5 border-b border-hairline-soft select-none text-left">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-faint">Select Microphone</span>
               </div>
               <div className="max-h-48 overflow-y-auto flex flex-col gap-0.5">
                 {audioDevices.map((device) => (
@@ -288,14 +288,14 @@ export default function DesktopControls({
                       setShowMicMenu(false);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer text-left text-xs font-semibold select-none ${
-                      activeAudioId === device.deviceId ? 'text-indigo-400 font-bold bg-indigo-500/10' : 'text-[#C2CCDE]'
+                      activeAudioId === device.deviceId ? 'text-accent font-bold bg-accent/10' : 'text-text-muted'
                     }`}
                   >
                     <span className="truncate">{device.label || `Microphone ${device.deviceId.slice(0, 5)}`}</span>
                   </button>
                 ))}
                 {audioDevices.length === 0 && (
-                  <span className="px-3 py-2 text-xs text-[#C2CCDE]/40">No microphones found</span>
+                  <span className="px-3 py-2 text-xs text-text-faint">No microphones found</span>
                 )}
               </div>
             </div>
@@ -305,13 +305,13 @@ export default function DesktopControls({
         {/* Camera Toggle */}
         <div className="relative" ref={camMenuRef}>
           <div className={`relative w-[84px] h-[60px] rounded-xl border text-[#C2CCDE] transition-all duration-200 flex items-center p-0.5 ${
-            isCameraEnabled ? 'border-white/10 bg-white/5' : 'border-transparent bg-transparent'
+            isCameraEnabled ? 'border-hairline bg-elevated' : 'border-transparent bg-transparent'
           }`}>
             {/* Video Toggle main button */}
             <Tooltip content={isCameraEnabled ? "Turn Off Camera" : "Turn On Camera"} className="flex-1 h-full">
               <button
                 onClick={toggleCamera}
-                className="w-full h-full flex flex-col items-center justify-center rounded-lg hover:bg-white/5 transition-colors cursor-pointer gap-0.5"
+                className="w-full h-full flex flex-col items-center justify-center rounded-lg hover:bg-elevated transition-colors cursor-pointer gap-0.5"
               >
                 {isCameraEnabled ? (
                   <svg
@@ -379,7 +379,7 @@ export default function DesktopControls({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
                   </svg>
                 )}
-                <span className="text-[11px] font-medium leading-none select-none text-[#C2CCDE]">Video</span>
+                <span className="text-[11px] font-medium leading-none select-none text-text-muted">Video</span>
               </button>
             </Tooltip>
 
@@ -389,7 +389,7 @@ export default function DesktopControls({
                 e.stopPropagation();
                 setShowCamMenu(prev => !prev);
               }}
-              className="w-5.5 h-full flex items-center justify-center rounded-lg hover:bg-white/10 text-[#C2CCDE]/50 hover:text-white transition-colors cursor-pointer"
+              className="w-5.5 h-full flex items-center justify-center rounded-lg hover:bg-elevated-hi text-text-faint hover:text-text transition-colors cursor-pointer"
             >
               <IconChevronUp className="w-3.5 h-3.5" />
             </button>
@@ -397,9 +397,9 @@ export default function DesktopControls({
 
           {/* Camera selector menu */}
           {showCamMenu && (
-            <div className="absolute bottom-[68px] left-0 w-64 bg-[#0b0f19]/95 border border-white/10 rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5 text-[#C2CCDE] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
-              <div className="px-3 py-1.5 border-b border-white/5 select-none text-left">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#C2CCDE]/40">Select Camera</span>
+            <div className="absolute bottom-[68px] left-0 w-64 bg-shell/95 border border-hairline rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5 text-text-muted z-[200] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
+              <div className="px-3 py-1.5 border-b border-hairline-soft select-none text-left">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-faint">Select Camera</span>
               </div>
               <div className="max-h-48 overflow-y-auto flex flex-col gap-0.5">
                 {videoDevices.map((device) => (
@@ -410,14 +410,14 @@ export default function DesktopControls({
                       setShowCamMenu(false);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer text-left text-xs font-semibold select-none ${
-                      activeVideoId === device.deviceId ? 'text-indigo-400 font-bold bg-indigo-500/10' : 'text-[#C2CCDE]'
+                      activeVideoId === device.deviceId ? 'text-accent font-bold bg-accent/10' : 'text-text-muted'
                     }`}
                   >
                     <span className="truncate">{device.label || `Camera ${device.deviceId.slice(0, 5)}`}</span>
                   </button>
                 ))}
                 {videoDevices.length === 0 && (
-                  <span className="px-3 py-2 text-xs text-[#C2CCDE]/40">No cameras found</span>
+                  <span className="px-3 py-2 text-xs text-text-faint">No cameras found</span>
                 )}
               </div>
             </div>
@@ -440,10 +440,10 @@ export default function DesktopControls({
               onClick={toggleScreenShare}
               className={`w-[72px] h-[60px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer ${
                 !isScreenShareAllowed
-                  ? 'opacity-45 cursor-not-allowed text-[#C2CCDE]/30 border-transparent bg-transparent'
+                  ? 'opacity-45 cursor-not-allowed text-text-faint border-transparent bg-transparent'
                   : isScreenShareEnabled
-                  ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30 font-semibold'
-                  : 'text-[#C2CCDE] border-transparent bg-transparent hover:bg-white/10 cursor-pointer'
+                  ? 'text-accent bg-accent/10 border-accent/30 font-semibold'
+                  : 'text-text-muted border-transparent bg-transparent hover:bg-elevated-hi cursor-pointer'
               }`}
             >
               <svg
@@ -481,7 +481,7 @@ export default function DesktopControls({
             </button>
           </Tooltip>
           {!isScreenShareAllowed && (
-            <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-red-600 rounded-full flex items-center justify-center text-white border border-[#090d1a] shadow-md z-10">
+            <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-red-600 rounded-full flex items-center justify-center text-on-accent border border-[#090d1a] shadow-md z-10">
               <IconLock className="w-2.5 h-2.5" />
             </span>
           )}
@@ -504,8 +504,8 @@ export default function DesktopControls({
               onClick={toggleWhiteboard}
               className={`w-[72px] h-[60px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer ${
                 showWhiteboard
-                  ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30 font-semibold'
-                  : 'text-[#C2CCDE] border-transparent bg-transparent hover:bg-white/10'
+                  ? 'text-accent bg-accent/10 border-accent/30 font-semibold'
+                  : 'text-text-muted border-transparent bg-transparent hover:bg-elevated-hi'
               }`}
             >
               {showWhiteboard ? (
@@ -517,7 +517,7 @@ export default function DesktopControls({
             </button>
           </Tooltip>
           {!isWhiteboardAllowed && (
-            <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#d97706] rounded-full flex items-center justify-center text-white border border-[#090d1a] shadow-md z-10">
+            <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#d97706] rounded-full flex items-center justify-center text-text border border-[#090d1a] shadow-md z-10">
               <IconLock className="w-2.5 h-2.5" />
             </span>
           )}
@@ -530,8 +530,8 @@ export default function DesktopControls({
               onClick={() => setShowLayoutMenu(!showLayoutMenu)}
               className={`w-[72px] h-[60px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer ${
                 showLayoutMenu
-                  ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30 font-semibold'
-                  : 'text-[#C2CCDE] border-transparent bg-transparent hover:bg-white/10'
+                  ? 'text-accent bg-accent/10 border-accent/30 font-semibold'
+                  : 'text-text-muted border-transparent bg-transparent hover:bg-elevated-hi'
               }`}
             >
               <IconLayoutDashboard className="w-6 h-6" />
@@ -541,9 +541,9 @@ export default function DesktopControls({
 
           {/* Adjust View Dropdown Menu */}
           {showLayoutMenu && (
-            <div className="absolute bottom-[68px] left-1/2 -translate-x-1/2 w-72 bg-[#0b0f19]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl p-2.5 flex flex-col gap-1 text-[#C2CCDE] z-[300] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
-              <div className="px-3 py-1.5 border-b border-white/5 select-none text-left">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#C2CCDE]/40">Adjust view</span>
+            <div className="absolute bottom-[68px] left-1/2 -translate-x-1/2 w-72 bg-shell/95 backdrop-blur-md border border-hairline rounded-2xl shadow-2xl p-2.5 flex flex-col gap-1 text-text-muted z-[300] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
+              <div className="px-3 py-1.5 border-b border-hairline-soft select-none text-left">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-faint">Adjust view</span>
               </div>
 
               <div className="grid grid-cols-2 gap-1.5 pt-1">
@@ -553,7 +553,7 @@ export default function DesktopControls({
                     setShowLayoutMenu(false);
                   }}
                   className={`flex flex-col items-center gap-1.5 px-2.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-center text-xs font-semibold select-none ${
-                    layoutMode === 'auto' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                    layoutMode === 'auto' ? 'text-accent bg-accent/10' : 'text-text-muted'
                   }`}
                 >
                   <IconTableSpark className="w-4 h-4" />
@@ -566,7 +566,7 @@ export default function DesktopControls({
                     setShowLayoutMenu(false);
                   }}
                   className={`flex flex-col items-center gap-1.5 px-2.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-center text-xs font-semibold select-none ${
-                    layoutMode === 'tiled' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                    layoutMode === 'tiled' ? 'text-accent bg-accent/10' : 'text-text-muted'
                   }`}
                 >
                   <IconLayoutGrid className="w-4 h-4" />
@@ -579,7 +579,7 @@ export default function DesktopControls({
                     setShowLayoutMenu(false);
                   }}
                   className={`flex flex-col items-center gap-1.5 px-2.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-center text-xs font-semibold select-none ${
-                    layoutMode === 'sidebar' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                    layoutMode === 'sidebar' ? 'text-accent bg-accent/10' : 'text-text-muted'
                   }`}
                 >
                   <IconLayoutSidebarRight className="w-4 h-4" />
@@ -596,10 +596,10 @@ export default function DesktopControls({
                   }}
                   className={`flex flex-col items-center gap-1.5 px-2.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-center text-xs font-semibold select-none ${
                     !showSplitLayout
-                      ? 'opacity-40 cursor-not-allowed text-[#C2CCDE]/50'
+                      ? 'opacity-40 cursor-not-allowed text-text-faint'
                       : layoutMode === 'focus'
-                      ? 'text-indigo-400 bg-indigo-500/10 cursor-pointer'
-                      : 'text-[#C2CCDE] cursor-pointer'
+                      ? 'text-accent bg-accent/10 cursor-pointer'
+                      : 'text-text-muted cursor-pointer'
                   }`}
                   title={!showSplitLayout ? 'Focus View (Only available during presentations)' : ''}
                 >
@@ -618,8 +618,8 @@ export default function DesktopControls({
               onClick={() => setShowDeviceSettings(!showDeviceSettings)}
               className={`w-[72px] h-[60px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer ${
                 showDeviceSettings
-                  ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30 font-semibold'
-                  : 'text-[#C2CCDE] border-transparent bg-transparent hover:bg-white/10'
+                  ? 'text-accent bg-accent/10 border-accent/30 font-semibold'
+                  : 'text-text-muted border-transparent bg-transparent hover:bg-elevated-hi'
               }`}
             >
               <svg
@@ -651,9 +651,9 @@ export default function DesktopControls({
 
           {/* Devices Settings Menu */}
           {showDeviceSettings && (
-            <div className="absolute bottom-[68px] left-1/2 -translate-x-1/2 w-72 bg-[#0b0f19]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl p-2.5 flex flex-col gap-1 text-[#C2CCDE] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
-              <div className="px-3.5 py-2 border-b border-white/5 flex items-center justify-between select-none">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#C2CCDE]/40">Settings</span>
+            <div className="absolute bottom-[68px] left-1/2 -translate-x-1/2 w-72 bg-shell/95 backdrop-blur-md border border-hairline rounded-2xl shadow-2xl p-2.5 flex flex-col gap-1 text-text-muted z-[200] animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
+              <div className="px-3.5 py-2 border-b border-hairline-soft flex items-center justify-between select-none">
+                <span className="text-xs font-bold uppercase tracking-wider text-text-faint">Settings</span>
                 {isTeacher && (
                   <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold uppercase select-none">
                     Teacher Mode
@@ -663,13 +663,13 @@ export default function DesktopControls({
 
               {/* Audio Source Select */}
               <div className="px-3.5 py-2 flex flex-col gap-1.5">
-                <span className="text-[10px] font-bold text-[#C2CCDE]/45 uppercase select-none text-left">
+                <span className="text-[10px] font-bold text-text-faint uppercase select-none text-left">
                   Microphone Source
                 </span>
                 <select
                   value={activeAudioId}
                   onChange={(e) => setActiveAudioDevice(e.target.value)}
-                  className="w-full bg-[#161a26] border border-white/10 hover:border-white/20 text-white rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none font-sans font-semibold pr-8"
+                  className="w-full bg-shell border border-hairline hover:border-hairline text-text rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none font-sans font-semibold pr-8"
                 >
                   {audioDevices.map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>
@@ -680,14 +680,14 @@ export default function DesktopControls({
               </div>
 
               {/* Video Source Select */}
-              <div className="px-3.5 py-2 flex flex-col gap-1.5 border-b border-white/5 pb-3">
-                <span className="text-[10px] font-bold text-[#C2CCDE]/45 uppercase select-none text-left">
+              <div className="px-3.5 py-2 flex flex-col gap-1.5 border-b border-hairline-soft pb-3">
+                <span className="text-[10px] font-bold text-text-faint uppercase select-none text-left">
                   Camera Source
                 </span>
                 <select
                   value={activeVideoId}
                   onChange={(e) => setActiveVideoDevice(e.target.value)}
-                  className="w-full bg-[#161a26] border border-white/10 hover:border-white/20 text-white rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none font-sans font-semibold pr-8"
+                  className="w-full bg-shell border border-hairline hover:border-hairline text-text rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none font-sans font-semibold pr-8"
                 >
                   {videoDevices.map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>
@@ -704,7 +704,7 @@ export default function DesktopControls({
                     <a
                       href={exportedPdfUrl}
                       download={`${roomName}_notes.pdf`}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-on-accent text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer"
                     >
                       Download Board PDF
                     </a>
@@ -715,7 +715,7 @@ export default function DesktopControls({
                         setShowDeviceSettings(false);
                       }}
                       disabled={isExporting}
-                      className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer"
+                      className="w-full py-2.5 bg-accent hover:bg-accent text-on-accent text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer"
                     >
                       Export Board to PDF
                     </button>
@@ -730,7 +730,7 @@ export default function DesktopControls({
         <Tooltip content={isTeacher ? 'End class session' : 'Leave classroom'}>
           <button
             onClick={onLeave}
-            className="w-[60px] h-[60px] rounded-full border border-transparent flex items-center justify-center transition-all cursor-pointer text-white bg-red-600 hover:bg-red-500 shadow-md"
+            className="w-[60px] h-[60px] rounded-full border border-transparent flex items-center justify-center transition-all cursor-pointer text-on-accent bg-red-600 hover:bg-red-500 shadow-md"
           >
             <IconPhone className="w-6.5 h-6.5 transform rotate-[135deg]" />
           </button>
@@ -745,8 +745,8 @@ export default function DesktopControls({
             onClick={() => setActiveRightPanelTab(activeRightPanelTab === 'chat' ? null : 'chat')}
             className={`w-[72px] h-[60px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer ${
               activeRightPanelTab === 'chat'
-                ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30 font-semibold'
-                : 'text-[#C2CCDE] border-transparent bg-transparent hover:bg-white/10'
+                ? 'text-accent bg-accent/10 border-accent/30 font-semibold'
+                : 'text-text-muted border-transparent bg-transparent hover:bg-elevated-hi'
             }`}
           >
             <svg
@@ -803,8 +803,8 @@ export default function DesktopControls({
             }
             className={`w-[72px] h-[60px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer ${
               activeRightPanelTab === 'participants'
-                ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30 font-semibold'
-                : 'text-[#C2CCDE] border-transparent bg-transparent hover:bg-white/10'
+                ? 'text-accent bg-accent/10 border-accent/30 font-semibold'
+                : 'text-text-muted border-transparent bg-transparent hover:bg-elevated-hi'
             }`}
           >
             <svg

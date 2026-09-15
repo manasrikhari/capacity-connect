@@ -276,7 +276,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
           <button
             onClick={() => handleToolClick('select')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              currentTool === 'select' ? 'bg-accent text-white shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
+              currentTool === 'select' ? 'bg-accent text-on-accent shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
             }`}
           >
             <MousePointer className="w-5 h-5" strokeWidth={strokeWidth} />
@@ -288,7 +288,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
           <button
             onClick={() => handleToolClick('hand')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              currentTool === 'hand' ? 'bg-accent text-white shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
+              currentTool === 'hand' ? 'bg-accent text-on-accent shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
             }`}
           >
             <Hand className="w-5 h-5" strokeWidth={strokeWidth} />
@@ -301,7 +301,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
             ref={penButtonRef}
             onClick={() => handleToolClick('draw')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer relative ${
-              isDrawActive ? 'bg-accent text-white shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
+              isDrawActive ? 'bg-accent text-on-accent shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
             }`}
           >
             <IconPencil className="w-5 h-5" strokeWidth={strokeWidth} />
@@ -321,7 +321,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
             ref={highlighterButtonRef}
             onClick={() => handleToolClick('highlight')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer relative ${
-              isHighlightActive ? 'bg-accent text-white shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
+              isHighlightActive ? 'bg-accent text-on-accent shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
             }`}
           >
             <Highlighter className="w-5 h-5" strokeWidth={strokeWidth} />
@@ -340,7 +340,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
           <button
             onClick={() => handleToolClick('eraser')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              currentTool === 'eraser' ? 'bg-accent text-white shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
+              currentTool === 'eraser' ? 'bg-accent text-on-accent shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
             }`}
           >
             <IconEraser className="w-5 h-5" strokeWidth={strokeWidth} />
@@ -352,7 +352,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
           <button
             onClick={() => handleToolClick('text')}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              currentTool === 'text' ? 'bg-accent text-white shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
+              currentTool === 'text' ? 'bg-accent text-on-accent shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
             }`}
           >
             <IconTypography className="w-5 h-5" strokeWidth={strokeWidth} />
@@ -368,7 +368,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
               setShowShapesPopover(prev => !prev);
             }}
             className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              isShapesActive ? 'bg-accent text-white shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
+              isShapesActive ? 'bg-accent text-on-accent shadow-md' : 'text-text/70 hover:bg-surface-hi hover:text-text'
             }`}
           >
             <IconTriangleSquareCircle className="w-5 h-5" strokeWidth={strokeWidth} />
@@ -387,7 +387,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
               <button
                 onClick={() => addHandDrawnPage(editor)}
                 className={isWhiteboardEmpty
-                  ? "w-10 h-10 rounded-lg flex items-center justify-center bg-accent text-white shadow-lg shadow-accent/50 animate-pulse-glow relative z-50 cursor-pointer"
+                  ? "w-10 h-10 rounded-lg flex items-center justify-center bg-accent text-on-accent shadow-lg shadow-accent/50 animate-pulse-glow relative z-50 cursor-pointer"
                   : "w-10 h-10 rounded-lg flex items-center justify-center text-text/70 hover:bg-surface-hi hover:text-text transition-colors cursor-pointer"
                 }
               >
@@ -490,7 +490,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
                     <span className="text-[#0d0d14] text-[10px]">✓</span>
                   )}
                   {c.key !== 'white' && activeColor === c.key && (
-                    <span className="text-white text-[10px]">✓</span>
+                    <span className="text-text text-[10px]">✓</span>
                   )}
                 </button>
               ))}

@@ -131,12 +131,12 @@ export default function ParticipantsTab({
   return (
     <div className="flex-1 overflow-y-auto p-4 flex flex-col font-sans h-full">
       {isLocalTeacher && (
-        <div className="mb-4 p-3.5 bg-[#161a26]/40 border border-white/5 rounded-xl space-y-3 font-sans">
-          <div className="text-[10px] font-bold text-[#C2CCDE]/40 uppercase tracking-wider select-none">
+        <div className="mb-4 p-3.5 bg-shell/40 border border-hairline-soft rounded-xl space-y-3 font-sans">
+          <div className="text-[10px] font-bold text-text-faint uppercase tracking-wider select-none">
             Global Class Permissions
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-white/95">Allow Student Whiteboard</span>
+            <span className="text-xs font-semibold text-text/95">Allow Student Whiteboard</span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -144,11 +144,11 @@ export default function ParticipantsTab({
                 checked={globalWhiteboardAllowed}
                 onChange={() => onToggleGlobalPermission?.('whiteboard')}
               />
-              <div className="w-9 h-5 bg-[#2d3139] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#C2CCDE] after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:after:bg-white"></div>
+              <div className="w-9 h-5 bg-surface-hi peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-border after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#C2CCDE] after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:after:bg-white"></div>
             </label>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-white/95">Allow Student Screen Share</span>
+            <span className="text-xs font-semibold text-text/95">Allow Student Screen Share</span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -156,7 +156,7 @@ export default function ParticipantsTab({
                 checked={globalScreenShareAllowed}
                 onChange={() => onToggleGlobalPermission?.('screenshare')}
               />
-              <div className="w-9 h-5 bg-[#2d3139] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#C2CCDE] after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:after:bg-white"></div>
+              <div className="w-9 h-5 bg-surface-hi peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-border after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#C2CCDE] after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:after:bg-white"></div>
             </label>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function ParticipantsTab({
           return (
             <div
               key={p.sid}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-surface/30 group relative hover:border-white/10 hover:bg-surface-light/20 transition-all duration-150"
+              className="flex items-center justify-between p-2.5 rounded-xl border border-hairline-soft bg-surface/30 group relative hover:border-hairline hover:bg-surface-light/20 transition-all duration-150"
             >
               <div className="flex items-center gap-3 min-w-0">
                 {/* Avatar */}
@@ -191,14 +191,14 @@ export default function ParticipantsTab({
 
                 {/* Name Details */}
                 <div className="flex flex-col min-w-0 font-sans">
-                  <span className="text-sm font-semibold text-white truncate pr-1">{pName}</span>
+                  <span className="text-sm font-semibold text-text truncate pr-1">{pName}</span>
                   {isTeacher && (
                     <span className="text-[9px] text-primary font-bold uppercase tracking-wider leading-none mt-0.5 select-none">
                       Teacher
                     </span>
                   )}
                   {isLocal && (
-                    <span className="text-[9px] text-[#C2CCDE]/40 font-bold uppercase tracking-wider leading-none mt-0.5 select-none">
+                    <span className="text-[9px] text-text-faint font-bold uppercase tracking-wider leading-none mt-0.5 select-none">
                       You
                     </span>
                   )}
@@ -215,7 +215,7 @@ export default function ParticipantsTab({
                       onClick={() => handleMuteToggle(p, 'audio', true)}
                       className={`p-1.5 rounded-lg border transition-all ${
                         p.isMicrophoneEnabled
-                          ? 'text-[#C2CCDE]/60 hover:text-white hover:bg-white/5 border-transparent cursor-pointer'
+                          ? 'text-text-faint hover:text-text hover:bg-elevated border-transparent cursor-pointer'
                           : 'text-red-500 bg-red-500/10 border-red-500/20 opacity-55 cursor-not-allowed'
                       }`}
                     >
@@ -232,7 +232,7 @@ export default function ParticipantsTab({
                     </button>
                   </Tooltip>
                 ) : (
-                  <div className={`p-1.5 rounded-md ${p.isMicrophoneEnabled ? 'text-[#C2CCDE]/40' : 'text-red-500 bg-red-500/10'}`}>
+                  <div className={`p-1.5 rounded-md ${p.isMicrophoneEnabled ? 'text-text-faint' : 'text-red-500 bg-red-500/10'}`}>
                     {p.isMicrophoneEnabled ? (
                       <IconMicrophone className="w-3.5 h-3.5" />
                     ) : (
@@ -249,7 +249,7 @@ export default function ParticipantsTab({
                       onClick={() => handleMuteToggle(p, 'video', true)}
                       className={`p-1.5 rounded-lg border transition-all ${
                         p.isCameraEnabled
-                          ? 'text-[#C2CCDE]/60 hover:text-white hover:bg-white/5 border-transparent cursor-pointer'
+                          ? 'text-text-faint hover:text-text hover:bg-elevated border-transparent cursor-pointer'
                           : 'text-red-500 bg-red-500/10 border-red-500/20 opacity-55 cursor-not-allowed'
                       }`}
                     >
@@ -266,7 +266,7 @@ export default function ParticipantsTab({
                     </button>
                   </Tooltip>
                 ) : (
-                  <div className={`p-1.5 rounded-md ${p.isCameraEnabled ? 'text-[#C2CCDE]/40' : 'text-red-500 bg-red-500/10'}`}>
+                  <div className={`p-1.5 rounded-md ${p.isCameraEnabled ? 'text-text-faint' : 'text-red-500 bg-red-500/10'}`}>
                     {p.isCameraEnabled ? (
                       <IconVideo className="w-3.5 h-3.5" />
                     ) : (
@@ -280,12 +280,12 @@ export default function ParticipantsTab({
                   <div className="relative">
                     <button
                       onClick={() => setActiveDropdownSid(activeDropdownSid === p.sid ? null : p.sid)}
-                      className="w-7 h-7 rounded-md hover:bg-white/10 flex items-center justify-center text-[#C2CCDE]/50 hover:text-white transition-colors cursor-pointer relative"
+                      className="w-7 h-7 rounded-md hover:bg-elevated-hi flex items-center justify-center text-text-faint hover:text-text transition-colors cursor-pointer relative"
                     >
                       {isLocalTeacher && p.metadata !== 'teacher' && isStudentLocked ? (
                         <div className="relative flex items-center justify-center">
                           <IconDotsVertical className="w-4 h-4" />
-                          <IconLock className="w-2.5 h-2.5 absolute -top-1 -right-1 text-red-500 bg-[#0c101d] rounded-full p-[0.5px]" />
+                          <IconLock className="w-2.5 h-2.5 absolute -top-1 -right-1 text-red-500 bg-shell rounded-full p-[0.5px]" />
                         </div>
                       ) : (
                         <IconDotsVertical className="w-4 h-4" />
@@ -295,11 +295,11 @@ export default function ParticipantsTab({
                     {activeDropdownSid === p.sid && (
                       <div
                         ref={dropdownRef}
-                        className="absolute right-7 top-1 w-48 bg-[#0c101d]/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl p-1 z-40 animate-in fade-in slide-in-from-top-1 duration-100 font-sans"
+                        className="absolute right-7 top-1 w-48 bg-shell/95 backdrop-blur-md border border-hairline rounded-xl shadow-2xl p-1 z-40 animate-in fade-in slide-in-from-top-1 duration-100 font-sans"
                       >
                         <button
                           onClick={() => onStartDM(p)}
-                          className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-white/5 rounded-lg text-[#C2CCDE] transition-colors flex items-center gap-2 cursor-pointer"
+                          className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-elevated rounded-lg text-text-muted transition-colors flex items-center gap-2 cursor-pointer"
                         >
                           <IconMessage className="w-3.5 h-3.5" />
                           Direct Chat
@@ -311,17 +311,17 @@ export default function ParticipantsTab({
                                 onToggleStudentPermission?.(p.identity, 'whiteboard');
                                 setActiveDropdownSid(null);
                               }}
-                              className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-white/5 rounded-lg text-[#C2CCDE] transition-colors flex items-center justify-between cursor-pointer border-t border-white/5 mt-1"
+                              className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-elevated rounded-lg text-text-muted transition-colors flex items-center justify-between cursor-pointer border-t border-hairline-soft mt-1"
                             >
                               <span className="flex items-center gap-2">
-                                <IconLock className="w-3.5 h-3.5 text-zinc-400" />
+                                <IconLock className="w-3.5 h-3.5 text-text-muted" />
                                 Whiteboard Edit
                               </span>
                               <span
                                 className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                                   allowedWhiteboardStudents[p.identity]
                                     ? 'bg-emerald-500/15 text-emerald-400'
-                                    : 'bg-zinc-800 text-zinc-500'
+                                    : 'bg-zinc-800 text-text-muted'
                                 }`}
                               >
                                 {allowedWhiteboardStudents[p.identity] ? 'ON' : 'OFF'}
@@ -332,17 +332,17 @@ export default function ParticipantsTab({
                                 onToggleStudentPermission?.(p.identity, 'screenshare');
                                 setActiveDropdownSid(null);
                               }}
-                              className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-white/5 rounded-lg text-[#C2CCDE] transition-colors flex items-center justify-between cursor-pointer mt-1"
+                              className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-elevated rounded-lg text-text-muted transition-colors flex items-center justify-between cursor-pointer mt-1"
                             >
                               <span className="flex items-center gap-2">
-                                <IconLock className="w-3.5 h-3.5 text-zinc-400" />
+                                <IconLock className="w-3.5 h-3.5 text-text-muted" />
                                 Screen Share
                               </span>
                               <span
                                 className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                                   allowedScreenShareStudents[p.identity]
                                     ? 'bg-emerald-500/15 text-emerald-400'
-                                    : 'bg-zinc-800 text-zinc-500'
+                                    : 'bg-zinc-800 text-text-muted'
                                 }`}
                               >
                                 {allowedScreenShareStudents[p.identity] ? 'ON' : 'OFF'}
@@ -351,7 +351,7 @@ export default function ParticipantsTab({
                             <button
                               onClick={() => handleKickParticipant(p)}
                               disabled={loadingActions[`${p.identity}-kick`]}
-                              className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-red-500/10 rounded-lg text-red-400 transition-colors flex items-center gap-2 cursor-pointer border-t border-white/5 mt-1"
+                              className="w-full text-left px-2.5 py-2 text-xs font-semibold hover:bg-red-500/10 rounded-lg text-red-400 transition-colors flex items-center gap-2 cursor-pointer border-t border-hairline-soft mt-1"
                             >
                               <IconX className="w-3.5 h-3.5 text-red-400" />
                               Kick Student

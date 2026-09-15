@@ -60,7 +60,7 @@ export default function ChatPanel({
   // Determine wrapper classes dynamically based on mobile vs pinned vs unpinned overlay on desktop
   const getWrapperClasses = () => {
     if (isMobile) {
-      return 'fixed inset-0 w-full h-full z-[300] bg-[#090d1a]/98 backdrop-blur-2xl flex flex-col font-sans';
+      return 'fixed inset-0 w-full h-full z-[300] bg-shell backdrop-blur-2xl flex flex-col font-sans';
     }
     if (isPinned) {
       return 'w-80 shrink-0 h-full border-l border-border bg-surface flex flex-col relative z-30 font-sans';
@@ -78,11 +78,11 @@ export default function ChatPanel({
             <button
               onClick={() => setActiveTab(null)}
               type="button"
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[#C2CCDE] hover:text-white hover:bg-white/5 cursor-pointer transition-colors"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:text-text hover:bg-elevated cursor-pointer transition-colors"
             >
               <IconX className="w-5 h-5" />
             </button>
-            <span className="text-base font-bold text-white tracking-wide">
+            <span className="text-base font-bold text-text tracking-wide">
               {getMobileTitle()}
             </span>
           </div>
@@ -97,8 +97,8 @@ export default function ChatPanel({
             type="button"
             className={`flex-1 min-w-[70px] py-3.5 text-xs font-semibold text-center border-b-2 transition-all cursor-pointer ${
               activeTab === 'chat'
-                ? 'border-primary text-white bg-white/[0.02]'
-                : 'border-transparent text-[#C2CCDE] hover:text-white'
+                ? 'border-primary text-text bg-elevated'
+                : 'border-transparent text-text-muted hover:text-text'
             }`}
           >
             Chat
@@ -108,8 +108,8 @@ export default function ChatPanel({
             type="button"
             className={`flex-1 min-w-[70px] py-3.5 text-xs font-semibold text-center border-b-2 transition-all cursor-pointer ${
               activeTab === 'doubt'
-                ? 'border-primary text-white bg-white/[0.02]'
-                : 'border-transparent text-[#C2CCDE] hover:text-white'
+                ? 'border-primary text-text bg-elevated'
+                : 'border-transparent text-text-muted hover:text-text'
             }`}
           >
             {isTeacher ? 'Doubts' : 'Ask AI'}
@@ -119,8 +119,8 @@ export default function ChatPanel({
             type="button"
             className={`flex-1 min-w-[70px] py-3.5 text-xs font-semibold text-center border-b-2 transition-all cursor-pointer ${
               activeTab === 'summary'
-                ? 'border-primary text-white bg-white/[0.02]'
-                : 'border-transparent text-[#C2CCDE] hover:text-white'
+                ? 'border-primary text-text bg-elevated'
+                : 'border-transparent text-text-muted hover:text-text'
             }`}
           >
             Summary
@@ -138,7 +138,7 @@ export default function ChatPanel({
               className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                 activeTab === 'chat'
                   ? 'bg-accent/15 text-accent border border-accent/20'
-                  : 'text-text-muted hover:text-text hover:bg-white/5'
+                  : 'text-text-muted hover:text-text hover:bg-elevated'
               }`}
               title="Chat Messages"
             >
@@ -151,7 +151,7 @@ export default function ChatPanel({
               className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                 activeTab === 'doubt'
                   ? 'bg-accent/15 text-accent border border-accent/20'
-                  : 'text-text-muted hover:text-text hover:bg-white/5'
+                  : 'text-text-muted hover:text-text hover:bg-elevated'
               }`}
               title="Ask AI Doubt Solver"
             >
@@ -164,7 +164,7 @@ export default function ChatPanel({
               className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                 activeTab === 'summary'
                   ? 'bg-accent/15 text-accent border border-accent/20'
-                  : 'text-text-muted hover:text-text hover:bg-white/5'
+                  : 'text-text-muted hover:text-text hover:bg-elevated'
               }`}
               title="Rolling Class Summary"
             >
@@ -181,7 +181,7 @@ export default function ChatPanel({
               className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
                 isPinned 
                   ? 'bg-accent/15 text-accent border border-accent/20 hover:bg-accent/20' 
-                  : 'text-text-muted hover:text-text hover:bg-white/5'
+                  : 'text-text-muted hover:text-text hover:bg-elevated'
               }`}
               title={isPinned ? "Unpin Chat" : "Pin Chat to side"}
             >
@@ -192,7 +192,7 @@ export default function ChatPanel({
             <button
               onClick={() => setActiveTab(null)}
               type="button"
-              className="w-7 h-7 rounded-lg hover:bg-white/5 flex items-center justify-center text-text-muted hover:text-text transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-lg hover:bg-elevated flex items-center justify-center text-text-muted hover:text-text transition-colors cursor-pointer"
               title="Close Panel"
             >
               <IconX className="w-3.5 h-3.5" />

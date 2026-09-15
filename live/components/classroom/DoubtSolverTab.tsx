@@ -335,15 +335,15 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 	};
 
 	return (
-		<div className="flex flex-col h-full overflow-hidden bg-[#090d1a]/40 text-slate-100 font-sans">
+		<div className="flex flex-col h-full overflow-hidden bg-shell text-text font-sans">
 			{/* Top Header */}
-			<div className="p-4 border-b border-white/5 flex items-center justify-between bg-surface/30">
-				<h4 className="font-semibold text-xs text-white/80 uppercase tracking-wider">
+			<div className="p-4 border-b border-hairline-soft flex items-center justify-between bg-surface/30">
+				<h4 className="font-semibold text-xs text-text/80 uppercase tracking-wider">
 					{isTeacher ? 'Live Student Doubts Feed' : 'AI Classroom Doubt Solver'}
 				</h4>
 				<button
 					onClick={fetchDoubtsHistory}
-					className="p-1.5 rounded-lg hover:bg-white/5 text-[#C2CCDE] hover:text-white transition-colors cursor-pointer"
+					className="p-1.5 rounded-lg hover:bg-elevated text-text-muted hover:text-text transition-colors cursor-pointer"
 					title="Refresh doubt list"
 				>
 					<IconRefresh className="w-3.5 h-3.5" />
@@ -356,30 +356,30 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 				{!isStreaming && doubts.length === 0 && !isLoadingHistory && (
 					<div className="space-y-4 my-2">
 						{/* Welcome Message */}
-						<div className="flex flex-col items-center justify-center text-center p-6 border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
-							<IconAlertCircle className="w-8 h-8 text-indigo-400/50 mb-3 animate-pulse" />
-							<h5 className="font-semibold text-sm text-white/80">Your Private AI Study Assistant</h5>
-							<p className="text-xs text-[#C2CCDE]/55 max-w-xs mt-1 leading-relaxed">
+						<div className="flex flex-col items-center justify-center text-center p-6 border border-dashed border-hairline-soft rounded-2xl bg-elevated">
+							<IconAlertCircle className="w-8 h-8 text-accent/50 mb-3 animate-pulse" />
+							<h5 className="font-semibold text-sm text-text/80">Your Private AI Study Assistant</h5>
+							<p className="text-xs text-text-faint max-w-xs mt-1 leading-relaxed">
 								Ask questions about class concepts, slides, or topics. Your conversation is 100% private.
 							</p>
 						</div>
 
 						{/* Instructions Card */}
-						<div className="p-5 rounded-2xl bg-indigo-500/[0.02] border border-indigo-500/10 space-y-3.5 shadow-sm">
-							<h6 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+						<div className="p-5 rounded-2xl bg-accent/[0.02] border border-indigo-500/10 space-y-3.5 shadow-sm">
+							<h6 className="text-xs font-bold text-accent uppercase tracking-wider">
 								How to use the Doubt Solver
 							</h6>
-							<ul className="space-y-3 text-xs text-[#C2CCDE] leading-relaxed">
+							<ul className="space-y-3 text-xs text-text-muted leading-relaxed">
 								<li className="flex items-start gap-2.5">
-									<span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 font-bold text-[10px] shrink-0 mt-0.5">1</span>
+									<span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent/10 text-accent font-bold text-[10px] shrink-0 mt-0.5">1</span>
 									<span><strong>Type your doubt</strong> in the input field at the bottom of the tab.</span>
 								</li>
 								<li className="flex items-start gap-2.5">
-									<span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 font-bold text-[10px] shrink-0 mt-0.5">2</span>
-									<span><strong>Add optional context</strong>: Click <IconPhoto className="w-3.5 h-3.5 inline mx-0.5 text-indigo-300" /> to upload an image from your device, or click <IconCamera className="w-3.5 h-3.5 inline mx-0.5 text-indigo-300" /> to take a snapshot of the whiteboard.</span>
+									<span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent/10 text-accent font-bold text-[10px] shrink-0 mt-0.5">2</span>
+									<span><strong>Add optional context</strong>: Click <IconPhoto className="w-3.5 h-3.5 inline mx-0.5 text-accent" /> to upload an image from your device, or click <IconCamera className="w-3.5 h-3.5 inline mx-0.5 text-accent" /> to take a snapshot of the whiteboard.</span>
 								</li>
 								<li className="flex items-start gap-2.5">
-									<span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 font-bold text-[10px] shrink-0 mt-0.5">3</span>
+									<span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent/10 text-accent font-bold text-[10px] shrink-0 mt-0.5">3</span>
 									<span><strong>Submit and stream</strong>: Hit send and the AI will read the class transcript, notes, and screenshot to stream a context-aware answer.</span>
 								</li>
 							</ul>
@@ -389,7 +389,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 
 				{isLoadingHistory ? (
 					<div className="flex justify-center items-center py-12">
-						<IconLoader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+						<IconLoader2 className="w-6 h-6 text-accent animate-spin" />
 					</div>
 				) : (
 					<div className="space-y-6">
@@ -413,7 +413,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 							}
 
 							return (
-								<div key={d.id} className="space-y-4 pb-4 border-b border-white/5 last:border-0">
+								<div key={d.id} className="space-y-4 pb-4 border-b border-hairline-soft last:border-0">
 									{/* User Question (Right-aligned bubble + Floating image above) */}
 									<div className="flex flex-col items-end space-y-2 max-w-[85%] ml-auto">
 										{imgs.length > 0 && (
@@ -421,26 +421,26 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 												{imgs.map((imgUrl, idx) => (
 													<div
 														key={idx}
-														className="relative group w-32 aspect-video rounded-lg overflow-hidden border border-white/10 cursor-pointer shadow-md"
+														className="relative group w-32 aspect-video rounded-lg overflow-hidden border border-hairline cursor-pointer shadow-md"
 														onClick={() => setSelectedImage(imgUrl)}
 													>
 														<img src={imgUrl} alt={`Attachment ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" />
 														<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-															<IconMaximize className="w-4 h-4 text-white" />
+															<IconMaximize className="w-4 h-4 text-text" />
 														</div>
 													</div>
 												))}
 											</div>
 										)}
-										<div className="px-4 py-2.5 bg-white/[0.06] border border-white/5 rounded-2xl rounded-tr-none text-white text-xs leading-relaxed whitespace-pre-wrap">
+										<div className="px-4 py-2.5 bg-elevated-hi border border-hairline-soft rounded-2xl rounded-tr-none text-text text-xs leading-relaxed whitespace-pre-wrap">
 											{d.doubt_text}
 										</div>
 									</div>
 
 									{/* AI Answer (Left-aligned, directly on bg, no card) */}
 									<div className="space-y-2 pl-2">
-										<div className="flex items-center justify-between text-[9px] text-[#C2CCDE]/35">
-											<span className="font-bold text-indigo-400/80">AI DOUBT SOLVER</span>
+										<div className="flex items-center justify-between text-[9px] text-text-faint">
+											<span className="font-bold text-accent/80">AI DOUBT SOLVER</span>
 											<span>
 												{new Date(d.timestamp + ' UTC').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
 											</span>
@@ -448,10 +448,10 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 
 										{/* Collapsible thought process (rendered with markdown/LaTeX) */}
 										{hasThinking && (
-											<div className="my-2 p-2 bg-slate-950/20 border border-white/5 rounded-lg">
+											<div className="my-2 p-2 bg-slate-950/20 border border-hairline-soft rounded-lg">
 												<button
 													onClick={() => setExpandedThinking(prev => ({ ...prev, [d.id]: !prev[d.id] }))}
-													className="flex items-center gap-1 text-[9px] font-bold text-indigo-400/70 hover:text-indigo-400 transition-colors select-none"
+													className="flex items-center gap-1 text-[9px] font-bold text-accent/70 hover:text-accent transition-colors select-none"
 												>
 													{isThinkingOpen ? (
 														<IconChevronDown className="w-3.5 h-3.5" />
@@ -461,7 +461,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 													<span>THOUGHT PROCESS</span>
 												</button>
 												{isThinkingOpen && (
-													<div className="mt-2 pl-3 border-l border-white/10 text-[10px] text-slate-400 font-mono">
+													<div className="mt-2 pl-3 border-l border-hairline text-[10px] text-text-muted font-mono">
 														<MarkdownRenderer content={localThinking[d.id]} />
 													</div>
 												)}
@@ -469,7 +469,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 										)}
 
 										{/* Final solved answer */}
-										<div className="text-slate-100 text-xs leading-relaxed">
+										<div className="text-text text-xs leading-relaxed">
 											<MarkdownRenderer content={d.answer} />
 										</div>
 									</div>
@@ -479,7 +479,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 
 						{/* Render Active Streaming Doubt */}
 						{isStreaming && activeDoubt && (
-							<div className="space-y-4 pt-2 pb-6 border-b border-white/5">
+							<div className="space-y-4 pt-2 pb-6 border-b border-hairline-soft">
 								{/* User Question (Right-aligned bubble + Floating images above) */}
 								<div className="flex flex-col items-end space-y-2 max-w-[85%] ml-auto">
 									{activeDoubt.screenshots && activeDoubt.screenshots.length > 0 && (
@@ -487,18 +487,18 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 											{activeDoubt.screenshots.map((imgUrl, idx) => (
 												<div
 													key={idx}
-													className="relative group w-32 aspect-video rounded-lg overflow-hidden border border-white/10 cursor-pointer shadow-md"
+													className="relative group w-32 aspect-video rounded-lg overflow-hidden border border-hairline cursor-pointer shadow-md"
 													onClick={() => setSelectedImage(imgUrl)}
 												>
 													<img src={imgUrl} alt={`Screenshot ${idx + 1}`} className="w-full h-full object-cover" />
 													<div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
-														<IconMaximize className="w-4 h-4 text-white" />
+														<IconMaximize className="w-4 h-4 text-text" />
 													</div>
 												</div>
 											))}
 										</div>
 									)}
-									<div className="px-4 py-2.5 bg-white/[0.06] border border-white/5 rounded-2xl rounded-tr-none text-white text-xs leading-relaxed whitespace-pre-wrap">
+									<div className="px-4 py-2.5 bg-elevated-hi border border-hairline-soft rounded-2xl rounded-tr-none text-text text-xs leading-relaxed whitespace-pre-wrap">
 										{activeDoubt.text}
 									</div>
 								</div>
@@ -507,7 +507,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 								<div className="space-y-3 pl-2">
 									{/* Placeholder row (always at top) */}
 									{(streamingPhase === 'context' || streamingPhase === 'thinking') && (
-										<div className="flex items-center gap-2 py-1 text-xs text-indigo-400 font-medium italic animate-pulse">
+										<div className="flex items-center gap-2 py-1 text-xs text-accent font-medium italic animate-pulse">
 											<IconLoader2 className="w-3.5 h-3.5 animate-spin" />
 											<span>
 												{streamingPhase === 'context' ? 'Reading classroom context...' : 'Thinking deeply...'}
@@ -517,10 +517,10 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 
 									{/* Thought Process (active stream) */}
 									{streamedThinking && (
-										<div className="my-2 p-2 bg-slate-950/20 border border-white/5 rounded-lg">
+										<div className="my-2 p-2 bg-slate-950/20 border border-hairline-soft rounded-lg">
 											<button
 												onClick={() => setActiveThinkingExpanded(!activeThinkingExpanded)}
-												className="flex items-center gap-1 text-[9px] font-bold text-indigo-400/70 hover:text-indigo-400 transition-colors select-none"
+												className="flex items-center gap-1 text-[9px] font-bold text-accent/70 hover:text-accent transition-colors select-none"
 											>
 												{activeThinkingExpanded ? (
 													<IconChevronDown className="w-3.5 h-3.5" />
@@ -530,7 +530,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 												<span>THOUGHT PROCESS</span>
 											</button>
 											{activeThinkingExpanded && (
-												<div className="mt-2 pl-3 border-l border-white/10 text-[10px] text-slate-400 font-mono">
+												<div className="mt-2 pl-3 border-l border-hairline text-[10px] text-text-muted font-mono">
 													<MarkdownRenderer content={streamedThinking} />
 												</div>
 											)}
@@ -539,7 +539,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 
 									{/* Streaming Solution */}
 									{streamedAnswer && (
-										<div className="text-slate-100 text-xs leading-relaxed">
+										<div className="text-text text-xs leading-relaxed">
 											<MarkdownRenderer content={streamedAnswer} />
 										</div>
 									)}
@@ -553,7 +553,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 			</div>
 
 			{/* Bottom Input Area */}
-			<form onSubmit={handleSubmitDoubt} className="p-3 border-t border-white/5 bg-surface/20 space-y-3">
+			<form onSubmit={handleSubmitDoubt} className="p-3 border-t border-hairline-soft bg-surface/20 space-y-3">
 				{/* AI Context Pill & Thinking Mode Toggle */}
 				<div className="flex items-center justify-between">
 					<span className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-hi border border-border rounded-full text-[10px] font-bold text-text-muted font-sans select-none">
@@ -567,7 +567,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 					</span>
 
 					{/* Toggle for Thinking Mode */}
-					<label className="relative inline-flex items-center cursor-pointer select-none text-[10px] font-semibold text-[#C2CCDE]/70 hover:text-white transition-colors gap-1.5">
+					<label className="relative inline-flex items-center cursor-pointer select-none text-[10px] font-semibold text-text-faint hover:text-text transition-colors gap-1.5">
 						<span>Thinking Mode</span>
 						<div className="relative">
 							<input 
@@ -576,7 +576,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 								onChange={(e) => setEnableThinking(e.target.checked)} 
 								className="sr-only peer" 
 							/>
-							<div className="w-7 h-4 bg-white/10 rounded-full peer peer-checked:bg-indigo-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-3"></div>
+							<div className="w-7 h-4 bg-elevated-hi rounded-full peer peer-checked:bg-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-3"></div>
 						</div>
 					</label>
 				</div>
@@ -588,12 +588,12 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 							<div key={idx} className="relative pt-1.5 pr-1.5 shrink-0">
 								<div
 									onClick={() => setSelectedImage(img)}
-									className="relative w-28 h-16 rounded-xl border border-white/10 overflow-hidden shadow-lg cursor-pointer group transition-colors"
+									className="relative w-28 h-16 rounded-xl border border-hairline overflow-hidden shadow-lg cursor-pointer group transition-colors"
 									title="Click to view full screen"
 								>
 									<img src={img} alt="Doubt attachment preview" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform" />
 									<div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-										<IconMaximize className="w-4 h-4 text-white" />
+										<IconMaximize className="w-4 h-4 text-text" />
 									</div>
 								</div>
 								<button
@@ -602,7 +602,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 										e.stopPropagation();
 										setAttachedImages((prev) => prev.filter((_, i) => i !== idx));
 									}}
-									className="absolute top-0 right-0 bg-red-500 hover:bg-red-650 text-white rounded-full p-0.5 shadow-sm transition-colors cursor-pointer z-10 animate-in fade-in duration-100"
+									className="absolute top-0 right-0 bg-red-500 hover:bg-red-650 text-on-accent rounded-full p-0.5 shadow-sm transition-colors cursor-pointer z-10 animate-in fade-in duration-100"
 									title="Remove image"
 								>
 									<IconTrash className="w-3.5 h-3.5" />
@@ -617,7 +617,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 					<button
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
-						className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[#C2CCDE] hover:text-white transition-colors cursor-pointer"
+						className="p-3 rounded-xl bg-elevated hover:bg-elevated-hi border border-hairline-soft text-text-muted hover:text-text transition-colors cursor-pointer"
 						title="Attach screenshot"
 					>
 						<IconPhoto className="w-4 h-4" />
@@ -636,11 +636,11 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 						type="button"
 						onClick={handleCaptureWhiteboard}
 						disabled={isCapturing}
-						className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[#C2CCDE] hover:text-white transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center"
+						className="p-3 rounded-xl bg-elevated hover:bg-elevated-hi border border-hairline-soft text-text-muted hover:text-text transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center"
 						title="Capture Whiteboard drawing"
 					>
 						{isCapturing ? (
-							<IconLoader2 className="w-4 h-4 animate-spin text-indigo-400" />
+							<IconLoader2 className="w-4 h-4 animate-spin text-accent" />
 						) : (
 							<IconCamera className="w-4 h-4" />
 						)}
@@ -654,14 +654,14 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 						onPaste={handlePaste}
 						placeholder="Type doubt, paste image, or click attachments..."
 						disabled={isStreaming}
-						className="min-w-0 flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/5 focus:border-indigo-500/50 outline-none text-sm text-white placeholder-[#C2CCDE]/30 transition-all font-sans"
+						className="min-w-0 flex-1 px-4 py-2.5 rounded-xl bg-elevated border border-hairline-soft focus:border-indigo-500/50 outline-none text-sm text-text placeholder-[#C2CCDE]/30 transition-all font-sans"
 					/>
 
 					{/* Submit Button */}
 					<button
 						type="submit"
 						disabled={(!doubtText.trim() && attachedImages.length === 0) || isStreaming}
-						className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-50 disabled:bg-[#111827] cursor-pointer flex items-center justify-center"
+						className="p-3 rounded-xl bg-accent hover:bg-accent text-on-accent transition-colors disabled:opacity-50 disabled:bg-surface-hi cursor-pointer flex items-center justify-center"
 					>
 						<IconSend className="w-4 h-4" />
 					</button>
@@ -671,11 +671,11 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 			{/* Fullscreen Image Lightbox Modal */}
 			{selectedImage && (
 				<div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
-					<div className="relative max-w-4xl w-full max-h-[85vh] bg-surface border border-white/10 rounded-2xl overflow-hidden p-2 flex flex-col items-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+					<div className="relative max-w-4xl w-full max-h-[85vh] bg-surface border border-hairline rounded-2xl overflow-hidden p-2 flex flex-col items-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
 						<img src={selectedImage} alt="Attachment Full View" className="max-w-full max-h-[80vh] object-contain rounded-xl" />
 						<button
 							onClick={() => setSelectedImage(null)}
-							className="absolute top-4 right-4 px-3 py-1.5 bg-black/60 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-semibold cursor-pointer text-white"
+							className="absolute top-4 right-4 px-3 py-1.5 bg-black/60 hover:bg-elevated-hi border border-hairline rounded-lg text-xs font-semibold cursor-pointer text-text"
 						>
 							Close View
 						</button>

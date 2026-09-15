@@ -96,10 +96,10 @@ export default function WhiteboardPageControls({ editor, isTeacher, isWritable }
       <div 
         onPointerDown={handlePointerDown}
         style={{ touchAction: 'none' }}
-        className="flex items-center gap-1.5 text-[11px] font-sans font-bold tracking-wider uppercase text-zinc-500 pl-1.5 pr-2.5 border-r border-zinc-300 h-6 select-none cursor-grab active:cursor-grabbing touch-none"
+        className="flex items-center gap-1.5 text-[11px] font-sans font-bold tracking-wider uppercase text-text-muted pl-1.5 pr-2.5 border-r border-zinc-300 h-6 select-none cursor-grab active:cursor-grabbing touch-none"
         title="Drag to reposition"
       >
-        <IconGripVertical className="w-3.5 h-3.5 text-zinc-400" />
+        <IconGripVertical className="w-3.5 h-3.5 text-text-muted" />
         Pages
       </div>
       
@@ -123,7 +123,7 @@ export default function WhiteboardPageControls({ editor, isTeacher, isWritable }
       <label className={`flex items-center gap-1.5 px-3 py-1.5 bg-[#3182ed] hover:bg-[#256ec7] text-white rounded-xl text-xs font-semibold transition-all border border-[#3182ed]/25 shadow-sm select-none ${isImportingPdf ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
         {isImportingPdf ? (
           <>
-            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-border border-t-transparent rounded-full animate-spin" />
             <span>
               {pdfImportProgress.total > 0
                 ? `Importing ${pdfImportProgress.current}/${pdfImportProgress.total}`
@@ -132,7 +132,7 @@ export default function WhiteboardPageControls({ editor, isTeacher, isWritable }
           </>
         ) : (
           <>
-            <IconUpload className="w-3.5 h-3.5 text-white" />
+            <IconUpload className="w-3.5 h-3.5 text-text" />
             <span>Import PDF/Img</span>
           </>
         )}

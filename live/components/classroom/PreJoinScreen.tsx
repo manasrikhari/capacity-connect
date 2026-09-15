@@ -201,15 +201,15 @@ export default function PreJoinScreen({
   const displayTeacherName = teacherName || 'Teacher';
 
   return (
-    <div className="h-dvh w-screen bg-background text-white flex flex-col relative overflow-hidden font-sans select-none">
+    <div className="h-dvh w-screen bg-background text-text flex flex-col relative overflow-hidden font-sans select-none">
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[140px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-accent/5 blur-[140px]" />
       </div>
 
       {/* Header bar */}
-      <header className="h-16 w-full border-b border-white/5 flex items-center px-8 bg-[#030712]/40 backdrop-blur-md z-10 shrink-0">
+      <header className="h-16 w-full border-b border-hairline-soft flex items-center px-8 bg-shell/40 backdrop-blur-md z-10 shrink-0">
         <span className="text-[#fff] text-sm font-semibold tracking-wider">
           OpenGrapes Live
         </span>
@@ -220,20 +220,20 @@ export default function PreJoinScreen({
         {/* Preview & Device Setup */}
         <div className="w-full flex-1 min-h-0 flex flex-col items-center justify-center gap-4 text-center">
           <div className="space-y-2">
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#E2E8F0] mx-auto shrink-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-text mx-auto shrink-0">
               Joining{" "}
               <span className="text-[#C3B0DD] font-extrabold">{displayTeacherName}</span>
               's live classroom
             </h1>
             <p className="text-sm text-foreground/50">
               Welcome,{" "}
-              <span className="font-semibold text-white">{userName}</span>. Set
+              <span className="font-semibold text-text">{userName}</span>. Set
               up your devices before joining the class.
             </p>
           </div>
 
           {/* Self video feed box */}
-          <div className="h-full max-h-[46vh] w-auto max-w-full aspect-video mx-auto rounded-2xl border border-white/10 bg-[#202124] shadow-2xl relative flex items-center justify-center overflow-hidden group shrink min-h-40">
+          <div className="h-full max-h-[46vh] w-auto max-w-full aspect-video mx-auto rounded-2xl border border-hairline bg-[#202124] shadow-2xl relative flex items-center justify-center overflow-hidden group shrink min-h-40">
             {!isCamEnabled ? (
               <div className="flex flex-col items-center justify-center text-foreground/20 space-y-3 p-6 select-none">
                 <span className="text-2xl font-semibold text-foreground/60 font-sans">
@@ -261,7 +261,7 @@ export default function PreJoinScreen({
               </div>
             ) : !hasCamPermission ? (
               <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 max-w-md">
-                <div className="w-16 h-16 rounded-full bg-[#A98FCB]/10 border border-[#A98FCB]/20 flex items-center justify-center text-[#A98FCB] animate-pulse">
+                <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-accent animate-pulse">
                   <svg
                     className="w-8 h-8"
                     fill="none"
@@ -276,7 +276,7 @@ export default function PreJoinScreen({
                     />
                   </svg>
                 </div>
-                <p className="text-base font-bold text-[#E2E8F0] leading-relaxed">
+                <p className="text-base font-bold text-text leading-relaxed">
                   Allow permission to access microphone and camera
                 </p>
               </div>
@@ -301,8 +301,8 @@ export default function PreJoinScreen({
               onClick={() => setIsMicEnabled(!isMicEnabled)}
               className={`relative group w-15 h-12 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg ${
                 isMicEnabled
-                  ? "bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]"
-                  : "bg-red-600 hover:bg-red-500 text-white"
+                  ? "bg-surface-hi hover:bg-surface-hi text-text-muted"
+                  : "bg-red-600 hover:bg-red-500 text-on-accent"
               }`}
             >
               <svg
@@ -332,7 +332,7 @@ export default function PreJoinScreen({
                   />
                 )}
               </svg>
-              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-[#1e2230]/95 backdrop-blur border border-white/10 text-white text-xs font-semibold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-75 scale-95 group-hover:scale-100 origin-bottom whitespace-nowrap shadow-xl z-50">
+              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-surface-hi/95 backdrop-blur border border-hairline text-text text-xs font-semibold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-75 scale-95 group-hover:scale-100 origin-bottom whitespace-nowrap shadow-xl z-50">
                 {isMicEnabled ? "Mute Microphone" : "Unmute Microphone"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1e2230]/95" />
               </div>
@@ -343,8 +343,8 @@ export default function PreJoinScreen({
               onClick={() => setIsCamEnabled(!isCamEnabled)}
               className={`relative group w-15 h-12 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg ${
                 isCamEnabled
-                  ? "bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]"
-                  : "bg-red-600 hover:bg-red-500 text-white"
+                  ? "bg-surface-hi hover:bg-surface-hi text-text-muted"
+                  : "bg-red-600 hover:bg-red-500 text-on-accent"
               }`}
             >
               <svg
@@ -385,7 +385,7 @@ export default function PreJoinScreen({
                   />
                 )}
               </svg>
-              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-[#1e2230]/95 backdrop-blur border border-white/10 text-white text-xs font-semibold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-75 scale-95 group-hover:scale-100 origin-bottom whitespace-nowrap shadow-xl z-50">
+              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-surface-hi/95 backdrop-blur border border-hairline text-text text-xs font-semibold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-75 scale-95 group-hover:scale-100 origin-bottom whitespace-nowrap shadow-xl z-50">
                 {isCamEnabled ? "Turn Off Camera" : "Turn On Camera"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1e2230]/95" />
               </div>
@@ -396,8 +396,8 @@ export default function PreJoinScreen({
               onClick={() => setShowDeviceSettings(!showDeviceSettings)}
               className={`relative group w-15 h-12 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg ${
                 showDeviceSettings
-                  ? "bg-primary text-white hover:bg-primary-hover"
-                  : "bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]"
+                  ? "bg-primary text-on-accent hover:bg-primary-hover"
+                  : "bg-surface-hi hover:bg-surface-hi text-text-muted"
               }`}
             >
               <svg
@@ -418,7 +418,7 @@ export default function PreJoinScreen({
                   strokeLinejoin="round"
                 />
               </svg>
-              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-[#1e2230]/95 backdrop-blur border border-white/10 text-white text-xs font-semibold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-75 scale-95 group-hover:scale-100 origin-bottom whitespace-nowrap shadow-xl z-50">
+              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-surface-hi/95 backdrop-blur border border-hairline text-text text-xs font-semibold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-75 scale-95 group-hover:scale-100 origin-bottom whitespace-nowrap shadow-xl z-50">
                 Device settings
                 <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1e2230]/95" />
               </div>
@@ -426,12 +426,12 @@ export default function PreJoinScreen({
 
             {/* Dropdown Menu Card */}
             {showDeviceSettings && (
-              <div className="absolute bottom-14 left-1/2 -translate-x-1/2 w-80 bg-[#0b0f19]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 text-left z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+              <div className="absolute bottom-14 left-1/2 -translate-x-1/2 w-80 bg-shell/95 backdrop-blur-md border border-hairline rounded-2xl shadow-2xl p-4 flex flex-col gap-4 text-left z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                <div className="flex items-center justify-between border-b border-hairline-soft pb-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-text/90">
                     <svg
-                      className="w-4 h-4 text-[#C2CCDE]"
+                      className="w-4 h-4 text-text-muted"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -447,7 +447,7 @@ export default function PreJoinScreen({
                   </div>
                   <button
                     onClick={() => setShowDeviceSettings(false)}
-                    className="text-foreground/40 hover:text-white cursor-pointer"
+                    className="text-foreground/40 hover:text-text cursor-pointer"
                   >
                     <svg
                       className="w-4 h-4"
@@ -467,14 +467,14 @@ export default function PreJoinScreen({
 
                 {/* Microphone Select */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#C2CCDE]/40">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-faint">
                     Microphone
                   </label>
                   <div className="relative">
                     <select
                       value={selectedAudioId}
                       onChange={(e) => setSelectedAudioId(e.target.value)}
-                      className="w-full bg-[#161a26] border border-white/10 hover:border-white/20 text-white rounded-lg px-3 py-2 text-sm outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8"
+                      className="w-full bg-shell border border-hairline hover:border-hairline text-text rounded-lg px-3 py-2 text-sm outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8"
                     >
                       {audioDevices.length === 0 ? (
                         <option value="">No microphones found</option>
@@ -487,7 +487,7 @@ export default function PreJoinScreen({
                         ))
                       )}
                     </select>
-                    <div className="absolute inset-y-0 right-2.5 flex items-center pointer-events-none text-[#C2CCDE]/50">
+                    <div className="absolute inset-y-0 right-2.5 flex items-center pointer-events-none text-text-faint">
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -507,14 +507,14 @@ export default function PreJoinScreen({
 
                 {/* Camera Select */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#C2CCDE]/40">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-faint">
                     Camera
                   </label>
                   <div className="relative">
                     <select
                       value={selectedVideoId}
                       onChange={(e) => setSelectedVideoId(e.target.value)}
-                      className="w-full bg-[#161a26] border border-white/10 hover:border-white/20 text-white rounded-lg px-3 py-2 text-sm outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8"
+                      className="w-full bg-shell border border-hairline hover:border-hairline text-text rounded-lg px-3 py-2 text-sm outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8"
                     >
                       {videoDevices.length === 0 ? (
                         <option value="">No cameras found</option>
@@ -527,7 +527,7 @@ export default function PreJoinScreen({
                         ))
                       )}
                     </select>
-                    <div className="absolute inset-y-0 right-2.5 flex items-center pointer-events-none text-[#C2CCDE]/50">
+                    <div className="absolute inset-y-0 right-2.5 flex items-center pointer-events-none text-text-faint">
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -552,7 +552,7 @@ export default function PreJoinScreen({
           <div className="w-full max-w-md pt-1 z-20 shrink-0">
             <button
               onClick={handleJoinClick}
-              className="w-full py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/40 cursor-pointer flex items-center justify-center gap-2 text-sm"
+              className="w-full py-3 bg-primary hover:bg-primary-hover text-on-accent font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/40 cursor-pointer flex items-center justify-center gap-2 text-sm"
             >
               <span>Join class</span>
             </button>

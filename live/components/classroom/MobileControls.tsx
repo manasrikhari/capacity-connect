@@ -148,8 +148,8 @@ export default function MobileControls({
           onClick={toggleMicrophone}
           className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0 ${
             isMicrophoneEnabled
-              ? 'bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]'
-              : 'bg-red-600 hover:bg-red-500 text-white'
+              ? 'bg-surface-hi hover:bg-surface-hi text-text-muted'
+              : 'bg-red-600 hover:bg-red-500 text-on-accent'
           }`}
         >
           {isMicrophoneEnabled ? (
@@ -164,8 +164,8 @@ export default function MobileControls({
           onClick={toggleCamera}
           className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0 ${
             isCameraEnabled
-              ? 'bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]'
-              : 'bg-red-600 hover:bg-red-500 text-white'
+              ? 'bg-surface-hi hover:bg-surface-hi text-text-muted'
+              : 'bg-red-600 hover:bg-red-500 text-on-accent'
           }`}
         >
           {isCameraEnabled ? (
@@ -183,8 +183,8 @@ export default function MobileControls({
               onClick={() => setActiveRightPanelTab(activeRightPanelTab === 'chat' ? null : 'chat')}
               className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0 ${
                 activeRightPanelTab === 'chat'
-                  ? 'bg-primary text-white'
-                  : 'bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]'
+                  ? 'bg-primary text-on-accent'
+                  : 'bg-surface-hi hover:bg-surface-hi text-text-muted'
               }`}
             >
               <IconMessage className="w-5.5 h-5.5" strokeWidth={1.8} />
@@ -195,8 +195,8 @@ export default function MobileControls({
               onClick={() => setActiveRightPanelTab(activeRightPanelTab === 'doubt' ? null : 'doubt')}
               className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0 ${
                 activeRightPanelTab === 'doubt'
-                  ? 'bg-primary text-white'
-                  : 'bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]'
+                  ? 'bg-primary text-on-accent'
+                  : 'bg-surface-hi hover:bg-surface-hi text-text-muted'
               }`}
             >
               <IconGalaxy className="w-5.5 h-5.5" strokeWidth={1.8} />
@@ -209,8 +209,8 @@ export default function MobileControls({
               onClick={toggleWhiteboard}
               className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0 ${
                 showWhiteboard
-                  ? 'bg-primary text-white'
-                  : 'bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]'
+                  ? 'bg-primary text-on-accent'
+                  : 'bg-surface-hi hover:bg-surface-hi text-text-muted'
               }`}
             >
               {showWhiteboard ? (
@@ -226,10 +226,10 @@ export default function MobileControls({
               onClick={toggleScreenShare}
               className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0 ${
                 !isScreenShareAllowed
-                  ? 'opacity-40 cursor-not-allowed bg-transparent text-[#C2CCDE]/35 border border-white/5 shadow-none'
+                  ? 'opacity-40 cursor-not-allowed bg-transparent text-text-faint border border-hairline-soft shadow-none'
                   : isScreenShareEnabled
-                  ? 'bg-primary text-white'
-                  : 'bg-[#2d3139] hover:bg-[#3b3e45] text-[#C2CCDE]'
+                  ? 'bg-primary text-on-accent'
+                  : 'bg-surface-hi hover:bg-surface-hi text-text-muted'
               }`}
             >
               <svg
@@ -267,8 +267,8 @@ export default function MobileControls({
             onClick={() => setShowDeviceSettings(!showDeviceSettings)}
             className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg ${
               showDeviceSettings
-                ? 'bg-primary text-white'
-                : 'bg-[#2d3139] hover:bg-[#3b3e45] text-white'
+                ? 'bg-primary text-on-accent'
+                : 'bg-surface-hi hover:bg-surface-hi text-text'
             }`}
           >
             <IconDots className="w-5.5 h-5.5" strokeWidth={1.8} />
@@ -276,11 +276,11 @@ export default function MobileControls({
 
           {/* Collapsible Dropdown Settings Menu */}
           {showDeviceSettings && (
-            <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-72 bg-[#0b0f19]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl p-2.5 flex flex-col gap-1 text-[#C2CCDE] z-[300] animate-in fade-in slide-in-from-bottom-2 duration-150 animate-out fade-out duration-150">
+            <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-72 bg-shell/95 backdrop-blur-md border border-hairline rounded-2xl shadow-2xl p-2.5 flex flex-col gap-1 text-text-muted z-[300] animate-in fade-in slide-in-from-bottom-2 duration-150 animate-out fade-out duration-150">
               
               {/* Conditional Items inside Ellipses menu for Students */}
               {!isTeacher && (
-                <div className="flex flex-col gap-1 border-b border-white/5 pb-1">
+                <div className="flex flex-col gap-1 border-b border-hairline-soft pb-1">
                   {/* Student Ellipses Whiteboard Option */}
                   <button
                     onClick={() => {
@@ -288,7 +288,7 @@ export default function MobileControls({
                       setShowDeviceSettings(false);
                     }}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left text-sm font-semibold select-none ${
-                      showWhiteboard ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                      showWhiteboard ? 'text-accent bg-accent/10' : 'text-text-muted'
                     }`}
                   >
                     {showWhiteboard ? (
@@ -308,10 +308,10 @@ export default function MobileControls({
                     }}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left text-sm font-semibold select-none ${
                       !isScreenShareAllowed
-                        ? 'opacity-40 cursor-not-allowed text-[#C2CCDE]/30'
+                        ? 'opacity-40 cursor-not-allowed text-text-faint'
                         : isScreenShareEnabled
-                        ? 'text-indigo-400 bg-indigo-500/10 cursor-pointer'
-                        : 'text-[#C2CCDE] cursor-pointer'
+                        ? 'text-accent bg-accent/10 cursor-pointer'
+                        : 'text-text-muted cursor-pointer'
                     }`}
                   >
                     <svg
@@ -352,7 +352,7 @@ export default function MobileControls({
 
               {/* Conditional Items inside Ellipses menu for Teachers */}
               {isTeacher && (
-                <div className="flex flex-col gap-1 border-b border-white/5 pb-1">
+                <div className="flex flex-col gap-1 border-b border-hairline-soft pb-1">
                   {/* Teacher Ellipses Chat Option */}
                   <button
                     onClick={() => {
@@ -360,7 +360,7 @@ export default function MobileControls({
                       setShowDeviceSettings(false);
                     }}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left text-sm font-semibold select-none ${
-                      activeRightPanelTab === 'chat' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                      activeRightPanelTab === 'chat' ? 'text-accent bg-accent/10' : 'text-text-muted'
                     }`}
                   >
                     <IconMessage className="w-5 h-5" />
@@ -374,7 +374,7 @@ export default function MobileControls({
                       setShowDeviceSettings(false);
                     }}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left text-sm font-semibold select-none ${
-                      activeRightPanelTab === 'doubt' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                      activeRightPanelTab === 'doubt' ? 'text-accent bg-accent/10' : 'text-text-muted'
                     }`}
                   >
                     <IconGalaxy className="w-5 h-5" />
@@ -388,7 +388,7 @@ export default function MobileControls({
                       setShowDeviceSettings(false);
                     }}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left text-sm font-semibold select-none ${
-                      activeRightPanelTab === 'participants' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                      activeRightPanelTab === 'participants' ? 'text-accent bg-accent/10' : 'text-text-muted'
                     }`}
                   >
                     <IconUsers className="w-5 h-5" />
@@ -401,7 +401,7 @@ export default function MobileControls({
               <div className="flex flex-col">
                 <button
                   onClick={() => setShowLayoutMenu(!showLayoutMenu)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left text-sm font-semibold select-none text-[#C2CCDE]"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-elevated transition-colors cursor-pointer text-left text-sm font-semibold select-none text-text-muted"
                 >
                   <div className="flex items-center gap-3">
                     <IconLayoutDashboard className="w-5 h-5" />
@@ -411,14 +411,14 @@ export default function MobileControls({
                 </button>
 
                 {showLayoutMenu && (
-                  <div className="mx-2 mb-2 p-1.5 grid grid-cols-2 gap-1 border-t border-white/5 pt-1.5 bg-black/20 rounded-xl">
+                  <div className="mx-2 mb-2 p-1.5 grid grid-cols-2 gap-1 border-t border-hairline-soft pt-1.5 bg-black/20 rounded-xl">
                     <button
                       onClick={() => {
                         setLayoutMode('auto');
                         setShowDeviceSettings(false);
                       }}
                       className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-center text-xs font-semibold select-none ${
-                        layoutMode === 'auto' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                        layoutMode === 'auto' ? 'text-accent bg-accent/10' : 'text-text-muted'
                       }`}
                     >
                       <IconTableSpark className="w-4 h-4" />
@@ -430,7 +430,7 @@ export default function MobileControls({
                         setShowDeviceSettings(false);
                       }}
                       className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-center text-xs font-semibold select-none ${
-                        layoutMode === 'tiled' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                        layoutMode === 'tiled' ? 'text-accent bg-accent/10' : 'text-text-muted'
                       }`}
                     >
                       <IconLayoutGrid className="w-4 h-4" />
@@ -442,7 +442,7 @@ export default function MobileControls({
                         setShowDeviceSettings(false);
                       }}
                       className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-center text-xs font-semibold select-none ${
-                        layoutMode === 'sidebar' ? 'text-indigo-400 bg-indigo-500/10' : 'text-[#C2CCDE]'
+                        layoutMode === 'sidebar' ? 'text-accent bg-accent/10' : 'text-text-muted'
                       }`}
                     >
                       <IconLayoutSidebarRight className="w-4 h-4" />
@@ -458,10 +458,10 @@ export default function MobileControls({
                       }}
                       className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-center text-xs font-semibold select-none ${
                         !showSplitLayout
-                          ? 'opacity-40 cursor-not-allowed text-[#C2CCDE]/30'
+                          ? 'opacity-40 cursor-not-allowed text-text-faint'
                           : layoutMode === 'focus'
-                          ? 'text-indigo-400 bg-indigo-500/10 cursor-pointer'
-                          : 'text-[#C2CCDE] cursor-pointer'
+                          ? 'text-accent bg-accent/10 cursor-pointer'
+                          : 'text-text-muted cursor-pointer'
                       }`}
                     >
                       <IconRectangle className="w-4 h-4" />
@@ -475,11 +475,11 @@ export default function MobileControls({
               <div className="flex flex-col">
                 <button
                   onClick={() => setShowDevices(!showDevices)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left text-sm font-semibold select-none text-[#C2CCDE]"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-elevated transition-colors cursor-pointer text-left text-sm font-semibold select-none text-text-muted"
                 >
                   <div className="flex items-center gap-3">
                     <svg
-                      className="w-5 h-5 text-[#C2CCDE]"
+                      className="w-5 h-5 text-text-muted"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -503,17 +503,17 @@ export default function MobileControls({
                 </button>
 
                 {showDevices && (
-                  <div className="mx-2 mb-2 p-3 flex flex-col gap-3 border-t border-white/5 pt-3 bg-black/20 rounded-xl">
+                  <div className="mx-2 mb-2 p-3 flex flex-col gap-3 border-t border-hairline-soft pt-3 bg-black/20 rounded-xl">
                     {/* Microphone selector */}
-                    <div className="flex flex-col gap-1 border-b border-white/5 pb-2">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-[#C2CCDE]/50 select-none text-left">
+                    <div className="flex flex-col gap-1 border-b border-hairline-soft pb-2">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-text-faint select-none text-left">
                         Microphone
                       </label>
                       <div className="relative">
                         <select
                           value={activeAudioId}
                           onChange={(e) => setActiveAudioDevice(e.target.value)}
-                          className="w-full bg-[#161a26] border border-white/10 hover:border-white/20 text-white rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8 font-sans font-semibold"
+                          className="w-full bg-shell border border-hairline hover:border-hairline text-text rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8 font-sans font-semibold"
                         >
                           {audioDevices.length === 0 ? (
                             <option value="">No microphones</option>
@@ -530,14 +530,14 @@ export default function MobileControls({
 
                     {/* Camera selector */}
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-[#C2CCDE]/50 select-none text-left">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-text-faint select-none text-left">
                         Camera
                       </label>
                       <div className="relative">
                         <select
                           value={activeVideoId}
                           onChange={(e) => setActiveVideoDevice(e.target.value)}
-                          className="w-full bg-[#161a26] border border-white/10 hover:border-white/20 text-white rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8 font-sans font-semibold"
+                          className="w-full bg-shell border border-hairline hover:border-hairline text-text rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer focus:border-primary/50 transition-colors appearance-none pr-8 font-sans font-semibold"
                         >
                           {videoDevices.length === 0 ? (
                             <option value="">No cameras</option>
@@ -557,12 +557,12 @@ export default function MobileControls({
 
               {/* Publish Notes / Download Notes (Teacher) */}
               {/* {isTeacher && (
-                <div className="flex flex-col gap-1 border-t border-white/5 pt-1.5 mt-1.5">
+                <div className="flex flex-col gap-1 border-t border-hairline-soft pt-1.5 mt-1.5">
                   {exportedPdfUrl ? (
                     <a
                       href={exportedPdfUrl}
                       download={`${roomName}_notes.pdf`}
-                      className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer text-center font-sans"
+                      className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-600 hover:bg-emerald-500 text-on-accent text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer text-center font-sans"
                     >
                       Download Board PDF
                     </a>
@@ -573,11 +573,11 @@ export default function MobileControls({
                         setShowDeviceSettings(false);
                       }}
                       disabled={isExporting}
-                      className="w-full flex items-center justify-center gap-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed font-sans"
+                      className="w-full flex items-center justify-center gap-2 py-2 bg-accent hover:bg-accent text-on-accent text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed font-sans"
                     >
                       {isExporting ? (
                         <>
-                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="w-3.5 h-3.5 border-2 border-border border-t-transparent rounded-full animate-spin" />
                           <span>Publishing Notes...</span>
                         </>
                       ) : (
@@ -595,7 +595,7 @@ export default function MobileControls({
         {/* 6. End Call Button (rotated phone icon) */}
         <button
           onClick={onLeave}
-          className="w-11 h-11 rounded-full bg-red-600 hover:bg-red-500 active:scale-95 text-white flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0"
+          className="w-11 h-11 rounded-full bg-red-600 hover:bg-red-500 active:scale-95 text-on-accent flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg shrink-0"
         >
           <IconPhone className="w-5.5 h-5.5 transform rotate-[135deg]" strokeWidth={1.8} />
         </button>

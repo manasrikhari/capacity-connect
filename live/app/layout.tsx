@@ -45,9 +45,27 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="light"
+      suppressHydrationWarning
       className={`${hankenGrotesk.variable} ${splineSansMono.variable} ${spectral.variable} h-full antialiased`}
     >
       <body className="h-full bg-background text-foreground">
+        {/* Resolve the theme before paint: ?theme= wins, then the saved choice,
+            then the LMS/system default (light, matching the LMS). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                try {
+                  var p = new URLSearchParams(location.search).get('theme');
+                  var saved = localStorage.getItem('og-live-theme');
+                  var t = (p === 'dark' || p === 'light') ? p : (saved || 'light');
+                  document.documentElement.setAttribute('data-theme', t);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <AuthProvider>{children}</AuthProvider>
         <script
           dangerouslySetInnerHTML={{

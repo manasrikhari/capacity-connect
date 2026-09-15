@@ -41,6 +41,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const doubtsEndRef = useRef<HTMLDivElement>(null);
 	const finalThinkingRef = useRef('');
+	const finalAnswerRef = useRef('');
 	const hasCollapsedActiveThinkingRef = useRef(false);
 
 	// Helper to convert base64 dataURL to Blob for R2 uploads
@@ -69,13 +70,16 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 			});
 			if (res.ok) {
 				const data = await res.json();
-				setDoubts(data.doubts || []);
+				const list: Doubt[] = data.doubts || [];
+				setDoubts(list);
+				return list;
 			}
 		} catch (err) {
 			console.error('Failed to fetch doubts history:', err);
 		} finally {
 			setIsLoadingHistory(false);
 		}
+		return null;
 	};
 
 	// 2. Poll doubts history (every 5 seconds for teachers, manual refresh for students)
@@ -294,7 +298,11 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 											hasCollapsedActiveThinkingRef.current = true;
 											setActiveThinkingExpanded(false);
 										}
-										setStreamedAnswer((prev) => prev + parsed.text);
+										setStreamedAnswer((prev) => {
+											const updated = prev + parsed.text;
+											finalAnswerRef.current = updated;
+											return updated;
+										});
 										setStreamingPhase(phase => phase !== 'answering' ? 'answering' : phase);
 									}
 								} catch (e) {
@@ -307,23 +315,39 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 			}
 		} catch (err) {
 			console.error('Error sending doubt:', err);
-			setStreamedAnswer('Sorry, something went wrong while communicating with the doubt solver AI. Please try again.');
+			const msg = 'Sorry, something went wrong while communicating with the doubt solver AI. Please try again.';
+			setStreamedAnswer(msg);
+			finalAnswerRef.current = msg;
 		} finally {
 			const finalThinking = finalThinkingRef.current;
+			const finalAnswer = finalAnswerRef.current;
 			const textForDoubt = textToSend;
 			setStreamingPhase('idle');
 
-			await fetchDoubtsHistory(); // Reload history
+			// Reload history and reconcile. If the just-answered doubt isn't in the
+			// refetched list yet (persist race, or a token blip), keep it on screen
+			// as an optimistic entry instead of letting the answer vanish.
+			const latest = await fetchDoubtsHistory();
+			const persisted =
+				Array.isArray(latest) &&
+				latest.some((d) => d.doubt_text === textForDoubt && !!d.answer);
 
-			// Map final thinking trace to the newly created doubt ID in history
-			if (finalThinking) {
-				setDoubts(currentDoubts => {
-					const matchedDoubt = currentDoubts[currentDoubts.length - 1];
-					if (matchedDoubt) {
-						setLocalThinking(prev => ({ ...prev, [matchedDoubt.id]: finalThinking }));
-					}
-					return currentDoubts;
-				});
+			if (!persisted && (finalAnswer || textForDoubt)) {
+				const optimistic: Doubt = {
+					id: Date.now(),
+					session_id: sessionId,
+					student_id: 0,
+					studentName: 'You',
+					doubt_text: textForDoubt,
+					answer: finalAnswer,
+					screenshot: null,
+					timestamp: new Date().toISOString(),
+				};
+				setDoubts((prev) => [...prev, optimistic]);
+				if (finalThinking) setLocalThinking((prev) => ({ ...prev, [optimistic.id]: finalThinking }));
+			} else if (finalThinking && Array.isArray(latest)) {
+				const matched = latest[latest.length - 1];
+				if (matched) setLocalThinking((prev) => ({ ...prev, [matched.id]: finalThinking }));
 			}
 
 			setIsStreaming(false);
@@ -331,6 +355,7 @@ export default function DoubtSolverTab({ sessionId, isTeacher, editor }: DoubtSo
 			setStreamedAnswer(''); // Clear active streamed text state
 			setStreamedThinking(''); // Clear active thinking state
 			finalThinkingRef.current = '';
+			finalAnswerRef.current = '';
 		}
 	};
 

@@ -20,7 +20,8 @@
     "build:live": "npm run build --workspace=live",
     "prisma:generate": "npm run prisma:generate --workspace=backend",
     "prisma:migrate": "npm run prisma:migrate --workspace=backend",
-    "prisma:studio": "npm run prisma:studio --workspace=backend"
+    "prisma:studio": "npm run prisma:studio --workspace=backend",
+    "deploy": "bash deploy/railway-deploy.sh"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

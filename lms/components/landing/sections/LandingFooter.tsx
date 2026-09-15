@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { GOV, POLICY_LINKS } from "@/lib/gigw";
+
 export function LandingFooter() {
   return (
     <footer className="site">
@@ -6,46 +9,60 @@ export function LandingFooter() {
           <div>
             <div className="brand">
               <span className="dot" />
-              OpenGrapes
+              Capacity Connect
             </div>
             <p>
-              An all-in-one live teaching platform for independent educators.
-              Teach live. Let AI handle the rest.
+              The Ministry of Earth Sciences &amp; India Meteorological Department&apos;s platform for digital capacity building
+              in weather and climate services. Train live. Certify. Track national capacity.
             </p>
           </div>
           <div>
-            <h6>Product</h6>
+            <h6>Platform</h6>
             <ul>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#ai">AI layer</a></li>
-              <li><a href="#lms">Platform</a></li>
-              <li><a href="#how">How it works</a></li>
+              <li><a href="#features">Live classroom</a></li>
+              <li><a href="#features">MeghDoot AI</a></li>
+              <li><a href="#courses">Courses</a></li>
+              <li><a href="#announcements">Announcements</a></li>
             </ul>
           </div>
           <div>
-            <h6>For teachers</h6>
+            <h6>For members</h6>
             <ul>
-              <li><a href="#">Live classroom</a></li>
-              <li><a href="#">Whiteboard</a></li>
-              <li><a href="#">Tests &amp; notes</a></li>
-              <li><a href="#">Fees</a></li>
+              <li><a href="#signin">Trainees</a></li>
+              <li><a href="#signin">Trainers</a></li>
+              <li><a href="#signin">Ministry admins</a></li>
+              <li><Link href="/verify">Verify a certificate</Link></li>
+              <li><Link href="/search">Search</Link></li>
             </ul>
           </div>
           <div>
-            <h6>Company</h6>
+            <h6>Important links</h6>
             <ul>
-              <li><a href="#">About</a></li>
-              <li><a href="#">Sign in</a></li>
-              <li><a href="#">Contact</a></li>
-              <li><a href="#">Privacy</a></li>
+              {POLICY_LINKS.map((l) => (
+                <li key={l.href}><Link href={l.href}>{l.label}</Link></li>
+              ))}
+              <li>
+                <a href={GOV.nationalPortal} target="_blank" rel="noopener noreferrer">
+                  {GOV.nationalPortalLabel} ↗
+                </a>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="foot-base">
-          <span>© 2026 OpenGrapes. All rights reserved.</span>
-          <span>Teach live. Let AI handle the rest.</span>
+
+        {/* GIGW statutory base: national identity, ownership and review date. */}
+        <div className="mt-8 flex flex-col gap-2 border-t border-hair/70 pt-5 text-[12px] leading-relaxed text-ink-500 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-1">
+            <p lang="hi" className="text-ink-700">{GOV.countryHi} · {GOV.countryEn}</p>
+            <p>© {GOV.copyrightYear} {GOV.ministry} · {GOV.department}. All rights reserved.</p>
+            <p>{GOV.managedBy}. {GOV.developedBy}.</p>
+          </div>
+          <div className="space-y-1 md:text-right">
+            <p>Last reviewed: {GOV.lastReviewed}</p>
+            <p className="max-w-xs md:ml-auto">{GOV.bestViewed}</p>
+          </div>
         </div>
-        <div className="foot-credit">Created &amp; maintained by Manas &amp; Manas</div>
+        <div className="foot-credit">Capacity Connect — a national training platform</div>
       </div>
     </footer>
   );

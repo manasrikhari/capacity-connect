@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import Link from "next/link";
+import { useActionState, useEffect } from "react";
 import { credentialsSignInAction } from "@/app/actions/auth-actions";
 import { initialActionState } from "@/lib/action-state";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +12,12 @@ export function CredentialsSignInForm() {
     credentialsSignInAction,
     initialActionState
   );
+
+  // Full navigation (not router.push) so the request carries the freshly set
+  // session cookie; "/" then redirects to the role's dashboard.
+  useEffect(() => {
+    if (state?.success) window.location.assign("/");
+  }, [state?.success]);
 
   return (
     <form action={action} className="space-y-4">
@@ -44,9 +51,16 @@ export function CredentialsSignInForm() {
         </p>
       ) : null}
 
-      <Button type="submit" loading={pending} className="w-full">
+      <Button type="submit" loading={pending || !!state?.success} className="w-full">
         Sign in
       </Button>
+
+      <p className="text-center text-sm text-ink-500">
+        New here?{" "}
+        <Link href="/register" className="text-plum-600 hover:underline">
+          Create an account
+        </Link>
+      </p>
     </form>
   );
 }

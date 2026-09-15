@@ -323,3 +323,15 @@
   .lf2-hero .lbl::before, .lf2-block.on-air .lbl::before { animation: none; }
   .lf2-now, .lf2-prog-track i { transition: none; }
 }
+
+/* A day with nothing on it says so in one line. It used to draw twelve ruled
+   hours — around 650px, the tallest element on the dashboard — to communicate
+   an absence. */
+.lf2-day-none {
+  padding: 14px 0 18px;
+  font-family: var(--font-mono-stack);
+  font-size: 10px;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--ink-300);
+}

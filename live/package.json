@@ -12,7 +12,7 @@
     "@livekit/components-react": "^2.9.21",
     "@livekit/components-styles": "^1.2.0",
     "@tabler/icons-react": "^3.44.0",
-    "@tldraw/sync": "^5.1.0",
+    "@tldraw/sync": "5.1.1",
     "jspdf": "^4.2.1",
     "katex": "^0.17.0",
     "livekit-client": "^2.19.2",
@@ -25,7 +25,7 @@
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "tldraw": "^5.1.0"
+    "tldraw": "5.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

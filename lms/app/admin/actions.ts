@@ -3,8 +3,10 @@
 import { redirect } from "next/navigation";
 import type { ActionState } from "@/lib/action-state";
 import { setActiveBatchForTeacher } from "@/lib/batch";
+import { ensureBatchSlug } from "@/lib/catalogue-db";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
+import { batchSchema } from "@/lib/validations/batch";
 
 export async function setActiveBatchAction(batchId: string) {
   const session = await requireAdmin();
@@ -15,18 +17,44 @@ export async function setActiveBatchAction(batchId: string) {
 export async function createBatchAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await requireAdmin();
 
-  const name = (formData.get("name") as string | null)?.trim();
-  const subject = (formData.get("subject") as string | null)?.trim() || null;
-
-  if (!name) {
-    return { error: "Batch name is required." };
+  const parsed = batchSchema.safeParse({
+    name: formData.get("name"),
+    subject: formData.get("subject"),
+    grade: formData.get("grade"),
+    description: formData.get("description"),
+    department: formData.get("department"),
+    wmoTier: formData.get("wmoTier"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+  });
+  if (!parsed.success) {
+    return {
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
   }
+  const d = parsed.data;
 
   const joinCode = await generateUniqueJoinCode();
 
   const batch = await prisma.batch.create({
-    data: { name, subject, teacherId: session.user.id, joinCode },
+    data: {
+      name: d.name,
+      subject: d.subject,
+      grade: d.grade || null,
+      description: d.description || null,
+      department: d.department || null,
+      wmoTier: d.wmoTier || null,
+      startDate: d.startDate,
+      endDate: d.endDate,
+      teacherId: session.user.id,
+      joinCode,
+    },
   });
+
+  // Give it a public handle straight away so it is reachable at
+  // /courses/<slug> the moment it is created.
+  await ensureBatchSlug(batch.id, batch.name);
 
   await setActiveBatchForTeacher(session, batch.id);
   redirect("/admin/dashboard");

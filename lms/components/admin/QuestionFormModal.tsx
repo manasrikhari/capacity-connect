@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { addQuestion, updateQuestion } from "@/app/admin/tests/actions";
+import { addQuestion, listAllSkills, updateQuestion } from "@/app/admin/tests/actions";
 import type { Question } from "@/app/generated/prisma/client";
 import { Button } from "@/components/ui/Button";
 import { FormField, Input, Select, Textarea } from "@/components/ui/Field";
@@ -23,6 +23,22 @@ export function QuestionFormModal({
   const action = question ? updateQuestion.bind(null, question.id) : addQuestion.bind(null, testId);
   const [state, formAction, pending] = useActionState(action, initialActionState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [skills, setSkills] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    listAllSkills()
+      .then((rows) => {
+        if (active) setSkills(rows);
+      })
+      .catch(() => {
+        /* non-fatal: the skill select simply stays empty */
+      });
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (state?.success) {
@@ -82,6 +98,38 @@ export function QuestionFormModal({
             <Input id="marks" name="marks" type="number" min={1} max={100} defaultValue={question?.marks ?? 1} />
           </FormField>
         </div>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField label="Difficulty" htmlFor="difficulty" error={state?.fieldErrors?.difficulty?.[0]}>
+            <Select id="difficulty" name="difficulty" defaultValue={question?.difficulty ?? ""}>
+              <option value="">Unspecified</option>
+              <option value="EASY">Easy</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HARD">Hard</option>
+            </Select>
+          </FormField>
+          <FormField label="Competency (optional)" htmlFor="skillId" error={state?.fieldErrors?.skillId?.[0]}>
+            <Select id="skillId" name="skillId" defaultValue={question?.skillId ?? ""}>
+              <option value="">No competency</option>
+              {skills.map((skill) => (
+                <option key={skill.id} value={skill.id}>
+                  {skill.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        </div>
+        <FormField
+          label="Explanation (optional)"
+          htmlFor="explanation"
+          error={state?.fieldErrors?.explanation?.[0]}
+        >
+          <Textarea
+            id="explanation"
+            name="explanation"
+            defaultValue={question?.explanation ?? ""}
+            placeholder="Shown to trainees on their results page"
+          />
+        </FormField>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel

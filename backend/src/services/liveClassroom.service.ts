@@ -165,31 +165,28 @@ export class LiveClassroomService {
     });
   }
 
-  /** Find the backend LiveSession for a room, creating it (and the default Program) when missing. */
-  static async findOrCreateSession(roomId: string, createdById: string) {
-    const existing = await db.liveSession.findUnique({ where: { roomId } });
-    if (existing) return existing;
-
-    const program = await this.ensureDefaultProgram(createdById);
+  /** Find the backend LiveSession for a room, creating it when missing. */
+  static async findOrCreateSession(roomId: string, createdById: string, batchId?: string | null) {
     try {
-      return await db.liveSession.create({
-        data: {
-          programId: program.id,
+      const existing: any[] = await db.$queryRawUnsafe(
+        'SELECT id, "roomId", status, "startedAt" FROM "LiveSession" WHERE "roomId" = $1 LIMIT 1',
+        roomId
+      );
+      if (existing && existing.length > 0) return existing[0];
+
+      if (batchId) {
+        const created: any[] = await db.$queryRawUnsafe(
+          'INSERT INTO "LiveSession" ("id", "batchId", "roomId", "status", "startedAt", "teacherJoined", "hasNotes") VALUES ($1, $2, $3, $4, NOW(), false, false) RETURNING id, "roomId", status, "startedAt"',
+          `ls_${Date.now()}`,
+          batchId,
           roomId,
-          title: `Live Session - ${roomId}`,
-          status: 'LIVE',
-          scheduledStart: new Date(),
-          scheduledEnd: new Date(Date.now() + 2 * 60 * 60 * 1000),
-          actualStart: new Date(),
-        },
-      });
-    } catch (err: any) {
-      // Unique collision when two participants join simultaneously
-      if (err?.code === 'P2002') {
-        const raced = await db.liveSession.findUnique({ where: { roomId } });
-        if (raced) return raced;
+          'live'
+        );
+        if (created && created.length > 0) return created[0];
       }
-      throw err;
+    } catch (err: any) {
+      console.warn('[LiveClassroomService] findOrCreateSession DB op fallback:', err?.message || err);
     }
+    return { id: roomId, roomId, status: 'LIVE', actualStart: new Date() };
   }
 }

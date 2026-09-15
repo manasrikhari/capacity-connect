@@ -159,6 +159,14 @@ export type StudentHubPending = {
   teacherName: string | null;
 };
 
+export type StudentHubRejected = {
+  enrollmentId: string;
+  batchId: string;
+  name: string;
+  grade: string | null;
+  teacherName: string | null;
+};
+
 export const getStudentHubData = cache(async (session: Session) => {
   const enrollments = await prisma.enrollment.findMany({
     where: { studentId: session.user.id, batch: NOT_SUSPENDED },
@@ -182,6 +190,7 @@ export const getStudentHubData = cache(async (session: Session) => {
 
   const approvedEnrollments = enrollments.filter((e) => e.status === "APPROVED");
   const pendingEnrollments = enrollments.filter((e) => e.status === "PENDING");
+  const rejectedEnrollments = enrollments.filter((e) => e.status === "REJECTED");
 
   const approvedBatchIds = approvedEnrollments.map((e) => e.batch.id);
   const attemptedTests =
@@ -215,12 +224,23 @@ export const getStudentHubData = cache(async (session: Session) => {
     teacherName: e.batch.teacher.name,
   }));
 
+  // A REJECTED enrolment was previously dropped on the floor here, so the
+  // trainee saw nothing at all. Surface it so they can request again.
+  const rejected: StudentHubRejected[] = rejectedEnrollments.map((e) => ({
+    enrollmentId: e.id,
+    batchId: e.batch.id,
+    name: e.batch.name,
+    grade: e.batch.grade,
+    teacherName: e.batch.teacher.name,
+  }));
+
   const totalTestsDue = approved.reduce((s, b) => s + b.testsDue, 0);
   const liveCount = approved.filter((b) => b.isLive).length;
 
   return {
     approved,
     pending,
+    rejected,
     stats: {
       joinedBatches: approved.length,
       liveNow: liveCount,

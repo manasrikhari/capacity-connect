@@ -23,11 +23,11 @@ type ProfileData = NonNullable<Awaited<ReturnType<typeof getProfileData>>>;
 function getRoleMeta(role: string): { label: string; color: BadgeColor; Icon: typeof Shield } {
   switch (role) {
     case "SUPER_ADMIN":
-      return { label: "Super admin", color: "amber", Icon: Shield };
+      return { label: "Admin", color: "amber", Icon: Shield };
     case "ADMIN":
-      return { label: "Administrator", color: "violet", Icon: Shield };
+      return { label: "Trainer", color: "violet", Icon: Shield };
     default:
-      return { label: "Student", color: "blue", Icon: GraduationCap };
+      return { label: "Trainee", color: "blue", Icon: GraduationCap };
   }
 }
 
@@ -276,7 +276,7 @@ export function ProfileDrawer({
           {!loading && profile && variant === "admin" && profile.ownedBatches.length > 0 && (
             <section className="px-6 pb-6">
               <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
-                Your batches
+                Your courses
               </p>
               <div className="space-y-2">
                 {profile.ownedBatches.map((b) => (
@@ -353,7 +353,7 @@ export function ProfileDrawer({
                     <p className="text-sm font-semibold text-ink-900">Delete account</p>
                     <p className="mt-1 text-xs leading-relaxed text-ink-500">
                       {variant === "admin"
-                        ? "Permanently erases your account and everything you've created — all batches, student records, meetings, notes, tests, and conversations. Your students lose access immediately."
+                        ? "Permanently erases your account and everything you've created — all courses, trainee records, meetings, notes, tests, and conversations. Your trainees lose access immediately."
                         : "Permanently erases your account, all enrollments, test results, and your entire learning history. You'll be treated as a brand-new user next time you sign in."}
                     </p>
                     <Button variant="danger" size="sm" className="mt-3" onClick={() => setConfirmDelete(true)}>
@@ -374,7 +374,7 @@ export function ProfileDrawer({
 
                 <p className="mb-3 text-sm leading-relaxed text-ink-700">
                   {variant === "admin"
-                    ? "You are about to permanently destroy your account along with every batch, student enrollment, meeting, note, test, fee record, and AI conversation tied to it. Your students will lose access instantly."
+                    ? "You are about to permanently destroy your account along with every course, trainee enrollment, meeting, note, test, and AI conversation tied to it. Your trainees will lose access instantly."
                     : "You are about to permanently destroy your account, all your course enrollments, test scores, and every trace of your activity in this system. The next time you sign in, you will be a complete stranger to us."}
                 </p>
 

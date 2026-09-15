@@ -25,6 +25,8 @@ lerna-debug.log*
 .env
 .env*.local
 !.env.example
+deploy/deploy.env
+deploy/.secrets.env
 
 # IDE & OS files
 .DS_Store
@@ -51,4 +53,5 @@ scratch/
 .claude/
 .agents/
 skills-lock.json
-.mcp.json
+.mcp.json
+SIH_PPT_CONTENT.md

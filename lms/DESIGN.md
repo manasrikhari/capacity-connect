@@ -39,14 +39,28 @@ raised or dark.
 **Banned:** `violet-*`, `slate-*`, `emerald-*`, `indigo-*`, `white`/`black`
 utilities, colored shadows, gradients. Pure `#000`/`#fff` never appear.
 
+**One sanctioned exception — national identity.** The Ashoka tricolour
+(`--tiranga-saffron / -white / -green`) and the `GovBanner` masthead are
+government-identity chrome, not interaction colour. The flag white is the only
+place `#FFFFFF` appears, and only inside `TricolorBand`. Do not borrow these
+tones for anything else.
+
 ## Type voices (already loaded in `app/layout.tsx`)
+
+The type is pitched a step toward the Indian-government register (GIGW/NIC),
+without abandoning the system's character: the interface voice is Noto Sans, the
+display voice stays Spectral, and Devanagari is loaded for both so Hindi is
+first-class rather than an OS fallback.
 
 - **Spectral (`font-display`)** — the institution: page titles, card titles
   (global `h1–h5` rule applies it), big figures (scores, amounts, percents).
-  Figures use weight 400, `tabular-nums`.
-- **Hanken Grotesk (`font-sans`)** — the interface: body, buttons, labels.
-  Section heads are **sans 600, sentence case, 14px, ink-900** over a hairline
-  (`border-b border-hair-strong pb-2`) — *not* mono eyebrows.
+  Figures use weight 400, `tabular-nums`. In Hindi, headings fall through to
+  **Noto Serif Devanagari** (Spectral carries no Devanagari).
+- **Noto Sans (`font-sans`)** — the interface: body, buttons, labels. The
+  neutral, official face the NIC/GIGW ecosystem standardises on; **Noto Sans
+  Devanagari** carries Hindi. Section heads are **sans 600, sentence case, 14px,
+  ink-900** over a hairline (`border-b border-hair-strong pb-2`) — *not* mono
+  eyebrows.
 - **Spline Sans Mono (`font-mono`)** — machine data ONLY: times, dates-as-data,
   amounts in rows, ranks, codes, counts-as-metadata. Micro-caps style:
   `font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300`.

@@ -1,4 +1,5 @@
 import { ArrowLeft, Link2 } from "lucide-react";
+import { TrackView } from "@/components/course/TrackView";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
@@ -25,6 +26,7 @@ export default async function StudentNoteDetailPage({
 
   return (
     <div className="space-y-6">
+      <TrackView itemType="NOTE" itemId={id} />
       <Link href="/student/notes" className="inline-flex items-center gap-1.5 text-sm text-plum-700 hover:underline">
         <ArrowLeft className="size-4" />
         Back to notes

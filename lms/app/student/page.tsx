@@ -5,10 +5,17 @@ import {
   X,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { setActiveBatchAction, cancelEnrollmentAction } from "@/app/student/actions";
 import { getSession } from "@/lib/session";
 import { getStudentHubData } from "@/lib/batch";
-import type { StudentHubBatch, StudentHubPending } from "@/lib/batch";
+import type { StudentHubBatch, StudentHubPending, StudentHubRejected } from "@/lib/batch";
+import { prisma } from "@/lib/prisma";
+import { getRecommendationsForTrainee } from "@/lib/recommender-db";
+import {
+  RecommendationCard,
+  type RecommendationView,
+} from "@/components/recommendations/RecommendationCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatCard } from "@/components/ui/StatCard";
 import {
@@ -26,12 +33,33 @@ export default async function StudentHubPage({
   const session = await getSession();
   if (!session || session.user.role !== "STUDENT") redirect("/");
 
-  const [{ approved, pending, stats }, { joined }] = await Promise.all([
+  const [{ approved, pending, rejected, stats }, { joined }] = await Promise.all([
     getStudentHubData(session),
     searchParams,
   ]);
 
-  const hasAny = approved.length > 0 || pending.length > 0;
+  const hasAny = approved.length > 0 || pending.length > 0 || rejected.length > 0;
+
+  // Top course recommendations for the hub strip.
+  const recs = await getRecommendationsForTrainee(session.user.id, 3);
+  const recBatches = recs.length
+    ? await prisma.batch.findMany({
+        where: { id: { in: recs.map((r) => r.batchId) } },
+        select: { id: true, grade: true, wmoTier: true, teacher: { select: { name: true } } },
+      })
+    : [];
+  const recMeta = new Map(recBatches.map((b) => [b.id, b]));
+  const recViews: RecommendationView[] = recs.map((r) => ({
+    batchId: r.batchId,
+    name: r.name,
+    domain: r.domain,
+    level: recMeta.get(r.batchId)?.grade ?? null,
+    wmoTier: recMeta.get(r.batchId)?.wmoTier ?? null,
+    trainerName: recMeta.get(r.batchId)?.teacher.name ?? null,
+    score: r.score,
+    reasons: r.reasons.slice(0, 2),
+    enrollmentStatus: r.enrollmentStatus,
+  }));
 
   return (
     <div>
@@ -50,9 +78,9 @@ export default async function StudentHubPage({
       {/* Hero */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-normal text-ink-900">My batches</h1>
+          <h1 className="text-2xl font-normal text-ink-900">My courses</h1>
           <p className="mt-1 text-sm text-ink-500">
-            Pick a class to see its meetings, notes and tests.
+            Pick a course to see its sessions, notes and assessments.
           </p>
         </div>
         {hasAny && <JoinBatchTrigger variant="top-button" />}
@@ -62,8 +90,8 @@ export default async function StudentHubPage({
         <div className="mt-6">
           <EmptyState
             icon={GraduationCap}
-            title="No batches yet"
-            description="Enter a join code from your teacher to start accessing meetings, notes, and tests."
+            title="No courses yet"
+            description="Enter a course code from your trainer to start accessing sessions, notes, and assessments."
             action={<JoinBatchTrigger variant="empty-state" />}
           />
         </div>
@@ -71,18 +99,18 @@ export default async function StudentHubPage({
         <>
           {/* Stats */}
           <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3">
-            <StatCard value={stats.joinedBatches} label="Joined batches" />
+            <StatCard value={stats.joinedBatches} label="Joined courses" />
             <StatCard
               value={stats.liveNow}
               label="Live now"
               color={stats.liveNow > 0 ? "green" : "slate"}
             />
-            <StatCard value={stats.testsToAttempt} label="Tests to attempt" />
+            <StatCard value={stats.testsToAttempt} label="Assessments to attempt" />
           </div>
 
           {/* Section label */}
           <div className="mb-4 mt-8 flex items-center justify-between border-b border-hair-strong pb-2">
-            <h2 className="text-sm font-semibold text-ink-900">My batches</h2>
+            <h2 className="text-sm font-semibold text-ink-900">My courses</h2>
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
               {stats.joinedBatches} joined
               {pending.length > 0 && ` · ${pending.length} pending`}
@@ -97,9 +125,31 @@ export default async function StudentHubPage({
             {pending.map((p) => (
               <PendingBatchCard key={p.enrollmentId} batch={p} />
             ))}
+            {rejected.map((r) => (
+              <RejectedBatchCard key={r.enrollmentId} batch={r} />
+            ))}
             <JoinBatchTrigger variant="card" />
           </div>
         </>
+      )}
+
+      {recViews.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between border-b border-hair-strong pb-2">
+            <h2 className="text-sm font-semibold text-ink-900">Recommended for you</h2>
+            <Link
+              href="/student/recommendations"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-plum-600 hover:text-plum-700"
+            >
+              See all
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {recViews.map((v) => (
+              <RecommendationCard key={v.batchId} rec={v} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );
@@ -190,6 +240,33 @@ function PendingBatchCard({ batch }: { batch: StudentHubPending }) {
       <span className="mt-3 inline-flex w-fit items-center gap-2 rounded-[8px] border border-dashed border-hair bg-paper px-2.5 py-1.5 text-xs text-ink-500">
         Request sent — waiting for approval
       </span>
+    </div>
+  );
+}
+
+function RejectedBatchCard({ batch }: { batch: StudentHubRejected }) {
+  return (
+    <div className="flex min-h-40 flex-col rounded-2xl border border-status-unpaid/25 bg-status-unpaid/[0.03] p-[18px]">
+      <div className="flex items-start gap-2.5">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-[12px] bg-status-unpaid/10 text-status-unpaid">
+          <X className="size-6" />
+        </div>
+        <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-status-unpaid/10 px-2.5 py-1 text-[11px] font-semibold text-status-unpaid">
+          Not approved
+        </span>
+      </div>
+
+      <h3 className="mt-3 text-lg font-normal text-ink-900">{batch.name}</h3>
+      <p className="mt-0.5 text-xs text-ink-500">
+        {[batch.grade, batch.teacherName].filter(Boolean).join(" · ")}
+      </p>
+
+      <p className="mt-3 text-xs text-ink-500">
+        Your enrolment request was declined. You can request again with the course code from your trainer.
+      </p>
+      <div className="mt-3">
+        <JoinBatchTrigger variant="sidebar" />
+      </div>
     </div>
   );
 }

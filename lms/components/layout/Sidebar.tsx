@@ -1,29 +1,42 @@
 "use client";
 
 import {
+  Award,
+  BadgeCheck,
+  Building2,
+  CloudLightning,
   ClipboardList,
+  FolderOpen,
   Grid2x2,
+  Layers,
   LayoutDashboard,
   Megaphone,
+  Network,
   Menu,
+  CalendarRange,
+  MessageSquare,
+  MessagesSquare,
+  PenLine,
   NotebookText,
+  ShieldCheck,
   Sparkles,
+  Target,
   User,
   Users,
   Video,
-  Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { JoinBatchTrigger } from "@/components/join/JoinBatchTrigger";
 import { CopyJoinCode } from "@/components/ui/CopyJoinCode";
 import { getInitials, plumSphere } from "@/components/ui/avatar";
 import { ProfileDrawer } from "@/components/profile/ProfileDrawer";
+import { GOV_EMBLEM_SRC } from "@/lib/gov-emblem";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -33,58 +46,147 @@ interface NavItem {
   exact?: boolean;
 }
 
-export type SidebarVariant = "admin" | "student";
-
-const BATCH_NAV_ITEMS: Record<SidebarVariant, NavItem[]> = {
-  admin: [
-    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/students", label: "Students", icon: Users },
-    { href: "/admin/meetings", label: "Meetings", icon: Video },
-    { href: "/admin/notes", label: "Notes", icon: NotebookText },
-    { href: "/admin/notices", label: "Notices", icon: Megaphone },
-    { href: "/admin/tests", label: "Tests", icon: ClipboardList },
-    { href: "/admin/fees", label: "Fees", icon: Wallet },
-    { href: "/admin/ai", label: "OpenGrapes AI", icon: Sparkles },
-  ],
-  student: [
-    { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/student/meetings", label: "Meetings", icon: Video },
-    { href: "/student/notes", label: "Notes", icon: NotebookText },
-    { href: "/student/tests", label: "Tests", icon: ClipboardList },
-    { href: "/student/fees", label: "Fees", icon: Wallet },
-    { href: "/student/ai", label: "OpenGrapes AI", icon: Sparkles },
-  ],
-};
+export type SidebarVariant = "admin" | "student" | "platform";
 
 interface HubNavGroup {
+  /** Empty string renders the group without a heading. */
   label: string;
   items: NavItem[];
 }
+
+/** Top-level ("hub") route for each variant. */
+const HUB_PATH: Record<SidebarVariant, string> = {
+  admin: "/admin",
+  student: "/student",
+  platform: "/platform",
+};
+
+/**
+ * Course-workspace navigation.
+ *
+ * The trainer list is grouped rather than flat: fifteen undifferentiated
+ * destinations is a wall to scan every time. The groups follow the trainer's
+ * actual jobs — run the course, author material, look after the trainees, and
+ * feed the assistant.
+ *
+ * The trainee list stays a single unlabelled group; six items need no
+ * signposting, and adding headings to them would be decoration.
+ */
+const BATCH_NAV_ITEMS: Record<SidebarVariant, HubNavGroup[]> = {
+  admin: [
+    {
+      label: "Course",
+      items: [
+        { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/admin/weeks", label: "Weeks", icon: CalendarRange },
+        { href: "/admin/meetings", label: "Meetings", icon: Video },
+        { href: "/admin/notices", label: "Notices", icon: Megaphone },
+        { href: "/admin/competency", label: "Competency", icon: Target },
+      ],
+    },
+    {
+      label: "Material",
+      items: [
+        { href: "/admin/notes", label: "Notes", icon: NotebookText },
+        { href: "/admin/library", label: "Library", icon: FolderOpen },
+        { href: "/admin/tests", label: "Tests", icon: ClipboardList },
+        { href: "/admin/assignments", label: "Assignments", icon: PenLine },
+        { href: "/admin/drill", label: "Forecast drill", icon: CloudLightning },
+      ],
+    },
+    {
+      label: "Trainees",
+      items: [
+        { href: "/admin/students", label: "Roster", icon: Users },
+        { href: "/admin/discussion", label: "Discussion", icon: MessagesSquare },
+        { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
+        { href: "/admin/certificates", label: "Certificates", icon: Award },
+      ],
+    },
+    {
+      label: "MeghDoot",
+      items: [
+        { href: "/admin/knowledge", label: "Knowledge", icon: Network },
+        { href: "/admin/ai", label: "Ask MeghDoot", icon: Sparkles },
+      ],
+    },
+  ],
+  // Readings, recordings, quizzes and assignments are not listed here: they all
+  // live inside the course rail at /student/course, grouped by week and marked
+  // with what the trainee has finished. Repeating them as four flat indexes
+  // gave the trainee two navigations for one set of content.
+  //
+  // Discussion stays top-level because the rail only links into threads that
+  // already exist — asking a new question needs the index. SWAYAM keeps Q&A
+  // top-level for the same reason.
+  student: [
+    {
+      label: "",
+      items: [
+        { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/student/course", label: "Course content", icon: CalendarRange },
+        { href: "/student/discussion", label: "Discussion", icon: MessagesSquare },
+        { href: "/student/meetings", label: "Meetings", icon: Video },
+        { href: "/student/feedback", label: "Feedback", icon: MessageSquare },
+        { href: "/student/ai", label: "MeghDoot", icon: Sparkles },
+      ],
+    },
+  ],
+  // The ministry admin owns no single course, so it never enters a batch
+  // workspace — an empty list keeps it on the hub view permanently.
+  platform: [],
+};
 
 const HUB_NAV: Record<SidebarVariant, HubNavGroup[]> = {
   admin: [
     {
       label: "Workspace",
-      items: [
-        { href: "/admin", label: "All batches", icon: Grid2x2, exact: true },
-        { href: "/admin/fees-overview", label: "Fees overview", icon: Wallet },
-      ],
+      items: [{ href: "/admin", label: "All courses", icon: Grid2x2, exact: true }],
     },
     {
       label: "Account",
-      items: [{ href: "#", label: "Profile", icon: User }],
+      items: [{ href: "/admin/profile", label: "Profile", icon: User }],
     },
   ],
   student: [
     {
       label: "Learning",
       items: [
-        { href: "/student", label: "My batches", icon: Grid2x2, exact: true },
+        { href: "/student", label: "My courses", icon: Grid2x2, exact: true },
+        { href: "/student/recommendations", label: "Recommended for you", icon: Sparkles },
+        { href: "/student/competency", label: "My competencies", icon: Target },
+        { href: "/student/drill", label: "Forecast drill", icon: CloudLightning },
+        { href: "/student/passport", label: "Competency passport", icon: BadgeCheck },
+        { href: "/student/certificates", label: "My certificates", icon: Award },
       ],
     },
     {
       label: "Account",
-      items: [{ href: "#", label: "Profile", icon: User }],
+      items: [{ href: "/student/profile", label: "Profile", icon: User }],
+    },
+  ],
+  platform: [
+    {
+      label: "Ministry",
+      items: [
+        { href: "/platform", label: "Dashboard", icon: LayoutDashboard, exact: true },
+        { href: "/platform/analyst", label: "Analyst", icon: Sparkles },
+        { href: "/platform/competency", label: "Competency", icon: Target },
+        { href: "/platform/skills", label: "Skills", icon: Layers },
+        { href: "/platform/departments", label: "Offices", icon: Building2 },
+        { href: "/platform/feedback", label: "Feedback", icon: MessageSquare },
+      ],
+    },
+    {
+      label: "Content",
+      items: [
+        { href: "/platform/announcements", label: "Announcements", icon: Megaphone },
+        { href: "/platform/graph", label: "Knowledge base", icon: Network },
+      ],
+    },
+    {
+      label: "Public",
+      items: [{ href: "/platform/verify", label: "Verify a certificate", icon: ShieldCheck }],
     },
   ],
 };
@@ -105,6 +207,18 @@ function navItemClass(active: boolean) {
 }
 
 function SphereLogo({ className }: { className?: string }) {
+  // When the deploying team has supplied the State Emblem, the brand mark is
+  // the emblem; otherwise it stays the plum sphere. See lib/gov-emblem.ts.
+  if (GOV_EMBLEM_SRC) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={GOV_EMBLEM_SRC}
+        alt="State Emblem of India"
+        className={cn("block h-9 w-auto shrink-0", className)}
+      />
+    );
+  }
   return (
     <span
       aria-hidden="true"
@@ -121,6 +235,7 @@ export function Sidebar({
   joinCode,
   userName,
   userEmail,
+  slot,
 }: {
   variant: SidebarVariant;
   subtitle?: string;
@@ -128,18 +243,20 @@ export function Sidebar({
   joinCode?: string;
   userName?: string | null;
   userEmail?: string | null;
+  /** A shell control rendered in the sidebar header (e.g. the notification bell). */
+  slot?: ReactNode;
 }) {
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
-  const hubPath = variant === "admin" ? "/admin" : "/student";
-  const isInBatch = BATCH_NAV_ITEMS[variant].some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
-  );
+  const hubPath = HUB_PATH[variant];
+  const isInBatch = BATCH_NAV_ITEMS[variant]
+    .flatMap((g) => g.items)
+    .some((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
   const isHub = !isInBatch;
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-hair bg-paper md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-hair bg-paper md:flex print:!hidden">
         {isHub ? (
           <HubSidebarContent
             variant={variant}
@@ -147,7 +264,8 @@ export function Sidebar({
             pathname={pathname}
             userName={userName}
             userEmail={userEmail}
-            onProfileClick={() => setProfileOpen(true)}
+            slot={slot}
+            onProfileClick={variant === "platform" ? undefined : () => setProfileOpen(true)}
           />
         ) : (
           <BatchSidebarContent
@@ -158,18 +276,21 @@ export function Sidebar({
             pathname={pathname}
             userName={userName}
             userEmail={userEmail}
-            onProfileClick={() => setProfileOpen(true)}
+            slot={slot}
+            onProfileClick={variant === "platform" ? undefined : () => setProfileOpen(true)}
           />
         )}
       </aside>
 
-      <ProfileDrawer
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        variant={variant}
-        userName={userName}
-        userEmail={userEmail}
-      />
+      {variant !== "platform" && (
+        <ProfileDrawer
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          variant={variant}
+          userName={userName}
+          userEmail={userEmail}
+        />
+      )}
     </>
   );
 }
@@ -180,6 +301,7 @@ function HubSidebarContent({
   pathname,
   userName,
   userEmail,
+  slot,
   onProfileClick,
 }: {
   variant: SidebarVariant;
@@ -187,24 +309,27 @@ function HubSidebarContent({
   pathname: string;
   userName?: string | null;
   userEmail?: string | null;
-  onProfileClick: () => void;
+  slot?: ReactNode;
+  onProfileClick?: () => void;
 }) {
   const groups = HUB_NAV[variant];
 
   return (
     <div className="flex h-full flex-col px-5 py-6">
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-start gap-2.5">
         <SphereLogo />
-        <span className="font-display text-[17px] font-medium text-ink-900">
-          OpenGrapes
-        </span>
+        <div className="min-w-0">
+          <p className="font-display text-[15px] font-medium leading-snug text-ink-900">
+            Ministry of Earth Sciences
+          </p>
+          {subtitle && (
+            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+              {subtitle}
+            </p>
+          )}
+        </div>
+        {slot && <div className="ml-auto -mr-1">{slot}</div>}
       </div>
-      {subtitle && (
-        <p className="ml-[42px] mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
-          {subtitle}
-        </p>
-      )}
-
       <div className="mt-6 flex flex-1 flex-col gap-1">
         {groups.map((group) => (
           <div key={group.label}>
@@ -214,19 +339,6 @@ function HubSidebarContent({
             {group.items.map((item) => {
               const Icon = item.icon;
               const itemClass = navItemClass(isActive(pathname, item));
-
-              if (item.label === "Profile") {
-                return (
-                  <button
-                    key="profile"
-                    onClick={onProfileClick}
-                    className={cn(itemClass, "w-full text-left")}
-                  >
-                    <Icon className="size-[18px]" />
-                    {item.label}
-                  </button>
-                );
-              }
 
               return (
                 <Link
@@ -309,6 +421,7 @@ function BatchSidebarContent({
   pathname,
   userName,
   userEmail,
+  slot,
   onProfileClick,
 }: {
   variant: SidebarVariant;
@@ -318,20 +431,25 @@ function BatchSidebarContent({
   pathname: string;
   userName?: string | null;
   userEmail?: string | null;
-  onProfileClick: () => void;
+  slot?: ReactNode;
+  onProfileClick?: () => void;
 }) {
-  const items = BATCH_NAV_ITEMS[variant];
+  const groups = BATCH_NAV_ITEMS[variant];
 
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-6">
         <SphereLogo />
         <div className="min-w-0">
-          <h1 className="font-display text-[17px] font-medium text-ink-900">OpenGrapes</h1>
+          <h1 className="font-display text-[15px] font-medium leading-snug text-ink-900">
+            Ministry of Earth Sciences
+          </h1>
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
-            {variant === "admin" ? "Admin panel" : "Student"}
+            {/* Must match the hub sidebar subtitles set in each route layout. */}
+            {variant === "admin" ? "Trainer panel" : variant === "student" ? "Trainee" : "Ministry admin"}
           </p>
         </div>
+        {slot && <div className="ml-auto -mr-1">{slot}</div>}
       </div>
       {batchName && (
         <div className="mx-3 mb-3 rounded-[10px] border border-hair bg-sunken/40 px-2 py-2">
@@ -347,20 +465,29 @@ function BatchSidebarContent({
           </p>
         </div>
       )}
-      <nav className="flex-1 space-y-1 px-3">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={navItemClass(isActive(pathname, item))}
-            >
-              <Icon className="size-4.5" />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3">
+        {groups.map((group) => (
+          <div key={group.label || "main"} className="space-y-1">
+            {group.label && (
+              <p className="mb-2 mt-4 px-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300 first:mt-0">
+                {group.label}
+              </p>
+            )}
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={navItemClass(isActive(pathname, item))}
+                >
+                  <Icon className="size-4.5" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {joinCode && (
@@ -393,6 +520,7 @@ export function MobileSidebar({
   joinCode,
   userName,
   userEmail,
+  slot,
 }: {
   variant: SidebarVariant;
   subtitle?: string;
@@ -400,6 +528,7 @@ export function MobileSidebar({
   joinCode?: string;
   userName?: string | null;
   userEmail?: string | null;
+  slot?: ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -409,10 +538,10 @@ export function MobileSidebar({
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const skipFocusMove = useRef(true);
 
-  const hubPath = variant === "admin" ? "/admin" : "/student";
-  const isInBatch = BATCH_NAV_ITEMS[variant].some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
-  );
+  const hubPath = HUB_PATH[variant];
+  const isInBatch = BATCH_NAV_ITEMS[variant]
+    .flatMap((g) => g.items)
+    .some((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
   const isHub = !isInBatch;
 
   // Close the drawer whenever the route changes (e.g. a nav link was tapped).
@@ -457,7 +586,7 @@ export function MobileSidebar({
     }
   }, [open]);
 
-  const title = isHub ? "OpenGrapes" : batchName ?? "OpenGrapes";
+  const title = isHub ? "Capacity Connect" : batchName ?? "Capacity Connect";
 
   const handleProfileClick = () => {
     setOpen(false);
@@ -466,23 +595,26 @@ export function MobileSidebar({
 
   return (
     <>
-      <header className="sticky top-0 z-71 flex h-14 shrink-0 items-center justify-between border-b border-hair bg-paper/90 px-4 backdrop-blur reduce-transparency:bg-paper reduce-transparency:backdrop-blur-none md:hidden">
+      <header className="sticky top-0 z-71 flex h-14 shrink-0 items-center justify-between border-b border-hair bg-paper/90 px-4 backdrop-blur reduce-transparency:bg-paper reduce-transparency:backdrop-blur-none md:hidden print:!hidden">
         <div className="flex min-w-0 items-center gap-2.5">
           <SphereLogo />
           <p className="truncate font-display text-[15px] font-medium text-ink-900">{title}</p>
         </div>
 
-        <button
-          ref={toggleBtnRef}
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="mobile-sidebar-drawer"
-          aria-label={open ? "Close menu" : "Open menu"}
-          className="flex size-9 shrink-0 items-center justify-center rounded-[10px] text-ink-700 transition-colors hover:bg-plum-50 active:bg-plum-100"
-        >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {slot}
+          <button
+            ref={toggleBtnRef}
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-sidebar-drawer"
+            aria-label={open ? "Close menu" : "Open menu"}
+            className="flex size-9 shrink-0 items-center justify-center rounded-[10px] text-ink-700 transition-colors hover:bg-plum-50 active:bg-plum-100"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </header>
 
       {mounted &&
@@ -529,7 +661,7 @@ export function MobileSidebar({
                     pathname={pathname}
                     userName={userName}
                     userEmail={userEmail}
-                    onProfileClick={handleProfileClick}
+                    onProfileClick={variant === "platform" ? undefined : handleProfileClick}
                   />
                 ) : (
                   <BatchSidebarContent
@@ -540,7 +672,7 @@ export function MobileSidebar({
                     pathname={pathname}
                     userName={userName}
                     userEmail={userEmail}
-                    onProfileClick={handleProfileClick}
+                    onProfileClick={variant === "platform" ? undefined : handleProfileClick}
                   />
                 )}
               </div>
@@ -549,13 +681,15 @@ export function MobileSidebar({
           document.body
         )}
 
-      <ProfileDrawer
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        variant={variant}
-        userName={userName}
-        userEmail={userEmail}
-      />
+      {variant !== "platform" && (
+        <ProfileDrawer
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          variant={variant}
+          userName={userName}
+          userEmail={userEmail}
+        />
+      )}
     </>
   );
 }

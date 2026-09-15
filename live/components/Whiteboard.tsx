@@ -36,6 +36,13 @@ import { getPagesSorted } from './classroom/whiteboard-helpers';
 
 interface WhiteboardProps {
   roomName: string;
+  /**
+   * Optional per-board suffix (Phase 5 forecast drill). When set, the trainee
+   * gets their own isolated board keyed by `${roomName}:${boardSuffix}` — e.g. a
+   * per-trainee drill/viva board the examiner can open individually — instead of
+   * the one board shared by the whole room. Absent → the shared room board.
+   */
+  boardSuffix?: string;
   userName?: string;
   isTeacher: boolean;
   isWritable: boolean;
@@ -146,9 +153,10 @@ const whiteboardOverrides = {
   },
 };
 
-export default function Whiteboard({ 
-  roomName, 
-  userName, 
+export default function Whiteboard({
+  roomName,
+  boardSuffix,
+  userName,
   isTeacher, 
   isWritable, 
   onEditorMount,
@@ -174,41 +182,22 @@ export default function Whiteboard({
     }
   }
 
+  // Per-trainee drill/viva boards live at a distinct sync path so they don't
+  // collide with the shared room board; the worker keys a Durable Object per path.
+  const boardId = boardSuffix ? `${roomName}:${boardSuffix}` : roomName;
   const store = useSync({
-    uri: `${wsUri}/api/connect/${roomName}?clientSessionId=${clientId}&token=${token}`,
+    uri: `${wsUri}/api/connect/${encodeURIComponent(boardId)}?clientSessionId=${clientId}&token=${token}`,
     assets: multiplayerAssetStore,
   });
 
-  // Warm up DO on session start
+  // Monitor sync status
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const OriginalWebSocket = window.WebSocket;
-
-    class WarmupWebSocket extends OriginalWebSocket {
-      constructor(url: string | URL, protocols?: string | string[]) {
-        super(url, protocols);
-        
-        const urlStr = url.toString();
-        if (urlStr.includes('/api/connect/')) {
-          this.addEventListener('open', () => {
-            try {
-              this.send(JSON.stringify({ type: 'warmup' }));
-              console.log('[Whiteboard] Sent warmup message to Durable Object.');
-            } catch (err) {
-              console.error('[Whiteboard] Failed to send warmup message:', err);
-            }
-          });
-        }
-      }
+    if (store.status === 'error') {
+      console.error('[Whiteboard] Sync error occurred:', (store as any).error);
+    } else if (store.status === 'synced-remote') {
+      console.log('[Whiteboard] Successfully connected and synced to Durable Object.');
     }
-
-    window.WebSocket = WarmupWebSocket as any;
-
-    return () => {
-      window.WebSocket = OriginalWebSocket;
-    };
-  }, []);
+  }, [store.status]);
 
   const [editor, setEditor] = useState<any>(null);
 
@@ -552,8 +541,11 @@ export default function Whiteboard({
     clampCamera();
 
     // Invalidate/update cache and re-clamp when frames change in document
+    let isUpdatingFrames = false;
     const cleanupFrames = editor.store.listen(
       (event: any) => {
+        if (isUpdatingFrames) return;
+
         const hasAddedFrame = event.changes.added && 
           Object.values(event.changes.added).some((s: any) => s.typeName === 'shape' && s.type === 'frame');
         const hasRemovedFrame = event.changes.removed && 
@@ -592,11 +584,16 @@ export default function Whiteboard({
           });
 
           if (updates.length > 0) {
-            editor.run(() => {
-              updates.forEach((update) => {
-                editor.updateShape(update);
+            isUpdatingFrames = true;
+            try {
+              editor.run(() => {
+                updates.forEach((update) => {
+                  editor.updateShape(update);
+                });
               });
-            });
+            } finally {
+              isUpdatingFrames = false;
+            }
           }
 
           updateMaxY();
@@ -853,7 +850,7 @@ export default function Whiteboard({
       style={{ touchAction: "none" }}
     >
       <Tldraw
-        store={store}
+        store={store.status === 'error' ? undefined : store}
         onMount={handleMount}
         components={whiteboardComponents}
         overrides={whiteboardOverrides}
@@ -864,6 +861,13 @@ export default function Whiteboard({
         getShapeVisibility={getShapeVisibility}
         licenseKey="tldraw-2026-10-04/WyJuVUp6Z2RVOSIsWyIqIl0sMTYsIjIwMjYtMTAtMDQiXQ.zXszL8E54vL/Z2ZhQnXogE9n9sFkAz4jBMrR81a4ILvlXAQCR6H1J3tk/SXzk73DrP8QmDcwm2AUbsMWpstNuQ"
       />
+
+      {store.status === 'error' && (
+        <div className="absolute top-4 right-4 z-40 bg-amber-950/80 border border-amber-500/40 text-amber-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 backdrop-blur-md pointer-events-none">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>Whiteboard: Standalone Mode (Sync Offline)</span>
+        </div>
+      )}
 
       {/* Read-Only Mode Status Badge for Students */}
       {!isTeacher && !isWritable && (

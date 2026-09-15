@@ -6,6 +6,7 @@ import { TestAttemptForm, type AttemptQuestion } from "@/components/student/Test
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MathText } from "@/components/ui/MathText";
 import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
@@ -13,7 +14,9 @@ import { cn, formatDateTime, isTestOpen } from "@/lib/utils";
 
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
 
-type TestWithQuestions = Prisma.TestGetPayload<{ include: { questions: true } }>;
+type TestWithQuestions = Prisma.TestGetPayload<{
+  include: { questions: { include: { skill: true } }; skill: true };
+}>;
 
 function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestAttempt }) {
   let answers: Record<string, string> = {};
@@ -24,6 +27,7 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
     corrupt = true;
   }
   const percentage = attempt.totalMarks > 0 ? Math.round((attempt.score / attempt.totalMarks) * 100) : 0;
+  const passed = percentage >= test.passPercent;
 
   return (
     <div className="space-y-4">
@@ -35,10 +39,13 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
               {attempt.score} / {attempt.totalMarks}
             </p>
           </div>
-          <Badge color={percentage >= 50 ? "green" : "red"}>{percentage}%</Badge>
+          <div className="flex items-center gap-2">
+            <Badge color={passed ? "green" : "red"}>{passed ? "Passed" : "Failed"}</Badge>
+            <Badge color={passed ? "green" : "red"}>{percentage}%</Badge>
+          </div>
         </div>
         <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
-          Submitted {formatDateTime(attempt.submittedAt)}
+          Pass mark {test.passPercent}% &middot; Submitted {formatDateTime(attempt.submittedAt)}
         </p>
       </Card>
 
@@ -63,7 +70,7 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
               <Card key={question.id}>
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-ink-900">
-                    {index + 1}. {question.question}
+                    {index + 1}. <MathText text={question.question} />
                   </p>
                   <Badge color={isCorrect ? "green" : "red"}>{isCorrect ? "Correct" : "Incorrect"}</Badge>
                 </div>
@@ -83,13 +90,23 @@ function ResultView({ test, attempt }: { test: TestWithQuestions; attempt: TestA
                               : "border-hair text-ink-700"
                         )}
                       >
-                        <span className="font-medium">{letter}.</span> {options[letter]}
+                        <span className="font-medium">{letter}.</span> <MathText text={options[letter]} />
                         {isSelected && !isAnswer && <span className="ml-2 text-xs">(your answer)</span>}
                         {isAnswer && <span className="ml-2 text-xs">(correct answer)</span>}
                       </div>
                     );
                   })}
                 </div>
+                {question.explanation && (
+                  <p className="mt-3 rounded-[10px] bg-sunken px-3 py-2 text-sm text-ink-700">
+                    <span className="font-medium text-ink-900">Why:</span> <MathText text={question.explanation} />
+                  </p>
+                )}
+                {question.skill && (
+                  <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                    Competency: {question.skill.name}
+                  </p>
+                )}
               </Card>
             );
           })}
@@ -110,7 +127,10 @@ export default async function StudentTestDetailPage({ params }: { params: Promis
 
   const test = await prisma.test.findUnique({
     where: { id },
-    include: { questions: { orderBy: { order: "asc" } } },
+    include: {
+      questions: { orderBy: { order: "asc" }, include: { skill: true } },
+      skill: true,
+    },
   });
   if (!test || test.batchId !== batch.id) notFound();
 
@@ -149,6 +169,11 @@ export default async function StudentTestDetailPage({ params }: { params: Promis
             <p className="mt-1 text-sm text-ink-500">
               {test.questions.length} questions &middot; {totalMarks} marks
             </p>
+            {test.durationMins && !attempt && open && (
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-300">
+                Timed &middot; {test.durationMins} min
+              </p>
+            )}
             {test.closesAt && (
               <p className={cn("mt-1 text-xs", open ? "text-ink-500" : "text-status-unpaid")}>
                 {open ? `Closes ${formatDateTime(test.closesAt)}` : "Closed"}
@@ -162,7 +187,7 @@ export default async function StudentTestDetailPage({ params }: { params: Promis
       {attempt ? (
         <ResultView test={test} attempt={attempt} />
       ) : open ? (
-        <TestAttemptForm testId={test.id} questions={safeQuestions} />
+        <TestAttemptForm testId={test.id} questions={safeQuestions} durationMins={test.durationMins} />
       ) : (
         <EmptyState
           icon={Lock}

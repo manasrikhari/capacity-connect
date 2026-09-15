@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MathText } from "@/components/ui/MathText";
+import { markdownExcerpt } from "@/lib/math-segments";
 import { getSession } from "@/lib/session";
 import { getActiveStudentBatch } from "@/lib/batch";
 import { prisma } from "@/lib/prisma";
@@ -83,7 +85,9 @@ export default async function StudentNotesPage() {
                   </h3>
                   <Badge color="violet">{note.subject}</Badge>
                 </div>
-                <p className="mt-2 line-clamp-3 flex-1 text-sm text-ink-500">{note.content}</p>
+                <p className="mt-2 line-clamp-3 flex-1 text-sm text-ink-500">
+                  <MathText text={markdownExcerpt(note.content)} />
+                </p>
                 {note.fileUrl && (
                   <span className="mt-2 inline-flex items-center gap-1 text-xs text-plum-700">
                     <Link2 className="size-3" />

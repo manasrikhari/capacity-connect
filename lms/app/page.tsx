@@ -1,13 +1,141 @@
 import { redirect } from "next/navigation";
-import { LandingPage } from "@/components/landing/LandingPage";
+import { allLandingStyles } from "@/components/landing/styles";
+import { LandingInit } from "@/components/landing/LandingInit";
+import { LandingScrollbar } from "@/components/landing/sections/LandingScrollbar";
+import { GovBanner } from "@/components/layout/GovBanner";
+import { LandingHeader } from "@/components/landing/sections/LandingHeader";
+import { LandingHero } from "@/components/landing/sections/LandingHero";
+import { LandingFeatures } from "@/components/landing/sections/LandingFeatures";
+import { LandingAnnouncements } from "@/components/landing/sections/LandingAnnouncements";
+import { LandingCourses } from "@/components/landing/sections/LandingCourses";
+import { LandingResources } from "@/components/landing/sections/LandingResources";
+import { LandingHowItWorks } from "@/components/landing/sections/LandingHowItWorks";
+import { LandingPlatform } from "@/components/landing/sections/LandingPlatform";
+import { LandingVerify } from "@/components/landing/sections/LandingVerify";
+import { LandingSignIn } from "@/components/landing/sections/LandingSignIn";
+import { LandingCTA } from "@/components/landing/sections/LandingCTA";
+import { LandingFooter } from "@/components/landing/sections/LandingFooter";
 import { auth } from "@/lib/auth";
+import { getCapacityMetrics } from "@/lib/metrics-db";
+import { getLocale } from "@/lib/i18n-server";
 import { prisma } from "@/lib/prisma";
+
+async function loadLandingData() {
+  const now = new Date();
+  const [announcements, courses, metrics, activeCourseCount, traineeCount, resources] = await Promise.all([
+    prisma.announcement.findMany({
+      where: { isPublished: true },
+      orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
+      take: 5,
+      select: {
+        slug: true,
+        title: true,
+        summary: true,
+        category: true,
+        isFeatured: true,
+        publishedAt: true,
+        createdAt: true,
+      },
+    }),
+    prisma.batch.findMany({
+      where: { status: "ACTIVE", endDate: { gt: now } },
+      orderBy: { startDate: "asc" },
+      take: 4,
+      select: {
+        id: true,
+        name: true,
+        subject: true,
+        grade: true,
+        wmoTier: true,
+        startDate: true,
+        endDate: true,
+        teacher: { select: { name: true } },
+      },
+    }),
+    getCapacityMetrics(),
+    prisma.batch.count({ where: { status: "ACTIVE" } }),
+    prisma.user.count({ where: { role: "STUDENT" } }),
+    prisma.libraryItem.findMany({
+      where: { isPublic: true },
+      orderBy: { updatedAt: "desc" },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        fileUrl: true,
+        batch: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  return {
+    announcements: announcements.map((a) => ({
+      slug: a.slug,
+      title: a.title,
+      summary: a.summary,
+      category: a.category,
+      isFeatured: a.isFeatured,
+      date: a.publishedAt ?? a.createdAt,
+    })),
+    courses: courses.map((c) => ({
+      id: c.id,
+      name: c.name,
+      domain: c.subject,
+      level: c.grade,
+      wmoTier: c.wmoTier,
+      trainer: c.teacher?.name ?? null,
+      startDate: c.startDate,
+      endDate: c.endDate,
+    })),
+    stats: {
+      certified: metrics.certifiedCount,
+      courses: activeCourseCount,
+      trainees: traineeCount,
+    },
+    resources: resources.map((r) => ({
+      id: r.id,
+      title: r.title,
+      type: r.type,
+      course: r.batch?.name ?? null,
+      href: r.fileUrl,
+    })),
+  };
+}
 
 export default async function Home() {
   const session = await auth();
 
   if (!session) {
-    return <LandingPage />;
+    const [locale, { announcements, courses, stats, resources }] = await Promise.all([
+      getLocale(),
+      loadLandingData(),
+    ]);
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: allLandingStyles }} />
+
+        <LandingScrollbar />
+        <GovBanner container="mx-auto w-full max-w-[1180px] px-7" />
+        <LandingHeader locale={locale} />
+        <main id="main-content" tabIndex={-1}>
+          <LandingHero locale={locale} />
+          <LandingFeatures />
+          <LandingAnnouncements announcements={announcements} />
+          <LandingCourses courses={courses} stats={stats} />
+          <LandingResources resources={resources} />
+          <LandingHowItWorks />
+          <LandingPlatform />
+          <LandingVerify />
+          <LandingSignIn />
+          <LandingCTA locale={locale} />
+        </main>
+        <LandingFooter />
+
+        {/* Loads Lucide icons + runs scroll/animation scripts on the client */}
+        <LandingInit />
+      </>
+    );
   }
 
   const dbUser = await prisma.user.findUnique({

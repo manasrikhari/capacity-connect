@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { createTest, updateTest } from "@/app/admin/tests/actions";
+import { createTest, listAllSkills, updateTest } from "@/app/admin/tests/actions";
 import type { Test } from "@/app/generated/prisma/client";
 import { Button } from "@/components/ui/Button";
-import { FormField, Input } from "@/components/ui/Field";
+import { FormField, Input, Select } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
 import { initialActionState } from "@/lib/action-state";
 import { toDatetimeLocalValue } from "@/lib/utils";
@@ -22,6 +22,24 @@ export function TestFormModal({
   const action = test ? updateTest.bind(null, test.id) : createTest;
   const [state, formAction, pending] = useActionState(action, initialActionState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [skills, setSkills] = useState<{ id: string; name: string }[]>([]);
+
+  // Skills are loaded lazily so this modal stays self-contained wherever it is
+  // rendered (the detail manager mounts it without a skills prop).
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    listAllSkills()
+      .then((rows) => {
+        if (active) setSkills(rows);
+      })
+      .catch(() => {
+        /* non-fatal: the skill select simply stays empty */
+      });
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (state?.success) {
@@ -42,6 +60,50 @@ export function TestFormModal({
         </FormField>
         <FormField label="Subject" htmlFor="subject" error={state?.fieldErrors?.subject?.[0]}>
           <Input id="subject" name="subject" defaultValue={test?.subject} placeholder="e.g. Mathematics" />
+        </FormField>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            label="Duration (min)"
+            htmlFor="durationMins"
+            error={state?.fieldErrors?.durationMins?.[0]}
+          >
+            <Input
+              id="durationMins"
+              name="durationMins"
+              type="number"
+              min={5}
+              max={180}
+              defaultValue={test?.durationMins ?? ""}
+              placeholder="Untimed"
+            />
+          </FormField>
+          <FormField
+            label="Pass %"
+            htmlFor="passPercent"
+            error={state?.fieldErrors?.passPercent?.[0]}
+          >
+            <Input
+              id="passPercent"
+              name="passPercent"
+              type="number"
+              min={1}
+              max={100}
+              defaultValue={test?.passPercent ?? 50}
+            />
+          </FormField>
+        </div>
+        <FormField label="Competency (optional)" htmlFor="skillId" error={state?.fieldErrors?.skillId?.[0]}>
+          <Select id="skillId" name="skillId" defaultValue={test?.skillId ?? ""}>
+            <option value="">No competency</option>
+            {skills.map((skill) => (
+              <option key={skill.id} value={skill.id}>
+                {skill.name}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1 text-xs text-ink-300">
+            Passing this test updates the trainee&apos;s proficiency in this competency.
+          </p>
         </FormField>
         <FormField
           label="Closes at (optional)"

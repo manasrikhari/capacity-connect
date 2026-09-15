@@ -37,16 +37,20 @@ export async function credentialsSignInAction(
   }
 
   try {
+    // redirect:false — the form does a full-page navigation to "/" on
+    // success instead. Letting Auth.js redirect inside the action rendered
+    // the landing page in the same request that *sets* the session cookie,
+    // so the user saw the signed-out page and assumed the login failed.
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/",
+      redirect: false,
     });
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Wrong email or password." };
     }
-    throw error; // NEXT_REDIRECT and anything unexpected
+    throw error;
   }
-  return null;
+  return { success: true };
 }

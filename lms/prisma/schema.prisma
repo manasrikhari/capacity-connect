@@ -43,33 +43,105 @@ enum AttendanceStatus {
   ABSENT
 }
 
+// ── Capacity Connect (SIH 26075) enums ─────────────────────────────────────
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum CertificateStatus {
+  VALID
+  REVOKED
+}
+
+enum KnowledgeSourceKind {
+  PDF
+  LINK
+  TEXT
+  LIVE_CLASS
+}
+
+enum LibraryItemType {
+  RECORDED_LECTURE
+  PRESENTATION
+  DOCUMENT
+  MANUAL
+}
+
+// A trainee's request to be promoted to trainer, reviewed in the /platform queue.
+enum TrainerRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Per-course staff roles — IMD's SOP requires disjoint academic, examination and
+// result cells, so the same official cannot teach, set the paper and evaluate it.
+enum BatchStaffRole {
+  AUTHOR
+  EXAMINER
+  EVALUATOR
+  MENTOR
+  OBSERVER
+}
+
 // ── Tenant isolation unit ──────────────────────────────────────────────────
 model Batch {
   id        String      @id @default(cuid())
   name      String
-  subject   String?
-  grade     String?
+  subject   String? // Capacity Connect: reused as the operational DOMAIN label
+  grade     String? // Capacity Connect: reused as the course LEVEL label
   teacherId String
   teacher   User        @relation("OwnedBatches", fields: [teacherId], references: [id], onDelete: Cascade)
   status    BatchStatus @default(ACTIVE)
   joinCode  String      @unique
 
-  enrollments  Enrollment[]
-  meetings     Meeting[]
-  notes        Note[]
-  tests        Test[]
-  fees         Fee[]
-  payments     Payment[]
-  testAttempts TestAttempt[]
-  liveSessions LiveSession[]
+  // ── Capacity Connect course metadata (all additive/nullable) ──
+  description String?
+  department  String? // "IMD" | "NCMRWF" | "INCOIS" | "IITM" | "MoES"
+  wmoTier     String? // "BIP-M" | "BIP-MT" | "Specialised" | "Refresher"
+  startDate   DateTime?
+  endDate     DateTime?
+  slug        String?   @unique // stable public handle for /courses/<slug>
+  eligibility Json? // lib/eligibility.ts rule set: { minQualification?, requiredCadre?, minYearsExperience?, prerequisiteCourseIds? }
+
+  enrollments     Enrollment[]
+  meetings        Meeting[]
+  notes           Note[]
+  tests           Test[]
+  fees            Fee[]
+  payments        Payment[]
+  testAttempts    TestAttempt[]
+  liveSessions    LiveSession[]
   aiConversations AiConversation[]
-  attendances  Attendance[]
-  notices      Notice[]
+  attendances     Attendance[]
+  notices         Notice[]
+
+  // ── Capacity Connect relations ──
+  skillRequirements BatchSkillRequirement[]
+  certificates      Certificate[]
+  feedbacks         Feedback[]
+  libraryItems      LibraryItem[]
+  knowledgeNodes    KnowledgeNode[]
+  knowledgeSources  KnowledgeSource[]
+  staff             BatchStaff[]
+  invites           Invite[]
+  weeks             CourseWeek[]
+  threads           DiscussionThread[]
+  assignments       Assignment[]
+
+  // ── Phase 5 ──
+  competencyEvidence CompetencyEvidence[]
+  weatherCases       WeatherCase[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([teacherId])
+  @@index([department])
+  @@index([status])
+  @@index([startDate])
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
@@ -85,8 +157,8 @@ model User {
   plan          Plan           @default(FREE)
   onboarded     Boolean        @default(false)
 
-  enrollments Enrollment[]
-  doubts       Doubt[]
+  enrollments     Enrollment[]
+  doubts          Doubt[]
   aiConversations AiConversation[]
 
   accounts Account[]
@@ -102,6 +174,39 @@ model User {
 
   // ADMIN only — notices they authored
   authoredNotices Notice[] @relation("AuthoredNotices")
+
+  // ── Capacity Connect: SUPER_ADMIN = Admin, ADMIN = Trainer, STUDENT = Trainee ──
+  profile               Profile?
+  trainerSkills         TrainerSkill[]
+  traineeSkills         TraineeSkill[]
+  certificates          Certificate[]     @relation("TraineeCertificates")
+  feedbacks             Feedback[]        @relation("TraineeFeedback")
+  uploadedLibraryItems  LibraryItem[]     @relation("UploadedLibraryItems")
+  authoredAnnouncements Announcement[]    @relation("AuthoredAnnouncements")
+  addedKnowledgeSources KnowledgeSource[] @relation("AddedKnowledgeSources")
+  discussionThreads     DiscussionThread[]     @relation("AuthoredThreads")
+  discussionPosts       DiscussionPost[]       @relation("AuthoredPosts")
+  assignmentSubmissions AssignmentSubmission[] @relation("TraineeSubmissions")
+  contentViews          ContentView[]
+  gradedSubmissions     AssignmentSubmission[] @relation("GradedSubmissions")
+
+  // ── Phase 1: governed roles ──
+  trainerRequest           TrainerRequest?  @relation("TrainerRequestUser")
+  reviewedTrainerRequests  TrainerRequest[] @relation("TrainerRequestReviewer")
+  batchStaffRoles          BatchStaff[]     @relation("BatchStaffUser")
+  auditActed               AuditLog[]       @relation("AuditActor")
+  auditTargeted            AuditLog[]       @relation("AuditTarget")
+
+  // ── Phase 2: onboarding & notifications ──
+  notifications     Notification[] @relation("UserNotifications")
+  sentInvites       Invite[]       @relation("SentInvites")
+  spocDepartments   Department[]   @relation("SpocDepartments")
+
+  // ── Phase 5: competency passport & forecast drill ──
+  competencyEvidence  CompetencyEvidence[] @relation("TraineeEvidence")
+  verifiedEvidence    CompetencyEvidence[] @relation("EvidenceVerifier")
+  weatherCaseAttempts WeatherCaseAttempt[]
+  authoredWeatherCases WeatherCase[]       @relation("WeatherCaseAuthor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -214,18 +319,26 @@ model Notice {
 }
 
 model Note {
-  id      String @id @default(cuid())
+  id      String  @id @default(cuid())
   batchId String
-  batch   Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
   title   String
   subject String
   content String
   fileUrl String?
 
+  // ── Capacity Connect: notes can back GraphRAG nodes ──
+  knowledgeNodes KnowledgeNode[]
+
+  // Phase 3: optional, so content predating weeks falls into "Unsorted".
+  weekId String?
+  week   CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
+  @@index([weekId])
 }
 
 model Test {
@@ -237,13 +350,24 @@ model Test {
   isActive Boolean   @default(false)
   closesAt DateTime?
 
+  // ── Capacity Connect additions ──
+  durationMins Int?
+  passPercent  Int     @default(50)
+  skillId      String?
+  skill        Skill?  @relation(fields: [skillId], references: [id], onDelete: SetNull)
+
   questions Question[]
   attempts  TestAttempt[]
+
+  weekId String?
+  week   CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
+  @@index([skillId])
+  @@index([weekId])
 }
 
 model Question {
@@ -260,6 +384,14 @@ model Question {
   correctOption String
   marks         Int    @default(1)
   order         Int    @default(0)
+
+  // ── Capacity Connect additions ──
+  difficulty  Difficulty?
+  explanation String?
+  skillId     String?
+  skill       Skill?      @relation(fields: [skillId], references: [id], onDelete: SetNull)
+
+  @@index([skillId])
 }
 
 model TestAttempt {
@@ -316,36 +448,39 @@ model Payment {
 
 // ── Live Meeting Storage ───────────────────────────────────────────────────
 model LiveSession {
-  id            String          @id @default(cuid())
+  id            String    @id @default(cuid())
   batchId       String
-  batch         Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  roomId        String          @unique
-  status        String          @default("live") // "live", "completed", "expired"
-  startedAt     DateTime        @default(now())
+  batch         Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  roomId        String    @unique
+  status        String    @default("live") // "live", "completed", "expired"
+  startedAt     DateTime  @default(now())
   endedAt       DateTime?
-  teacherJoined Boolean         @default(false)
-  hasNotes      Boolean         @default(false)
-  
-  doubts        Doubt[]
+  teacherJoined Boolean   @default(false)
+  hasNotes      Boolean   @default(false)
+  transcript    String?   @db.Text // raw class transcript, captured for minutes & knowledge
+
+  doubts         Doubt[]
   meetingMinutes MeetingMinutes?
 }
+
 model Doubt {
-  id           String       @id @default(cuid())
-  sessionId    String
-  liveSession  LiveSession  @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
-  studentId    String
-  student      User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  doubtText    String
-  answer       String
-  screenshot   String?      // base64 image data
-  timestamp    DateTime     @default(now())
+  id          String      @id @default(cuid())
+  sessionId   String
+  liveSession LiveSession @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
+  studentId   String
+  student     User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  doubtText   String
+  answer      String
+  screenshot  String? // base64 image data
+  timestamp   DateTime    @default(now())
 }
+
 model MeetingMinutes {
-  id           String       @id @default(cuid())
-  sessionId    String       @unique
-  liveSession  LiveSession  @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
-  content      String       @db.Text
-  generatedAt  DateTime     @default(now())
+  id          String      @id @default(cuid())
+  sessionId   String      @unique
+  liveSession LiveSession @relation(fields: [sessionId], references: [roomId], onDelete: Cascade)
+  content     String      @db.Text
+  generatedAt DateTime    @default(now())
 }
 
 model AiConversation {
@@ -367,10 +502,667 @@ model AiMessage {
   id             String         @id @default(cuid())
   conversationId String
   conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  role           String         // "user" or "model"
+  role           String // "user" or "model"
   content        String         @db.Text
   createdAt      DateTime       @default(now())
 
   @@index([conversationId])
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CAPACITY CONNECT — SIH 2026 (PS 26075) — MoES / IMD Capacity Building Portal
+// SUPER_ADMIN = Admin (MoES)   ADMIN = Trainer (IMD)   STUDENT = Trainee
+// Course = Batch. All additive; see lib/roles.ts for display labels.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Profile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  designation      String?
+  department       String?
+  organisation     String?
+  postingLocation  String?
+  phone            String?
+  bio              String?
+  qualifications   Json? // [{ degree, institution, year }]
+  experience       Json? // [{ role, organisation, startYear, endYear, current }] — work history
+  cadre            String? // IMD cadre: "Met-A" | "Met-B" | "Scientist" | …
+  publicSlug       String?  @unique // stable handle for the public profile at /p/<slug>
+  isPublic         Boolean  @default(false)
+  openToMentoring  Boolean  @default(false)
+  yearsExperience  Float    @default(0)
+  interests        String[] @default([])
+  governmentIdType String?
+  governmentIdNum  String?
+  resumeUrl        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([organisation, department])
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trainerSkills     TrainerSkill[]
+  traineeSkills     TraineeSkill[]
+  batchRequirements BatchSkillRequirement[]
+  questions         Question[]
+  tests             Test[]
+  libraryItems      LibraryItem[]
+  assignments       Assignment[]
+  knowledgeNode     KnowledgeNode?
+
+  @@index([category])
+}
+
+model TrainerSkill {
+  id              String   @id @default(cuid())
+  trainerId       String
+  trainer         User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  skillId         String
+  skill           Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency     Int      @default(1) // 1 Novice … 5 Expert
+  yearsExperience Float    @default(0)
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([trainerId, skillId])
+  @@index([skillId, proficiency])
+}
+
+model TraineeSkill {
+  id          String   @id @default(cuid())
+  traineeId   String
+  trainee     User     @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency Int      @default(1)
+  source      String? // "SELF_DECLARED" | "TEST:<testId>" | "CERTIFICATE:<batchId>"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([traineeId, skillId])
+  @@index([skillId])
+}
+
+model BatchSkillRequirement {
+  id             String  @id @default(cuid())
+  batchId        String
+  batch          Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  skillId        String
+  skill          Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  minProficiency Int     @default(3)
+  weight         Float   @default(1.0)
+  isMandatory    Boolean @default(true)
+
+  @@unique([batchId, skillId])
+  @@index([skillId])
+}
+
+/// A document that was ingested to teach MeghDoot: an uploaded PDF, a scraped
+/// link, or a pasted passage. This is the unit staff actually manage — they
+/// browse and remove sources, not individual graph nodes.
+model KnowledgeSource {
+  id        String              @id @default(cuid())
+  title     String
+  kind      KnowledgeSourceKind
+  /// Original address for a LINK, so the library can offer "open".
+  url       String?
+  /// Null = national; otherwise the course that owns this knowledge.
+  batchId   String?
+  batch     Batch?              @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  addedById String?
+  addedBy   User?               @relation("AddedKnowledgeSources", fields: [addedById], references: [id], onDelete: SetNull)
+  nodes     KnowledgeNode[]
+  createdAt DateTime            @default(now())
+
+  @@index([batchId, createdAt])
+}
+
+model KnowledgeNode {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  type        String // lib/taxonomy.ts NODE_TYPES
+  category    String?
+  description String?
+  metadata    Json? // { aliases?: string[], source?: string, equation?: string }
+
+  batchId             String?
+  batch               Batch?           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  skillId             String?          @unique
+  skill               Skill?           @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  sourceLibraryItemId String?
+  sourceLibraryItem   LibraryItem?     @relation(fields: [sourceLibraryItemId], references: [id], onDelete: SetNull)
+  sourceNoteId        String?
+  sourceNote          Note?            @relation(fields: [sourceNoteId], references: [id], onDelete: SetNull)
+  sourceId            String?
+  source              KnowledgeSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  outgoing KnowledgeRelation[] @relation("RelationSource")
+  incoming KnowledgeRelation[] @relation("RelationTarget")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([batchId])
+  @@index([sourceId])
+}
+
+model KnowledgeRelation {
+  id           String        @id @default(cuid())
+  sourceId     String
+  source       KnowledgeNode @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  targetId     String
+  target       KnowledgeNode @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  relationType String // lib/taxonomy.ts RELATION_TYPES
+  weight       Float         @default(1.0)
+  createdAt    DateTime      @default(now())
+
+  @@unique([sourceId, targetId, relationType])
+  @@index([targetId])
+  @@index([relationType])
+}
+
+model Certificate {
+  id                String            @id @default(cuid())
+  certificateNumber String            @unique // "IMD-CC-2026-000123"
+  verificationHash  String            @unique // HMAC-SHA256, lib/certificate.ts
+  batchId           String
+  batch             Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  traineeId         String
+  trainee           User              @relation("TraineeCertificates", fields: [traineeId], references: [id], onDelete: Cascade)
+  issueDate         DateTime          @default(now())
+  grade             String? // "Distinction" | "Merit" | "Pass"
+  scorePercent      Int?
+  status            CertificateStatus @default(VALID)
+  pdfUrl            String?
+  metadata          Json?
+  createdAt         DateTime          @default(now())
+
+  @@unique([batchId, traineeId])
+  @@index([traineeId])
+}
+
+model Feedback {
+  id                   String   @id @default(cuid())
+  batchId              String
+  batch                Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  traineeId            String
+  trainee              User     @relation("TraineeFeedback", fields: [traineeId], references: [id], onDelete: Cascade)
+  overallRating        Int
+  contentRating        Int?
+  trainerRating        Int?
+  infrastructureRating Int?
+  comments             String?
+  suggestions          String?
+  createdAt            DateTime @default(now())
+
+  @@unique([batchId, traineeId])
+  @@index([batchId])
+}
+
+/// Public feedback / grievance submitted from the unauthenticated /feedback page
+/// (a GIGW requirement — a citizen-facing feedback channel). Distinct from the
+/// batch/trainee `Feedback` above, which is course evaluation behind sign-in.
+model PublicFeedback {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?
+  /// general | suggestion | accessibility | grievance
+  category  String   @default("general")
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model LibraryItem {
+  id             String          @id @default(cuid())
+  batchId        String
+  batch          Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  uploaderId     String
+  uploader       User            @relation("UploadedLibraryItems", fields: [uploaderId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  type           LibraryItemType
+  fileUrl        String // "/api/files/<batchId>/<storedName>" or https://…
+  mimeType       String?
+  fileSizeBytes  Int?
+  durationMins   Int?
+  subject        String?
+  isPublic       Boolean         @default(false) // published to the public homepage & servable without enrolment
+  skillId        String?
+  skill          Skill?          @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  knowledgeNodes KnowledgeNode[]
+
+  weekId String?
+  week   CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId, type])
+  @@index([skillId])
+  @@index([isPublic])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  summary     String?
+  content     String // markdown
+  category    String    @default("General") // lib/taxonomy.ts ANNOUNCEMENT_CATEGORIES
+  bannerUrl   String?
+  isPublished Boolean   @default(false)
+  isFeatured  Boolean   @default(false)
+  publishedAt DateTime?
+  viewCount   Int       @default(0)
+  authorId    String
+  author      User      @relation("AuthoredAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isPublished, publishedAt])
+  @@index([category])
+}
+
+// ── Phase 1: governed roles & separation of duties ─────────────────────────
+
+/// A trainee's request to be promoted to trainer. Created from /welcome; it
+/// surfaces in the MoES approval queue on /platform. Approval is the governed
+/// path that writes User.role — replacing the self-promotion hole it closed.
+model TrainerRequest {
+  id           String               @id @default(cuid())
+  userId       String               @unique
+  user         User                 @relation("TrainerRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  organisation String?
+  designation  String?
+  department   String?
+  intent       String? // a sentence on what they intend to teach
+  status       TrainerRequestStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?                @relation("TrainerRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([status])
+}
+
+/// A per-course staff assignment. Distinct from Batch.teacherId (the owner):
+/// a course can have an AUTHOR who cannot see the question bank and an
+/// EVALUATOR who is not the teacher, enforcing IMD's disjoint cells.
+model BatchStaff {
+  id      String         @id @default(cuid())
+  batchId String
+  batch   Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User           @relation("BatchStaffUser", fields: [userId], references: [id], onDelete: Cascade)
+  role    BatchStaffRole
+
+  createdAt DateTime @default(now())
+
+  @@unique([batchId, userId, role])
+  @@index([batchId])
+  @@index([userId])
+}
+
+// ── Phase 2: onboarding, nomination & notifications ────────────────────────
+
+/// An in-app notification. Works with no external service (the bell reads these
+/// directly); email is a separate best-effort adapter in lib/mailer.ts.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  kind      String // "trainer_request.approved" | "enrollment.approved" | "invite" | …
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+/// A regional office / institute / foreign NMHS whose SPOC nominates staff.
+/// Maps IMD's nomination model (NPTEL Local Chapter) onto a record.
+model Department {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  code      String? // "RMC-CHENNAI" | "DWR-MACHILIPATNAM" | …
+  kind      String? // "RMC" | "DWR" | "INSTITUTE" | "NMHS"
+  spocId    String?
+  spoc      User?   @relation("SpocDepartments", fields: [spocId], references: [id], onDelete: SetNull)
+
+  invites Invite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spocId])
+}
+
+/// A nomination invite consumed at /invite/[token]. Accepting creates (or links)
+/// the account pre-filled with org/department/cadre and, for a course invite, an
+/// already-approved enrolment because the nominating office vouched for them.
+model Invite {
+  id           String      @id @default(cuid())
+  token        String      @unique
+  email        String
+  name         String?
+  role         Role        @default(STUDENT)
+  cadre        String?
+  designation  String?
+  batchId      String?
+  batch        Batch?      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  invitedById  String?
+  invitedBy    User?       @relation("SentInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  createdAt    DateTime    @default(now())
+
+  @@index([email])
+  @@index([batchId])
+}
+
+/// An immutable record of a privileged change (role, status, staff assignment).
+/// A ministry deployment is expected to be able to answer "who changed what".
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetId  String?
+  target    User?    @relation("AuditTarget", fields: [targetId], references: [id], onDelete: SetNull)
+  action    String // "role.change" | "status.change" | "trainer_request.approve" | …
+  fromValue String?
+  toValue   String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([targetId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 3 — the SWAYAM four-quadrant course experience.
+//
+// SWAYAM builds every course on four quadrants: video lecture, reading
+// material, self-assessment, and a discussion forum. The platform already had
+// three of the four; DiscussionThread/DiscussionPost supply the fourth, and
+// CourseWeek gives them all a week to belong to.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CourseWeek {
+  id      String @id @default(cuid())
+  batchId String
+  batch   Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  /// 1-based position within the course.
+  index   Int
+  title   String
+  summary String?
+
+  /// Shown as a label, never enforced — weeks are not gated, so a reviewer can
+  /// look ahead during a demo.
+  opensAt DateTime?
+
+  libraryItems LibraryItem[]
+  notes        Note[]
+  tests        Test[]
+  assignments  Assignment[]
+  threads      DiscussionThread[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([batchId, index])
+  @@index([batchId])
+}
+
+model DiscussionThread {
+  id      String      @id @default(cuid())
+  batchId String
+  batch   Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  weekId  String?
+  week    CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
+  authorId String
+  author   User   @relation("AuthoredThreads", fields: [authorId], references: [id], onDelete: Cascade)
+
+  title String
+  body  String
+
+  /// Trainer-pinned threads sort first — announcements and FAQs.
+  isPinned   Boolean @default(false)
+  isResolved Boolean @default(false)
+
+  posts DiscussionPost[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId, createdAt])
+  @@index([weekId])
+}
+
+model DiscussionPost {
+  id       String           @id @default(cuid())
+  threadId String
+  thread   DiscussionThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User             @relation("AuthoredPosts", fields: [authorId], references: [id], onDelete: Cascade)
+
+  body String
+
+  /// A trainer marks one reply as the answer, the way SWAYAM's forum resolves a
+  /// doubt rather than leaving the thread to trail off.
+  isAnswer Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([threadId, createdAt])
+}
+
+/// Non-MCQ assessment. IMD's SOP counts "solving problems/puzzles, making
+/// presentations, completing practical assignments" as internal assessment;
+/// until now the only gradeable thing in the platform was a four-option MCQ.
+model Assignment {
+  id      String      @id @default(cuid())
+  batchId String
+  batch   Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  weekId  String?
+  week    CourseWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+
+  title       String
+  brief       String
+  /// Rubric criteria: [{ label, maxPoints, guidance? }]
+  rubric      Json?
+  maxPoints   Int       @default(100)
+  dueAt       DateTime?
+  isPublished Boolean   @default(false)
+
+  /// Optional competency this assignment evidences.
+  skillId String?
+  skill   Skill?  @relation(fields: [skillId], references: [id], onDelete: SetNull)
+
+  submissions AssignmentSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+  @@index([weekId])
+  @@index([skillId])
+}
+
+model AssignmentSubmission {
+  id           String     @id @default(cuid())
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  traineeId    String
+  trainee      User       @relation("TraineeSubmissions", fields: [traineeId], references: [id], onDelete: Cascade)
+
+  body    String
+  fileUrl String?
+
+  /// Per-criterion scores: [{ label, points }] — mirrors the rubric.
+  scores     Json?
+  totalScore Int?
+  feedback   String?
+
+  gradedById String?
+  gradedBy   User?     @relation("GradedSubmissions", fields: [gradedById], references: [id], onDelete: SetNull)
+  gradedAt   DateTime?
+
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([assignmentId, traineeId])
+  @@index([traineeId])
+}
+
+
+/// A trainee opening a piece of course content.
+///
+/// Progress across SWAYAM's four quadrants is meaningless without this: the
+/// platform tracks test attempts and submissions, but nothing recorded that a
+/// reading or a recording had actually been opened, so any "60% complete"
+/// would have been invented. One row per trainee per item, written on open.
+model ContentView {
+  id        String @id @default(cuid())
+  traineeId String
+  trainee   User   @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  /// "LIBRARY" | "NOTE" — the kind of item `itemId` points at. Deliberately a
+  /// string rather than a relation: the two content models have no common
+  /// parent, and a view is a fact about behaviour, not a foreign key worth
+  /// cascading.
+  itemType String
+  itemId   String
+
+  viewedAt DateTime @default(now())
+
+  @@unique([traineeId, itemType, itemId])
+  @@index([traineeId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 5 — Competency Passport & forecast-operations simulator
+// A trainee earns evidence toward named operational competencies (from courses,
+// assessments and forecast drills); the passport is the signed, verifiable
+// summary of what they can actually do — IMD's answer to "who can run the desk".
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// A named operational competency (e.g. "Nowcasting from Doppler radar").
+/// Admin-curated vocabulary; evidence accrues against it.
+model Competency {
+  id          String   @id @default(cuid())
+  code        String?  @unique // "WMO-BIP-M-3.2" | "IMD-NOWCAST" | …
+  name        String
+  category    String // lib/taxonomy.ts SKILL_CATEGORIES
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  evidence CompetencyEvidence[]
+
+  @@index([category])
+}
+
+/// One piece of evidence that a trainee holds a competency at some level.
+/// The passport is the roll-up of these, keeping the highest verified level.
+model CompetencyEvidence {
+  id           String  @id @default(cuid())
+  traineeId    String
+  trainee      User    @relation("TraineeEvidence", fields: [traineeId], references: [id], onDelete: Cascade)
+  competencyId String
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  /// How this was earned: "COURSE" | "ASSESSMENT" | "FORECAST_DRILL" | "MANUAL".
+  source String
+  /// Demonstrated level, 1 (Novice) … 5 (Expert).
+  level  Int    @default(1)
+  /// Optional numeric score behind the level (e.g. CSI×100 from a drill).
+  score  Int?
+  note   String?
+
+  batchId       String?
+  batch         Batch?       @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  weatherCaseId String?
+  weatherCase   WeatherCase? @relation(fields: [weatherCaseId], references: [id], onDelete: SetNull)
+
+  /// Set when a trainer/examiner vouches for the evidence (unverified otherwise).
+  verifiedById String?
+  verifiedBy   User?     @relation("EvidenceVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt   DateTime?
+
+  issuedAt DateTime @default(now())
+
+  @@index([traineeId, competencyId])
+  @@index([competencyId])
+}
+
+/// A forecasting drill scenario: the trainee issues an IMD colour-coded warning,
+/// scored deterministically (lib/forecast-verification.ts) against `correctColour`.
+model WeatherCase {
+  id            String  @id @default(cuid())
+  title         String
+  description   String  @db.Text
+  hazard        String? // "Cyclone" | "Heavy rain" | "Heatwave" | "Thunderstorm" | …
+  region        String?
+  imageUrl      String?
+  /// The verifying answer — one of lib/forecast-verification.ts IMD_COLOURS.
+  correctColour String
+  /// Optional competency this drill contributes evidence toward.
+  competencyCode String?
+
+  batchId     String?
+  batch       Batch?  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?   @relation("WeatherCaseAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  attempts WeatherCaseAttempt[]
+  evidence CompetencyEvidence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+}
+
+/// A trainee's answer to a weather case. One row per (case, trainee); re-taking
+/// overwrites. POD/FAR/CSI are computed across a trainee's attempts on demand.
+model WeatherCaseAttempt {
+  id            String      @id @default(cuid())
+  weatherCaseId String
+  weatherCase   WeatherCase @relation(fields: [weatherCaseId], references: [id], onDelete: Cascade)
+  traineeId     String
+  trainee       User        @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  /// The colour the trainee issued — one of IMD_COLOURS.
+  forecastColour String
+  isCorrect      Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([weatherCaseId, traineeId])
+  @@index([traineeId])
+}

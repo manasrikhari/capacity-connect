@@ -3,6 +3,8 @@ import { z } from "zod";
 // Strictly "A" | "B" | "C" | "D" - case-sensitive, nothing else accepted.
 export const optionLetterSchema = z.enum(["A", "B", "C", "D"]);
 
+export const difficultySchema = z.enum(["EASY", "MEDIUM", "HARD"]);
+
 export const questionSchema = z.object({
   question: z.string().min(1, "Question text is required"),
   optionA: z.string().min(1, "Option A is required"),
@@ -11,6 +13,9 @@ export const questionSchema = z.object({
   optionD: z.string().min(1, "Option D is required"),
   correctOption: optionLetterSchema,
   marks: z.coerce.number().int().min(1, "Marks must be at least 1").max(100),
+  difficulty: difficultySchema.optional(),
+  explanation: z.string().max(600).optional().or(z.literal("")),
+  skillId: z.string().optional().or(z.literal("")),
 });
 
 // Optional datetime-local string ("" allowed) parsed to a Date, or null when empty.
@@ -36,6 +41,9 @@ export const testMetaSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   subject: z.string().min(1, "Subject is required").max(100),
   closesAt: closesAtSchema,
+  durationMins: z.coerce.number().int().min(5).max(180).optional(),
+  passPercent: z.coerce.number().int().min(1).max(100).default(50),
+  skillId: z.string().optional().or(z.literal("")),
 });
 
 export type QuestionInput = z.infer<typeof questionSchema>;

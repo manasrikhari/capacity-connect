@@ -399,7 +399,7 @@ export default function LeftRail({ editor, showWhiteboard, strokeWidth = 1.5, is
             {isWhiteboardEmpty && (
               <div className="absolute left-14 top-1 z-50 pointer-events-none animate-bounce-horizontal whitespace-nowrap">
                 <div className="flex items-center gap-2 px-3 py-2 bg-[#FAF9F6] text-[#0D0D14] text-xs font-semibold rounded-lg shadow-xl border border-black relative">
-                  <span className="text-sm">👈</span>
+                  <span aria-hidden="true" className="text-sm font-semibold">←</span>
                   <span className="font-sans text-zinc-900 font-semibold">Click here to add page</span>
                 </div>
               </div>

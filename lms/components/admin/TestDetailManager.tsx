@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MathText } from "@/components/ui/MathText";
 import { cn, formatDateTime, isTestOpen } from "@/lib/utils";
 
 type TestWithQuestions = Prisma.TestGetPayload<{ include: { questions: true } }>;
@@ -158,7 +159,7 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-ink-900">
-                      {index + 1}. {question.question}
+                      {index + 1}. <MathText text={question.question} />
                     </p>
                     <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
                       {OPTION_LETTERS.map((letter) => (
@@ -172,7 +173,7 @@ export function TestDetailManager({ test }: { test: TestWithQuestions }) {
                           )}
                         >
                           <span className="font-medium">{letter}.</span>
-                          <span>{options[letter]}</span>
+                          <span><MathText text={options[letter]} /></span>
                         </div>
                       ))}
                     </div>

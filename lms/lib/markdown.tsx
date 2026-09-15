@@ -1,14 +1,17 @@
 import type { ReactNode } from "react";
+import { MathText } from "@/components/ui/MathText";
+import { splitMath } from "@/lib/math-segments";
 
-function renderInline(text: string): ReactNode[] {
+function renderProse(text: string, keyPrefix: string): ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean);
   return parts.map((part, i) => {
+    const key = `${keyPrefix}-${i}`;
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
+      return <strong key={key}>{part.slice(2, -2)}</strong>;
     }
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={i} className="rounded bg-violet-50 px-1 py-0.5 text-[0.85em] text-violet-700">
+        <code key={key} className="rounded bg-sunken px-1 py-0.5 font-mono text-[0.85em] text-plum-700">
           {part.slice(1, -1)}
         </code>
       );
@@ -17,9 +20,22 @@ function renderInline(text: string): ReactNode[] {
   });
 }
 
-/** Minimal markdown renderer supporting headings, bold, inline code, and lists. */
+/** Inline markdown (bold, code) with `$…$` math rendered by KaTeX. */
+function renderInline(text: string): ReactNode {
+  const nodes = splitMath(text).flatMap((seg, i): ReactNode[] =>
+    seg.kind === "math"
+      ? [<MathText key={`m-${i}`} text={seg.display ? `$$${seg.value}$$` : `$${seg.value}$`} />]
+      : renderProse(seg.value, `t-${i}`)
+  );
+  return <>{nodes}</>;
+}
+
+/** Minimal markdown renderer supporting headings, bold, inline code, lists, and TeX math. */
 export function renderMarkdown(content: string): ReactNode {
-  const lines = content.split("\n");
+  // Keep multi-line `$$…$$` blocks on one logical line so the line splitter
+  // below never cuts through a formula.
+  const flattened = content.replace(/\$\$([\s\S]+?)\$\$/g, (_m, body: string) => `$$${body.replace(/\s*\n\s*/g, " ")}$$`);
+  const lines = flattened.split("\n");
   const blocks: ReactNode[] = [];
   let listItems: ReactNode[] = [];
   let listType: "ul" | "ol" | null = null;
@@ -57,19 +73,19 @@ export function renderMarkdown(content: string): ReactNode {
       const text = renderInline(heading[2]);
       if (level === 1) {
         blocks.push(
-          <h1 key={blocks.length} className="text-xl font-semibold text-slate-800">
+          <h1 key={blocks.length} className="font-display text-xl text-ink-900">
             {text}
           </h1>
         );
       } else if (level === 2) {
         blocks.push(
-          <h2 key={blocks.length} className="text-lg font-semibold text-slate-800">
+          <h2 key={blocks.length} className="font-display text-lg text-ink-900">
             {text}
           </h2>
         );
       } else {
         blocks.push(
-          <h3 key={blocks.length} className="text-base font-semibold text-slate-800">
+          <h3 key={blocks.length} className="text-base font-semibold text-ink-900">
             {text}
           </h3>
         );
@@ -102,5 +118,5 @@ export function renderMarkdown(content: string): ReactNode {
   }
   flushList();
 
-  return <div className="space-y-3 text-sm text-slate-700">{blocks}</div>;
+  return <div className="space-y-3 text-sm text-ink-700">{blocks}</div>;
 }

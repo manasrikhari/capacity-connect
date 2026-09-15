@@ -1,5 +1,6 @@
 import { Clock, UserCheck, UserX } from "lucide-react";
 import { redirect } from "next/navigation";
+import { InviteTraineesCard } from "@/components/admin/InviteTraineesCard";
 import { StudentDeleteButton } from "@/components/admin/StudentDeleteButton";
 import { StudentStatusButton } from "@/components/admin/StudentStatusButton";
 import { Badge } from "@/components/ui/Badge";
@@ -35,9 +36,11 @@ export default async function AdminStudentsPage() {
         bindings={[{ event: PUSHER_EVENTS.ENROLLMENT_REQUESTED, toastMessageKey: "enrollmentRequested" }]}
       />
       <div>
-        <h1 className="text-2xl text-ink-900">Students</h1>
-        <p className="mt-1 text-sm text-ink-500">Approve, reject, or manage student access to {batch.name}.</p>
+        <h1 className="text-2xl text-ink-900">Trainees</h1>
+        <p className="mt-1 text-sm text-ink-500">Approve, reject, or manage trainee access to {batch.name}.</p>
       </div>
+
+      <InviteTraineesCard />
 
       <Card>
         <CardHeader>
@@ -47,7 +50,7 @@ export default async function AdminStudentsPage() {
           <EmptyState
             icon={Clock}
             title="No pending requests"
-            description="Students who join with your batch code will appear here for approval."
+            description="Trainees who join with your course code will appear here for approval."
           />
         ) : (
           <ul className="divide-y divide-hair">
@@ -76,10 +79,10 @@ export default async function AdminStudentsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Approved students ({approved.length})</CardTitle>
+          <CardTitle>Approved trainees ({approved.length})</CardTitle>
         </CardHeader>
         {approved.length === 0 ? (
-          <EmptyState icon={UserCheck} title="No approved students yet" />
+          <EmptyState icon={UserCheck} title="No approved trainees yet" />
         ) : (
           <ul className="divide-y divide-hair">
             {approved.map((e) => (

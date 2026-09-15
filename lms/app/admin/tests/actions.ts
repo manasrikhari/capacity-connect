@@ -8,11 +8,21 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { questionSchema, testMetaSchema } from "@/lib/validations/test";
 
+// Empty form fields arrive as "" — normalise to undefined so optional Zod
+// fields (and schema defaults) behave, and so an empty skill select never
+// becomes an invalid foreign key.
+function blankToUndefined(value: FormDataEntryValue | null): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
 function parseTestMetaForm(formData: FormData) {
   return testMetaSchema.safeParse({
     title: formData.get("title"),
     subject: formData.get("subject"),
     closesAt: formData.get("closesAt"),
+    durationMins: blankToUndefined(formData.get("durationMins")),
+    passPercent: blankToUndefined(formData.get("passPercent")),
+    skillId: blankToUndefined(formData.get("skillId")),
   });
 }
 
@@ -25,6 +35,18 @@ function parseQuestionForm(formData: FormData) {
     optionD: formData.get("optionD"),
     correctOption: formData.get("correctOption"),
     marks: formData.get("marks"),
+    difficulty: blankToUndefined(formData.get("difficulty")),
+    explanation: formData.get("explanation") ?? undefined,
+    skillId: blankToUndefined(formData.get("skillId")),
+  });
+}
+
+/** Skills available for tagging tests and questions (used by the form modals). */
+export async function listAllSkills(): Promise<{ id: string; name: string }[]> {
+  await requireAdmin();
+  return prisma.skill.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
   });
 }
 
@@ -44,6 +66,9 @@ export async function createTest(_prev: ActionState, formData: FormData): Promis
       title: parsed.data.title,
       subject: parsed.data.subject,
       closesAt: parsed.data.closesAt,
+      durationMins: parsed.data.durationMins ?? null,
+      passPercent: parsed.data.passPercent,
+      skillId: parsed.data.skillId || null,
       isActive: false,
     },
   });
@@ -71,6 +96,9 @@ export async function updateTest(id: string, _prev: ActionState, formData: FormD
       title: parsed.data.title,
       subject: parsed.data.subject,
       closesAt: parsed.data.closesAt,
+      durationMins: parsed.data.durationMins ?? null,
+      passPercent: parsed.data.passPercent,
+      skillId: parsed.data.skillId || null,
     },
   });
 
@@ -134,8 +162,16 @@ export async function addQuestion(
 
   const last = await prisma.question.findFirst({ where: { testId }, orderBy: { order: "desc" } });
 
+  const { difficulty, explanation, skillId, ...core } = parsed.data;
   await prisma.question.create({
-    data: { ...parsed.data, testId, order: (last?.order ?? 0) + 1 },
+    data: {
+      ...core,
+      difficulty: difficulty ?? null,
+      explanation: explanation || null,
+      skillId: skillId || null,
+      testId,
+      order: (last?.order ?? 0) + 1,
+    },
   });
 
   revalidatePath(`/admin/tests/${testId}`);
@@ -159,7 +195,16 @@ export async function updateQuestion(
   const question = await prisma.question.findUnique({ where: { id }, include: { test: true } });
   if (!question || question.test.batchId !== batch.id) return { error: "Question not found" };
 
-  await prisma.question.update({ where: { id }, data: parsed.data });
+  const { difficulty, explanation, skillId, ...core } = parsed.data;
+  await prisma.question.update({
+    where: { id },
+    data: {
+      ...core,
+      difficulty: difficulty ?? null,
+      explanation: explanation || null,
+      skillId: skillId || null,
+    },
+  });
 
   revalidatePath(`/admin/tests/${question.testId}`);
   return { success: true };

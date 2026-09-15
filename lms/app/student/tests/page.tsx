@@ -55,6 +55,7 @@ export default async function StudentTestsPage() {
                   </div>
                   <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-500">
                     {test._count.questions} question{test._count.questions === 1 ? "" : "s"}
+                    {test.durationMins ? ` · ${test.durationMins} min` : ""}
                   </p>
                   {!test.isActive ? (
                     <p className="mt-1.5 text-xs text-ink-300">No longer active · results only</p>

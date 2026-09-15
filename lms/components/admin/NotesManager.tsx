@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MathText } from "@/components/ui/MathText";
+import { markdownExcerpt } from "@/lib/math-segments";
 import { formatDate } from "@/lib/utils";
 
 interface NoteDisplay {
@@ -92,7 +94,9 @@ export function NotesManager({ notes }: { notes: NoteDisplay[] }) {
                     </h3>
                     <Badge color="violet">{note.subject}</Badge>
                   </div>
-                  <p className="mt-2 line-clamp-3 text-sm text-ink-500">{note.content}</p>
+                  <p className="mt-2 line-clamp-3 text-sm text-ink-500">
+                    <MathText text={markdownExcerpt(note.content)} />
+                  </p>
                   {note.fileUrl && (
                     <a
                       href={note.fileUrl}

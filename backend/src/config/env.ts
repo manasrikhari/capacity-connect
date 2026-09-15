@@ -44,6 +44,17 @@ export const ENV = {
   METERED_API_KEY: process.env.METERED_API_KEY || '',
   METERED_APP_NAME: getEnv('METERED_APP_NAME', 'opengrapes'),
 
+  // Room-composite egress → S3 recording. Optional: when EGRESS_S3_BUCKET is
+  // unset, recording is disabled and classes simply produce no recording.
+  EGRESS_S3_BUCKET: process.env.EGRESS_S3_BUCKET || '',
+  EGRESS_S3_REGION: getEnv('EGRESS_S3_REGION', 'us-east-1'),
+  EGRESS_S3_ACCESS_KEY: process.env.EGRESS_S3_ACCESS_KEY || '',
+  EGRESS_S3_SECRET_KEY: process.env.EGRESS_S3_SECRET_KEY || '',
+  EGRESS_S3_ENDPOINT: process.env.EGRESS_S3_ENDPOINT || '',
+  // Public base URL that serves the bucket, used to turn an S3 key into a
+  // playable URL for the LMS library (falls back to the S3 endpoint/bucket).
+  EGRESS_PUBLIC_BASE_URL: process.env.EGRESS_PUBLIC_BASE_URL || '',
+
   CERTIFICATE_SECRET: process.env.CERTIFICATE_SECRET || '',
 };
 

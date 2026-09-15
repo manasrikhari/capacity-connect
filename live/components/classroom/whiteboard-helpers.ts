@@ -10,51 +10,14 @@ export function getPagesSorted(editor: Editor) {
     .getCurrentPageShapes()
     .filter((s) => s.type === 'frame');
 
-  // Sort frames to determine sequential ordering
-  // We sort by pageIndex if defined, else Y position
-  const sortedToHeal = [...frames].sort((a, b) => {
+  // Sort frames by pageIndex if defined, else Y position
+  return [...frames].sort((a, b) => {
     const aIndex = a.meta?.pageIndex !== undefined ? (a.meta.pageIndex as number) : -1;
     const bIndex = b.meta?.pageIndex !== undefined ? (b.meta.pageIndex as number) : -1;
     if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
     if (aIndex === -1 && bIndex === -1) return a.y - b.y;
     return aIndex === -1 ? 1 : -1;
   });
-
-  const updates: any[] = [];
-  sortedToHeal.forEach((f, idx) => {
-    const expectedIndex = idx;
-    const expectedName = `Page ${expectedIndex + 1}`;
-    const currentName = f.props.name;
-    const currentIdx = f.meta?.pageIndex;
-
-    if (currentIdx !== expectedIndex || currentName !== expectedName) {
-      updates.push({
-        id: f.id,
-        type: 'frame',
-        props: {
-          ...f.props,
-          name: expectedName,
-        },
-        meta: {
-          ...f.meta,
-          pageIndex: expectedIndex,
-        },
-      });
-    }
-  });
-
-  if (updates.length > 0) {
-    editor.run(() => {
-      updates.forEach((update) => {
-        editor.updateShape(update);
-      });
-    });
-  }
-
-  return editor
-    .getCurrentPageShapes()
-    .filter((s) => s.type === 'frame')
-    .sort((a, b) => ((a.meta?.pageIndex ?? 0) as number) - ((b.meta?.pageIndex ?? 0) as number));
 }
 
 /**
@@ -67,31 +30,55 @@ export function getNextPageIndex(editor: Editor) {
 }
 
 /**
- * Handler for manual page creation. Creates a Letter-sized (1600x900)
+ * Handler for manual page creation. Creates a Letter-sized (810x1080)
  * page frame placed vertically below the last page.
  */
 export function addHandDrawnPage(editor: Editor) {
-  const pages = getPagesSorted(editor);
-  const last = pages[pages.length - 1];
-  const PAGE_W = 810;   // 3:4 portrait width
-  const PAGE_H = 1080;  // Letter height
-  const GAP = 50;
+  if (!editor) {
+    console.warn('[whiteboard] Cannot add page: editor is null or undefined');
+    return;
+  }
 
-  const y = last ? last.y + (last.props.h as number ?? PAGE_H) + GAP : 0;
-  const x = (1440 - PAGE_W) / 2; // Center horizontally in 1440 width
-  
-  const frameId = createShapeId();
+  try {
+    const pages = getPagesSorted(editor);
+    const nextIndex = pages.length;
+    const last = pages[pages.length - 1];
+    const PAGE_W = 810;   // 3:4 portrait width
+    const PAGE_H = 1080;  // Letter height
+    const GAP = 50;
 
-  editor.run(() => {
-    editor.createShape({
-      id: frameId,
-      type: 'frame',
-      x,
-      y,
-      props: { w: PAGE_W, h: PAGE_H, name: `Page ${getNextPageIndex(editor) + 1}` },
-      meta: { pageIndex: getNextPageIndex(editor) },
+    const y = last ? last.y + (last.props.h as number ?? PAGE_H) + GAP : 0;
+    const x = (1440 - PAGE_W) / 2; // Center horizontally in 1440 width
+    
+    const frameId = createShapeId();
+
+    editor.run(() => {
+      editor.createShape({
+        id: frameId,
+        type: 'frame',
+        x,
+        y,
+        props: { w: PAGE_W, h: PAGE_H, name: `Page ${nextIndex + 1}` },
+        meta: { pageIndex: nextIndex },
+      });
     });
-  });
+
+    console.log(`[whiteboard] Page ${nextIndex + 1} created: ${frameId} at (x: ${x}, y: ${y})`);
+
+    // Smoothly pan & zoom the camera directly to the newly created page
+    setTimeout(() => {
+      try {
+        const bounds = editor.getShapePageBounds(frameId);
+        if (bounds) {
+          editor.zoomToBounds(bounds, { animation: { duration: 300 } });
+        }
+      } catch (e) {
+        console.warn('[whiteboard] Could not auto-zoom to new page:', e);
+      }
+    }, 50);
+  } catch (err) {
+    console.error('[whiteboard] Failed to add hand-drawn page:', err);
+  }
 }
 
 /**

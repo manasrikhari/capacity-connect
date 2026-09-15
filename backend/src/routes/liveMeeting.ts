@@ -83,42 +83,43 @@ router.post('/exchange-lms-token', async (req: Request, res: Response, next: Nex
       return;
     }
 
-    let user = await db.user.findUnique({
-      where: { email: userEmail.toLowerCase() },
-    });
+    let user: { id: string; status?: string; role?: string } | null = null;
+    try {
+      const rows: any[] = await db.$queryRawUnsafe(
+        'SELECT id, email, status, role FROM "User" WHERE LOWER(email) = $1 LIMIT 1',
+        userEmail.toLowerCase()
+      );
+      if (rows && rows.length > 0) {
+        user = rows[0];
+      }
+    } catch (dbErr: any) {
+      console.warn('[liveMeeting] Warning: user lookup via DB failed, using token claims:', dbErr?.message || dbErr);
+    }
 
-    if (!user) {
-      // LMS "teacher" maps to backend TRAINER (never ADMIN).
-      const assignedRole =
-        rawRole === 'teacher' || rawRole === 'TRAINER'
-          ? 'TRAINER'
-          : rawRole === 'ADMIN'
-            ? 'ADMIN'
-            : 'TRAINEE';
-      user = await db.user.create({
-        data: {
-          ...(lmsUserId ? { id: lmsUserId } : {}),
-          email: userEmail.toLowerCase(),
-          password: 'SSO_MANAGED_LOGIN',
-          fullName: userName,
-          role: assignedRole as any,
-          status: 'APPROVED',
-        },
-      });
-    } else if (user.status === 'SUSPENDED' || user.status === 'REJECTED') {
+    if (user && (user.status === 'SUSPENDED' || user.status === 'REJECTED')) {
       res.status(403).json({ error: 'Your account is suspended or rejected.' });
       return;
     }
 
+    const effectiveUserId = user?.id || lmsUserId || userEmail;
     const isTeacher =
-      user.role === 'ADMIN' || user.role === 'TRAINER' || user.role === 'SUPER_ADMIN' || rawRole === 'teacher';
+      rawRole === 'teacher' ||
+      rawRole === 'TRAINER' ||
+      user?.role === 'ADMIN' ||
+      user?.role === 'TRAINER' ||
+      user?.role === 'SUPER_ADMIN';
     const nativeRole: 'teacher' | 'student' = isTeacher ? 'teacher' : 'student';
 
-    const liveSession = await LiveClassroomService.findOrCreateSession(meetingId, user.id);
+    let liveSession: any = null;
+    try {
+      liveSession = await LiveClassroomService.findOrCreateSession(meetingId, effectiveUserId, lmsBatchId);
+    } catch (sessionErr: any) {
+      console.warn('[liveMeeting] Session initialization fallback:', sessionErr?.message || sessionErr);
+    }
 
     const claims: ClassroomClaims = {
-      userId: user.id,
-      lmsUserId: lmsUserId || user.id,
+      userId: effectiveUserId,
+      lmsUserId: lmsUserId || effectiveUserId,
       role: nativeRole,
       roomId: meetingId,
       roomName: meetingId,
@@ -139,7 +140,9 @@ router.post('/exchange-lms-token', async (req: Request, res: Response, next: Nex
       void RecordingService.start(meetingId);
     }
 
-    const startedAtMs = new Date(liveSession.actualStart || liveSession.scheduledStart || Date.now()).getTime();
+    const startedAtMs = new Date(
+      liveSession?.actualStart || liveSession?.startedAt || liveSession?.scheduledStart || Date.now()
+    ).getTime();
 
     res.json({
       accessToken,
@@ -609,14 +612,16 @@ router.post('/end-class', async (req: Request, res: Response, next: NextFunction
       console.warn(`[End Class] Could not delete LiveKit room ${roomId}: ${e?.message || e}`);
     }
 
-    await db.liveSession.updateMany({
-      where: { roomId },
-      data: {
-        status: 'COMPLETED',
-        actualEnd: new Date(),
-        ...(hasNotes ? { hasNotes: true } : {}),
-      },
-    });
+    try {
+      await db.$queryRawUnsafe(
+        'UPDATE "LiveSession" SET status = $1, "endedAt" = NOW(), "hasNotes" = $2 WHERE "roomId" = $3',
+        'completed',
+        hasNotes,
+        roomId
+      );
+    } catch (e: any) {
+      console.warn(`[End Class] Could not update LiveSession table: ${e?.message || e}`);
+    }
 
     // Fire-and-forget: tell the LMS the class ended, then hand over the
     // transcript (which triggers minutes + a knowledge source on the LMS).

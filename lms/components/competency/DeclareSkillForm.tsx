@@ -27,7 +27,7 @@ export function DeclareSkillForm({ skills }: { skills: { id: string; name: strin
           ))}
         </Select>
       </label>
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-3">
         <label className="flex flex-col gap-1 text-xs text-ink-500">
           Level
           <Select name="proficiency" defaultValue="3" className="w-20">
@@ -38,7 +38,7 @@ export function DeclareSkillForm({ skills }: { skills: { id: string; name: strin
             ))}
           </Select>
         </label>
-        <Button type="submit" loading={pending} className="ml-auto">
+        <Button type="submit" loading={pending}>
           Declare
         </Button>
       </div>

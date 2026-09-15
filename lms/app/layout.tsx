@@ -7,6 +7,7 @@ import {
   Spline_Sans_Mono,
   Caveat,
 } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "@/components/ui/Toaster";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { TricolorBand } from "@/components/layout/TricolorBand";
@@ -88,6 +89,10 @@ export default async function RootLayout({
         {/* National-identity accent: a hairline Ashoka tricolour at the very top
             of every page — the one government cue that sits above all chrome. */}
         <TricolorBand />
+        {/* Instant feedback on every navigation — including filter/option
+            changes that only touch search params, which loading.tsx never
+            covers — so a slow round-trip reads as "working", not "frozen". */}
+        <NextTopLoader color="#6B5489" height={3} showSpinner={false} shadow={false} />
         {/* GIGW / WCAG: keyboard users skip the nav straight to content. */}
         <a
           href="#main-content"

@@ -55,3 +55,6 @@ scratch/
 skills-lock.json
 .mcp.json
 SIH_PPT_CONTENT.md
+
+# Vercel CLI link metadata
+.vercel/

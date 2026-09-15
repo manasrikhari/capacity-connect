@@ -73,10 +73,23 @@ const hhmm = (t: number) =>
     Math.round((t % 1) * 60)
   ).padStart(2, "0")}`;
 
-const toHours = (iso: string) => {
-  const d = new Date(iso);
-  return d.getHours() + d.getMinutes() / 60;
+/* Wall-clock hours in IST. The server renders in UTC and the browser in the
+   trainee's zone; reading getHours() on each side put today's blocks at
+   different grid positions and tripped React's hydration check (#418). The
+   platform is IMD/MoES-only, so pin every clock read to Asia/Kolkata. */
+const IST_HOURS = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Kolkata",
+  hour: "numeric",
+  minute: "numeric",
+  hour12: false,
+});
+const hoursIn = (d: Date) => {
+  const parts = IST_HOURS.formatToParts(d);
+  const h = Number(parts.find((p) => p.type === "hour")?.value ?? 0) % 24;
+  const m = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  return h + m / 60;
 };
+const toHours = (iso: string) => hoursIn(new Date(iso));
 
 export function StudentDashboard({ data }: { data: DashboardData }) {
   const [now, setNow] = useState<Date | null>(null);
@@ -87,7 +100,7 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
   }, []);
 
   const live = data.live;
-  const clock = now ? now.getHours() + now.getMinutes() / 60 : null;
+  const clock = now ? hoursIn(now) : null;
 
   const liveStart = live ? toHours(live.startAt) : null;
   const liveEnd = live && liveStart !== null ? liveStart + live.durationMins / 60 : null;

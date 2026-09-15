@@ -1,0 +1,23 @@
+# Auto-deploy to Railway on every push to main.
+# One-time setup: Railway project → Settings → Tokens → create a token and
+# add it as the GitHub repo secret RAILWAY_TOKEN. Run deploy/railway-deploy.sh
+# once locally first so the project, services and variables exist.
+name: deploy
+on:
+  push:
+    branches: [main]
+    paths: [backend/**, lms/**, live/**]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [backend, lms, live]
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i -g @railway/cli
+      - run: railway up ./${{ matrix.service }} --path-as-root --service ${{ matrix.service }} --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

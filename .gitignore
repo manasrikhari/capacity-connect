@@ -25,6 +25,8 @@ lerna-debug.log*
 .env
 .env*.local
 !.env.example
+deploy/deploy.env
+deploy/.secrets.env
 
 # IDE & OS files
 .DS_Store
